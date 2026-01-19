@@ -131,6 +131,32 @@ async def health_check():
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database unavailable: {str(e)}")
 
+# ============== AUTHENTICATION ==============
+
+@api_router.post("/auth/register", response_model=dict)
+async def register_admin(user_data: AdminUserCreate):
+    """Register a new admin user"""
+    user = await create_admin_user(db, user_data)
+    return {"message": "Admin user created successfully", "user": user}
+
+@api_router.post("/auth/login", response_model=Token)
+async def login(credentials: AdminUserLogin):
+    """Login and get access token"""
+    token = await login_user(db, credentials.email, credentials.password)
+    return token
+
+@api_router.get("/auth/me")
+async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current authenticated admin user"""
+    current_user = await get_current_user(credentials, db)
+    return current_user
+
+@api_router.get("/auth/verify")
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify if token is valid"""
+    current_user = await get_current_user(credentials, db)
+    return {"valid": True, "user": current_user}
+
 # ============== SCHEMA INDEX (Sheet 15) ==============
 
 @api_router.get("/schema")
