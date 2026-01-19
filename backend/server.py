@@ -452,6 +452,19 @@ async def create_proposal(
     
     await db.proposals.insert_one(doc)
     
+    # WEBHOOK: Emit proposal created event
+    await webhook_service.emit(
+        event_type=WebhookEventType.PROPOSAL_CREATED,
+        payload={
+            "title": proposal_obj.title,
+            "description": proposal_obj.description[:200],
+            "priority": proposal_obj.priority
+        },
+        source_entity="proposal",
+        source_id=proposal_obj.id,
+        user_id=proposal.user_id
+    )
+    
     return ProjectProposalResponse(
         id=proposal_obj.id,
         title=proposal_obj.title,
