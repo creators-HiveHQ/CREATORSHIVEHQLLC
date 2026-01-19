@@ -32,10 +32,14 @@ class CreatorsHiveAPITester:
         
         self.results[test_name] = {"success": success, "details": details}
 
-    def test_endpoint(self, name: str, method: str, endpoint: str, expected_status: int = 200, data: Dict = None) -> tuple:
+    def test_endpoint(self, name: str, method: str, endpoint: str, expected_status: int = 200, data: Dict = None, auth_required: bool = False) -> tuple:
         """Test a single API endpoint"""
         url = f"{self.api_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
+        
+        # Add auth header if required and available
+        if auth_required and self.auth_token:
+            headers['Authorization'] = f'Bearer {self.auth_token}'
         
         try:
             if method == 'GET':
