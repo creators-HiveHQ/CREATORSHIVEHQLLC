@@ -17,6 +17,8 @@ class CreatorsHiveAPITester:
         self.tests_passed = 0
         self.failed_tests = []
         self.results = {}
+        self.auth_token = None
+        self.auth_user = None
 
     def log_result(self, test_name: str, success: bool, details: str = ""):
         """Log test result"""
