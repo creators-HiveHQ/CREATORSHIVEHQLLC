@@ -1343,6 +1343,11 @@ function App() {
               <Layout><AdminCreatorsPage /></Layout>
             </ProtectedRoute>
           } />
+          <Route path="/proposals" element={
+            <ProtectedRoute>
+              <Layout><AdminProposalsPage /></Layout>
+            </ProtectedRoute>
+          } />
           
           {/* Public Creator Registration Form */}
           <Route path="/register" element={<CreatorRegistrationForm />} />
