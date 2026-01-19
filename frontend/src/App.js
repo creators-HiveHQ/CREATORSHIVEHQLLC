@@ -1295,75 +1295,85 @@ const Layout = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public route - Login */}
-          <Route path="/login" element={<LoginPage />} />
-          
-          {/* Protected routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout><Dashboard /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/users" element={
-            <ProtectedRoute>
-              <Layout><UsersPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/projects" element={
-            <ProtectedRoute>
-              <Layout><ProjectsPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/calculator" element={
-            <ProtectedRoute>
-              <Layout><CalculatorPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/subscriptions" element={
-            <ProtectedRoute>
-              <Layout><SubscriptionsPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/arris" element={
-            <ProtectedRoute>
-              <Layout><ArrisPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/patterns" element={
-            <ProtectedRoute>
-              <Layout><PatternsPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/schema" element={
-            <ProtectedRoute>
-              <Layout><SchemaPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/creators" element={
-            <ProtectedRoute>
-              <Layout><AdminCreatorsPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/proposals" element={
-            <ProtectedRoute>
-              <Layout><AdminProposalsPage /></Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/webhooks" element={
-            <ProtectedRoute>
-              <Layout><WebhooksAdmin /></Layout>
-            </ProtectedRoute>
-          } />
-          
-          {/* Public Creator Registration Form */}
-          <Route path="/register" element={<CreatorRegistrationForm />} />
-          
-          {/* Catch-all redirect to login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <CreatorAuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public route - Admin Login */}
+            <Route path="/login" element={<LoginPage />} />
+            
+            {/* Protected Admin routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout><Dashboard /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/users" element={
+              <ProtectedRoute>
+                <Layout><UsersPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <Layout><ProjectsPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/calculator" element={
+              <ProtectedRoute>
+                <Layout><CalculatorPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/subscriptions" element={
+              <ProtectedRoute>
+                <Layout><SubscriptionsPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/arris" element={
+              <ProtectedRoute>
+                <Layout><ArrisPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/patterns" element={
+              <ProtectedRoute>
+                <Layout><PatternsPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/schema" element={
+              <ProtectedRoute>
+                <Layout><SchemaPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/creators" element={
+              <ProtectedRoute>
+                <Layout><AdminCreatorsPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/proposals" element={
+              <ProtectedRoute>
+                <Layout><AdminProposalsPage /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/webhooks" element={
+              <ProtectedRoute>
+                <Layout><WebhooksAdmin /></Layout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Public Creator Registration Form */}
+            <Route path="/register" element={<CreatorRegistrationForm />} />
+            
+            {/* Creator Portal Routes */}
+            <Route path="/creator/login" element={<CreatorLoginPage />} />
+            <Route path="/creator/dashboard" element={
+              <CreatorProtectedRoute>
+                <CreatorDashboard />
+              </CreatorProtectedRoute>
+            } />
+            
+            {/* Catch-all redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </CreatorAuthProvider>
     </AuthProvider>
   );
 }
