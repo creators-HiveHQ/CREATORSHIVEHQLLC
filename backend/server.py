@@ -545,6 +545,33 @@ async def submit_proposal(
     }
     await db.arris_usage_log.insert_one(arris_log)
     
+    # WEBHOOK: Emit proposal submitted event
+    await webhook_service.emit(
+        event_type=WebhookEventType.PROPOSAL_SUBMITTED,
+        payload={
+            "title": proposal.get("title"),
+            "priority": proposal.get("priority"),
+            "has_arris_insights": True,
+            "complexity": arris_insights.get("estimated_complexity", "Unknown")
+        },
+        source_entity="proposal",
+        source_id=proposal_id,
+        user_id=proposal.get("user_id")
+    )
+    
+    # WEBHOOK: Emit ARRIS insights generated event
+    await webhook_service.emit(
+        event_type=WebhookEventType.ARRIS_INSIGHTS_GENERATED,
+        payload={
+            "proposal_id": proposal_id,
+            "insights_summary": arris_insights.get("summary", "")[:200],
+            "complexity": arris_insights.get("estimated_complexity")
+        },
+        source_entity="arris",
+        source_id=proposal_id,
+        user_id=proposal.get("user_id")
+    )
+    
     return {
         "id": proposal_id,
         "status": "submitted",
