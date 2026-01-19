@@ -43,7 +43,12 @@ const LoginPage = () => {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,6 +66,7 @@ const LoginPage = () => {
       if (!result.success) {
         setError(result.error);
       }
+      // If success, the isAuthenticated check above will redirect
     } catch (err) {
       setError("An unexpected error occurred");
     } finally {
