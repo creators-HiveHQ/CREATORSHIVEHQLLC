@@ -17,6 +17,7 @@ class CreatorRegistration(BaseModel):
     # Basic Info
     name: str
     email: EmailStr
+    hashed_password: str = ""  # Added for authentication
     
     # Platform & Niche
     platforms: List[str] = []  # YouTube, Instagram, TikTok, etc.
@@ -36,6 +37,7 @@ class CreatorRegistration(BaseModel):
     reviewed_at: Optional[datetime] = None
     reviewed_by: Optional[str] = None
     notes: str = ""
+    last_login: Optional[datetime] = None
     
     # Auto-assigned after approval
     assigned_tier: str = "Free"
@@ -45,6 +47,7 @@ class CreatorRegistrationCreate(BaseModel):
     """Public form submission - minimal required fields"""
     name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
+    password: str = Field(..., min_length=6, max_length=100)  # Added password field
     platforms: List[str] = Field(default=[], description="Selected platforms")
     niche: str = Field(default="", max_length=200)
     goals: str = Field(default="", max_length=1000)
@@ -64,6 +67,18 @@ class CreatorRegistrationResponse(BaseModel):
     status: str
     message: str
     submitted_at: str
+
+class CreatorLogin(BaseModel):
+    """Creator login request"""
+    email: EmailStr
+    password: str
+
+class CreatorToken(BaseModel):
+    """Token response for creator login"""
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    creator: dict
 
 # ============== PLATFORM OPTIONS ==============
 
