@@ -619,6 +619,297 @@ class CreatorsHiveAPITester:
             401
         )
 
+    def test_project_proposal_endpoints(self):
+        """Test Project Proposal endpoints - Core workflow testing"""
+        print("\n🔍 Testing Project Proposal System...")
+        
+        # Test 1: Get proposal form options (public endpoint)
+        success, form_options = self.test_endpoint("Get Proposal Form Options", "GET", "proposals/form-options")
+        
+        if success and form_options:
+            platforms = form_options.get("platforms", [])
+            timelines = form_options.get("timelines", [])
+            priorities = form_options.get("priorities", [])
+            statuses = form_options.get("statuses", [])
+            arris_question = form_options.get("arris_question", "")
+            
+            print(f"   📋 Found {len(platforms)} platform options")
+            print(f"   📋 Found {len(timelines)} timeline options")
+            print(f"   📋 Found {len(priorities)} priority options")
+            print(f"   📋 Found {len(statuses)} status options")
+            print(f"   🧠 ARRIS Question: {arris_question[:50]}..." if arris_question else "   ❌ No ARRIS question")
+            
+            # Validate form options structure
+            if platforms and isinstance(platforms, list) and len(platforms) > 0:
+                first_platform = platforms[0]
+                if isinstance(first_platform, dict) and "value" in first_platform and "label" in first_platform:
+                    self.log_result("Proposal Form Options Structure", True, "Platform options properly structured")
+                else:
+                    self.log_result("Proposal Form Options Structure", False, "Platform options missing required fields")
+            else:
+                self.log_result("Proposal Form Options Structure", False, "No platform options found")
+        
+        # Skip authenticated tests if no token
+        if not self.auth_token:
+            print("   ⚠️  Skipping authenticated proposal endpoints - no auth token available")
+            return
+        
+        # Test 2: Create a new proposal (requires auth)
+        import uuid
+        test_user_id = f"U-{str(uuid.uuid4())[:4]}"
+        proposal_data = {
+            "user_id": test_user_id,
+            "title": "YouTube Course Launch Campaign",
+            "description": "Launch a comprehensive online course about content creation, targeting aspiring YouTubers. The course will include video lessons, downloadable resources, and community access.",
+            "goals": "Generate $50K in course sales within 3 months, build email list of 5K subscribers, establish authority in creator education space",
+            "platforms": ["youtube", "instagram", "twitter"],
+            "timeline": "2-4_weeks",
+            "estimated_hours": 120.0,
+            "arris_intake_question": "I want to create a sustainable income stream while helping other creators succeed. My biggest challenge is balancing content creation with course development.",
+            "priority": "high"
+        }
+        
+        success, proposal_response = self.test_endpoint(
+            "Create New Proposal", 
+            "POST", 
+            "proposals", 
+            200, 
+            proposal_data,
+            auth_required=True
+        )
+        
+        proposal_id = None
+        if success and proposal_response:
+            proposal_id = proposal_response.get("id")
+            expected_fields = ["id", "title", "status", "message"]
+            missing_fields = [field for field in expected_fields if field not in proposal_response]
+            
+            if missing_fields:
+                self.log_result("Proposal Creation Response", False, f"Missing fields: {missing_fields}")
+            else:
+                self.log_result("Proposal Creation Response", True, "All required fields present")
+                print(f"   ✅ Proposal created with ID: {proposal_id}")
+                print(f"   📝 Status: {proposal_response.get('status')}")
+        
+        # Test 3: Submit proposal for review (generates ARRIS insights)
+        if proposal_id:
+            success, submit_response = self.test_endpoint(
+                f"Submit Proposal for Review: {proposal_id}", 
+                "POST", 
+                f"proposals/{proposal_id}/submit", 
+                200, 
+                auth_required=True
+            )
+            
+            if success and submit_response:
+                arris_insights = submit_response.get("arris_insights")
+                if arris_insights and isinstance(arris_insights, dict):
+                    self.log_result("ARRIS Insights Generation", True, "ARRIS insights generated successfully")
+                    print(f"   🧠 ARRIS Insights generated")
+                    
+                    # Check insights structure
+                    expected_insight_fields = ["summary", "strengths", "risks", "recommendations"]
+                    missing_insight_fields = [field for field in expected_insight_fields if field not in arris_insights]
+                    
+                    if missing_insight_fields:
+                        self.log_result("ARRIS Insights Structure", False, f"Missing insight fields: {missing_insight_fields}")
+                    else:
+                        self.log_result("ARRIS Insights Structure", True, "All required insight fields present")
+                        print(f"   📊 Summary: {arris_insights.get('summary', '')[:100]}...")
+                        print(f"   💪 Strengths: {len(arris_insights.get('strengths', []))} items")
+                        print(f"   ⚠️  Risks: {len(arris_insights.get('risks', []))} items")
+                        print(f"   💡 Recommendations: {len(arris_insights.get('recommendations', []))} items")
+                else:
+                    self.log_result("ARRIS Insights Generation", False, "No ARRIS insights in response")
+        
+        # Test 4: Get all proposals (admin view)
+        success, proposals_list = self.test_endpoint(
+            "Get All Proposals", 
+            "GET", 
+            "proposals", 
+            200, 
+            auth_required=True
+        )
+        
+        if success and proposals_list:
+            print(f"   📋 Found {len(proposals_list)} proposals")
+            
+            # Check if our test proposal is in the list
+            if proposal_id:
+                test_proposal_found = any(p.get("id") == proposal_id for p in proposals_list)
+                if test_proposal_found:
+                    self.log_result("Test Proposal in List", True, "Newly created proposal found in list")
+                else:
+                    self.log_result("Test Proposal in List", False, "Newly created proposal not found in list")
+        
+        # Test 5: Get specific proposal with ARRIS insights
+        if proposal_id:
+            success, proposal_details = self.test_endpoint(
+                f"Get Proposal by ID: {proposal_id}", 
+                "GET", 
+                f"proposals/{proposal_id}", 
+                200, 
+                auth_required=True
+            )
+            
+            if success and proposal_details:
+                if proposal_details.get("id") == proposal_id:
+                    self.log_result("Proposal Details Match", True, "Retrieved proposal matches created data")
+                    
+                    # Check if ARRIS insights are included
+                    if proposal_details.get("arris_insights"):
+                        self.log_result("ARRIS Insights in Details", True, "ARRIS insights included in proposal details")
+                    else:
+                        self.log_result("ARRIS Insights in Details", False, "ARRIS insights missing from proposal details")
+                else:
+                    self.log_result("Proposal Details Match", False, "Retrieved proposal data mismatch")
+        
+        # Test 6: Update proposal status (admin review)
+        if proposal_id:
+            update_data = {
+                "status": "under_review",
+                "review_notes": "Reviewing proposal for approval"
+            }
+            
+            success, update_response = self.test_endpoint(
+                f"Update Proposal Status: {proposal_id}", 
+                "PATCH", 
+                f"proposals/{proposal_id}", 
+                200, 
+                update_data,
+                auth_required=True
+            )
+            
+            if success and update_response:
+                message = update_response.get("message", "")
+                if "updated" in message.lower():
+                    self.log_result("Proposal Status Update", True, "Proposal status updated successfully")
+                    print(f"   ✅ {message}")
+        
+        # Test 7: Approve proposal (should create project)
+        if proposal_id:
+            approve_data = {
+                "status": "approved"
+            }
+            
+            success, approve_response = self.test_endpoint(
+                f"Approve Proposal: {proposal_id}", 
+                "PATCH", 
+                f"proposals/{proposal_id}", 
+                200, 
+                approve_data,
+                auth_required=True
+            )
+            
+            if success and approve_response:
+                message = approve_response.get("message", "")
+                project_id = approve_response.get("project_id")
+                
+                if "approved" in message.lower() and "project" in message.lower() and project_id:
+                    self.log_result("Proposal Approval with Project Creation", True, "Proposal approved and project created")
+                    print(f"   ✅ {message}")
+                    print(f"   📁 New Project ID: {project_id}")
+                else:
+                    self.log_result("Proposal Approval", True, "Proposal approved")
+        
+        # Test 8: Regenerate ARRIS insights
+        if proposal_id:
+            success, regen_response = self.test_endpoint(
+                f"Regenerate ARRIS Insights: {proposal_id}", 
+                "POST", 
+                f"proposals/{proposal_id}/regenerate-insights", 
+                200, 
+                auth_required=True
+            )
+            
+            if success and regen_response:
+                arris_insights = regen_response.get("arris_insights")
+                if arris_insights:
+                    self.log_result("ARRIS Insights Regeneration", True, "ARRIS insights regenerated successfully")
+                else:
+                    self.log_result("ARRIS Insights Regeneration", False, "No insights in regeneration response")
+        
+        # Test 9: Get proposal statistics
+        success, proposal_stats = self.test_endpoint(
+            "Get Proposal Statistics", 
+            "GET", 
+            "proposals/stats/summary", 
+            200, 
+            auth_required=True
+        )
+        
+        if success and proposal_stats:
+            total_proposals = proposal_stats.get("total_proposals", 0)
+            by_status = proposal_stats.get("by_status", {})
+            by_priority = proposal_stats.get("by_priority", {})
+            
+            print(f"   📊 Total Proposals: {total_proposals}")
+            print(f"   📊 By Status: {by_status}")
+            print(f"   📊 By Priority: {by_priority}")
+            
+            # Validate stats structure
+            if isinstance(by_status, dict) and isinstance(by_priority, dict):
+                self.log_result("Proposal Stats Structure", True, "Statistics properly structured")
+            else:
+                self.log_result("Proposal Stats Structure", False, "Statistics structure invalid")
+        
+        # Test 10: Filter proposals by status and priority
+        success, filtered_proposals = self.test_endpoint(
+            "Filter Proposals by Status", 
+            "GET", 
+            "proposals?status=submitted", 
+            200, 
+            auth_required=True
+        )
+        
+        if success and filtered_proposals:
+            print(f"   📋 Found {len(filtered_proposals)} submitted proposals")
+        
+        success, priority_filtered = self.test_endpoint(
+            "Filter Proposals by Priority", 
+            "GET", 
+            "proposals?priority=high", 
+            200, 
+            auth_required=True
+        )
+        
+        if success and priority_filtered:
+            print(f"   📋 Found {len(priority_filtered)} high priority proposals")
+        
+        # Test 11: Try to access proposals without authentication
+        self.test_endpoint(
+            "Access Proposals Without Auth", 
+            "GET", 
+            "proposals", 
+            401
+        )
+        
+        # Test 12: Try to create proposal with missing fields
+        incomplete_proposal_data = {
+            "user_id": "test-user",
+            "title": "Incomplete Proposal"
+            # Missing required description
+        }
+        
+        self.test_endpoint(
+            "Create Proposal with Missing Fields", 
+            "POST", 
+            "proposals", 
+            422,  # Validation error
+            incomplete_proposal_data,
+            auth_required=True
+        )
+        
+        # Test 13: Try to submit non-existent proposal
+        fake_proposal_id = "PP-FAKE123"
+        self.test_endpoint(
+            "Submit Non-existent Proposal", 
+            "POST", 
+            f"proposals/{fake_proposal_id}/submit", 
+            404,
+            auth_required=True
+        )
+
     def test_additional_endpoints(self):
         """Test additional endpoints"""
         print("\n🔍 Testing Additional Endpoints...")
