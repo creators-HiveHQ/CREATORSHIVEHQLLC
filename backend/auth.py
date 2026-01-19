@@ -221,3 +221,94 @@ async def seed_default_admin(db):
         await db.admin_users.insert_one(doc)
         return True
     return False
+
+# ============== CREATOR AUTHENTICATION ==============
+
+async def authenticate_creator(db, email: str, password: str) -> Optional[dict]:
+    """Authenticate a creator by email and password"""
+    creator = await db.creators.find_one({"email": email})
+    if not creator:
+        return None
+    if not creator.get("hashed_password"):
+        return None
+    if not verify_password(password, creator["hashed_password"]):
+        return None
+    return creator
+
+async def login_creator(db, email: str, password: str):
+    """Login creator and return token"""
+    from models_creator import CreatorToken
+    
+    creator = await authenticate_creator(db, email, password)
+    if not creator:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check if creator is approved/active
+    if creator.get("status") not in ["approved", "active"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account status: {creator.get('status')}. Please wait for approval."
+        )
+    
+    # Update last login
+    await db.creators.update_one(
+        {"email": email},
+        {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Create token with creator role
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={
+            "sub": creator["email"], 
+            "user_id": creator["id"],
+            "role": "creator"
+        },
+        expires_delta=access_token_expires
+    )
+    
+    return CreatorToken(
+        access_token=access_token,
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        creator={
+            "id": creator["id"],
+            "email": creator["email"],
+            "name": creator["name"],
+            "status": creator.get("status", "pending"),
+            "tier": creator.get("assigned_tier", "Free"),
+            "platforms": creator.get("platforms", []),
+            "niche": creator.get("niche", "")
+        }
+    )
+
+async def get_current_creator(credentials: HTTPAuthorizationCredentials = Depends(security), db=None):
+    """
+    Dependency to get the current authenticated creator from JWT token
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    token = credentials.credentials
+    token_data = decode_token(token)
+    
+    if token_data is None:
+        raise credentials_exception
+    
+    # If db is provided, verify creator exists
+    if db is not None:
+        creator = await db.creators.find_one(
+            {"email": token_data.email}, 
+            {"_id": 0, "hashed_password": 0}
+        )
+        if creator is None:
+            raise credentials_exception
+        return creator
+    
+    return {"email": token_data.email, "user_id": token_data.user_id}
