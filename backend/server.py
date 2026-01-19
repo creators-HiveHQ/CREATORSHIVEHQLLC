@@ -78,6 +78,16 @@ from models_creator import (
     PLATFORM_OPTIONS, NICHE_OPTIONS, ARRIS_INTAKE_QUESTIONS
 )
 
+# Import project proposal models
+from models_proposal import (
+    ProjectProposal, ProjectProposalCreate, ProjectProposalUpdate,
+    ProjectProposalResponse, TIMELINE_OPTIONS, PRIORITY_OPTIONS,
+    STATUS_OPTIONS, ARRIS_PROJECT_QUESTIONS
+)
+
+# Import ARRIS AI service
+from arris_service import arris_service
+
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
