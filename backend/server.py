@@ -88,6 +88,13 @@ from models_proposal import (
 # Import ARRIS AI service
 from arris_service import arris_service
 
+# Import webhook service
+from webhook_service import webhook_service
+from models_webhook import (
+    WebhookEvent, WebhookEventCreate, WebhookEventType,
+    AutomationRule, DEFAULT_AUTOMATION_RULES, FOLLOW_UP_ACTIONS
+)
+
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
