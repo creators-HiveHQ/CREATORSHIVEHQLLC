@@ -164,6 +164,190 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
     current_user = await get_current_user(credentials, db)
     return {"valid": True, "user": current_user}
 
+# ============== CREATOR REGISTRATION (Public Form) ==============
+
+@api_router.get("/creators/form-options")
+async def get_creator_form_options():
+    """Get options for the creator registration form (public endpoint)"""
+    import random
+    return {
+        "platforms": PLATFORM_OPTIONS,
+        "niches": NICHE_OPTIONS,
+        "arris_question": random.choice(ARRIS_INTAKE_QUESTIONS)
+    }
+
+@api_router.post("/creators/register", response_model=CreatorRegistrationResponse)
+async def register_creator(registration: CreatorRegistrationCreate):
+    """
+    Public endpoint - Register a new creator (no auth required)
+    Stores in creators collection for admin review
+    """
+    # Check if email already registered
+    existing = await db.creators.find_one({"email": registration.email})
+    if existing:
+        raise HTTPException(
+            status_code=400, 
+            detail="This email is already registered. Please use a different email or contact support."
+        )
+    
+    # Create registration record
+    creator = CreatorRegistration(**registration.model_dump())
+    doc = creator.model_dump()
+    doc['submitted_at'] = doc['submitted_at'].isoformat()
+    
+    await db.creators.insert_one(doc)
+    
+    # Log to ARRIS usage for pattern analysis
+    arris_log = {
+        "id": f"ARRIS-REG-{creator.id}",
+        "log_id": f"ARRIS-REG-{creator.id}",
+        "user_id": creator.id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user_query_snippet": f"Creator Registration: {creator.name}",
+        "response_type": "Registration_Intake",
+        "response_id": creator.id,
+        "time_taken_s": 0,
+        "linked_project": None,
+        "query_category": "Registration",
+        "success": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.arris_usage_log.insert_one(arris_log)
+    
+    return CreatorRegistrationResponse(
+        id=creator.id,
+        name=creator.name,
+        email=creator.email,
+        status=creator.status,
+        message="Thank you for registering! Your application is being reviewed. We'll be in touch soon.",
+        submitted_at=doc['submitted_at']
+    )
+
+@api_router.get("/creators")
+async def get_creators(
+    status: Optional[str] = None,
+    limit: int = Query(default=100, le=1000),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all creator registrations (admin only)"""
+    await get_current_user(credentials, db)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    creators = await db.creators.find(query, {"_id": 0}).sort("submitted_at", -1).to_list(limit)
+    return creators
+
+@api_router.get("/creators/{creator_id}")
+async def get_creator(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific creator registration (admin only)"""
+    await get_current_user(credentials, db)
+    
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0})
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    return creator
+
+@api_router.patch("/creators/{creator_id}")
+async def update_creator(
+    creator_id: str,
+    update: CreatorRegistrationUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update creator registration status (admin only)"""
+    current_user = await get_current_user(credentials, db)
+    
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No update data provided")
+    
+    update_data["reviewed_at"] = datetime.now(timezone.utc).isoformat()
+    update_data["reviewed_by"] = current_user.get("id", "admin")
+    
+    result = await db.creators.update_one(
+        {"id": creator_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    
+    # If approved, create a user account
+    if update.status == "approved":
+        creator = await db.creators.find_one({"id": creator_id})
+        if creator and not creator.get("assigned_user_id"):
+            # Create user in 01_Users
+            new_user_id = f"U-{str(uuid.uuid4())[:4]}"
+            new_user = {
+                "id": new_user_id,
+                "user_id": new_user_id,
+                "name": creator["name"],
+                "email": creator["email"],
+                "role": "Creator",
+                "business_type": creator.get("niche", ""),
+                "tier": update.assigned_tier or "Free",
+                "account_status": "Active",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(new_user)
+            
+            # Link user to creator registration
+            await db.creators.update_one(
+                {"id": creator_id},
+                {"$set": {"assigned_user_id": new_user_id, "status": "active"}}
+            )
+            
+            return {"message": "Creator approved and user account created", "user_id": new_user_id}
+    
+    return {"message": "Creator updated successfully"}
+
+@api_router.get("/creators/stats/summary")
+async def get_creator_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get creator registration statistics (admin only)"""
+    await get_current_user(credentials, db)
+    
+    pipeline = [
+        {"$group": {
+            "_id": "$status",
+            "count": {"$sum": 1}
+        }}
+    ]
+    
+    status_counts = await db.creators.aggregate(pipeline).to_list(10)
+    
+    # Platform popularity
+    platform_pipeline = [
+        {"$unwind": "$platforms"},
+        {"$group": {"_id": "$platforms", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    platform_stats = await db.creators.aggregate(platform_pipeline).to_list(10)
+    
+    # Niche distribution
+    niche_pipeline = [
+        {"$match": {"niche": {"$ne": ""}}},
+        {"$group": {"_id": "$niche", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    niche_stats = await db.creators.aggregate(niche_pipeline).to_list(10)
+    
+    total = await db.creators.count_documents({})
+    
+    return {
+        "total_registrations": total,
+        "by_status": {item["_id"]: item["count"] for item in status_counts},
+        "top_platforms": platform_stats,
+        "top_niches": niche_stats
+    }
+
 # ============== SCHEMA INDEX (Sheet 15) ==============
 
 @api_router.get("/schema")
