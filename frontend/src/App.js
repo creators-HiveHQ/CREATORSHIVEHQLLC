@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CreatorRegistrationForm, AdminCreatorsPage } from "@/components/CreatorRegistration";
 import { AdminProposalsPage } from "@/components/ProjectProposal";
+import WebhooksAdmin from "@/components/WebhooksAdmin";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
