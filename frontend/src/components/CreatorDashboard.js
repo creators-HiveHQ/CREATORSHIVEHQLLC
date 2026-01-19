@@ -1,6 +1,6 @@
 /**
  * Creator Dashboard - Creator-Facing Proposal Management
- * View proposals, track status, read ARRIS insights
+ * View proposals, track status, read ARRIS insights, create new proposals
  */
 
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
@@ -13,6 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
