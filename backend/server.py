@@ -358,6 +358,283 @@ async def get_creator_stats(credentials: HTTPAuthorizationCredentials = Depends(
         "top_niches": niche_stats
     }
 
+# ============== PROJECT PROPOSALS ==============
+
+@api_router.get("/proposals/form-options")
+async def get_proposal_form_options():
+    """Get options for the project proposal form"""
+    import random
+    return {
+        "platforms": PLATFORM_OPTIONS,
+        "timelines": TIMELINE_OPTIONS,
+        "priorities": PRIORITY_OPTIONS,
+        "statuses": STATUS_OPTIONS,
+        "arris_question": random.choice(ARRIS_PROJECT_QUESTIONS)
+    }
+
+@api_router.post("/proposals", response_model=ProjectProposalResponse)
+async def create_proposal(
+    proposal: ProjectProposalCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new project proposal (authenticated users)"""
+    current_user = await get_current_user(credentials, db)
+    
+    # Get user/creator info
+    user_info = await db.users.find_one({"id": proposal.user_id}, {"_id": 0})
+    creator_info = await db.creators.find_one({"assigned_user_id": proposal.user_id}, {"_id": 0})
+    
+    # Create proposal
+    proposal_obj = ProjectProposal(**proposal.model_dump())
+    if user_info:
+        proposal_obj.creator_name = user_info.get("name", "")
+        proposal_obj.creator_email = user_info.get("email", "")
+    elif creator_info:
+        proposal_obj.creator_name = creator_info.get("name", "")
+        proposal_obj.creator_email = creator_info.get("email", "")
+    
+    doc = proposal_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.proposals.insert_one(doc)
+    
+    return ProjectProposalResponse(
+        id=proposal_obj.id,
+        title=proposal_obj.title,
+        status=proposal_obj.status,
+        message="Proposal created as draft. Submit when ready for review."
+    )
+
+@api_router.post("/proposals/{proposal_id}/submit")
+async def submit_proposal(
+    proposal_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Submit a proposal for review and generate ARRIS insights"""
+    current_user = await get_current_user(credentials, db)
+    
+    proposal = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    if proposal.get("status") not in ["draft"]:
+        raise HTTPException(status_code=400, detail="Only draft proposals can be submitted")
+    
+    # Get Memory Palace data for context
+    memory_palace_data = None
+    if proposal.get("user_id"):
+        # Fetch user patterns
+        user_id = proposal["user_id"]
+        activity = {
+            "projects": await db.projects.count_documents({"user_id": user_id}),
+            "tasks_completed": await db.tasks.count_documents({"assigned_to_user_id": user_id, "completion_status": 1}),
+            "arris_queries": await db.arris_usage_log.count_documents({"user_id": user_id}),
+        }
+        
+        # Financial data
+        income_entries = await db.calculator.find({"user_id": user_id, "category": "Income"}).to_list(100)
+        total_revenue = sum(e.get("revenue", 0) for e in income_entries)
+        expense_entries = await db.calculator.find({"user_id": user_id, "category": "Expense"}).to_list(100)
+        total_expenses = sum(e.get("expenses", 0) for e in expense_entries)
+        
+        memory_palace_data = {
+            "activity": activity,
+            "financials": {
+                "total_revenue": total_revenue,
+                "total_expenses": total_expenses,
+                "net_profit": total_revenue - total_expenses
+            }
+        }
+    
+    # Generate ARRIS insights
+    arris_insights = await arris_service.generate_project_insights(proposal, memory_palace_data)
+    
+    # Update proposal
+    update_data = {
+        "status": "submitted",
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+        "arris_insights": arris_insights,
+        "arris_insights_generated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.proposals.update_one({"id": proposal_id}, {"$set": update_data})
+    
+    # Log to ARRIS usage
+    arris_log = {
+        "id": f"ARRIS-PROP-{proposal_id}",
+        "log_id": f"ARRIS-PROP-{proposal_id}",
+        "user_id": proposal.get("user_id", ""),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user_query_snippet": f"Project Proposal Analysis: {proposal.get('title', '')}",
+        "response_type": "Proposal_Analysis",
+        "response_id": proposal_id,
+        "time_taken_s": 0,
+        "linked_project": None,
+        "query_category": "Proposal",
+        "success": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.arris_usage_log.insert_one(arris_log)
+    
+    return {
+        "id": proposal_id,
+        "status": "submitted",
+        "message": "Proposal submitted for review. ARRIS has generated insights.",
+        "arris_insights": arris_insights
+    }
+
+@api_router.post("/proposals/{proposal_id}/regenerate-insights")
+async def regenerate_insights(
+    proposal_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Regenerate ARRIS insights for a proposal"""
+    await get_current_user(credentials, db)
+    
+    proposal = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    # Regenerate insights
+    arris_insights = await arris_service.generate_project_insights(proposal, None)
+    
+    await db.proposals.update_one(
+        {"id": proposal_id},
+        {"$set": {
+            "arris_insights": arris_insights,
+            "arris_insights_generated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Insights regenerated", "arris_insights": arris_insights}
+
+@api_router.get("/proposals")
+async def get_proposals(
+    user_id: Optional[str] = None,
+    status: Optional[str] = None,
+    priority: Optional[str] = None,
+    limit: int = Query(default=100, le=1000),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all proposals (admin) or user's proposals"""
+    await get_current_user(credentials, db)
+    
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+    if status:
+        query["status"] = status
+    if priority:
+        query["priority"] = priority
+    
+    proposals = await db.proposals.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    return proposals
+
+@api_router.get("/proposals/{proposal_id}")
+async def get_proposal(
+    proposal_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific proposal with ARRIS insights"""
+    await get_current_user(credentials, db)
+    
+    proposal = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    return proposal
+
+@api_router.patch("/proposals/{proposal_id}")
+async def update_proposal(
+    proposal_id: str,
+    update: ProjectProposalUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update a proposal (admin review)"""
+    current_user = await get_current_user(credentials, db)
+    
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No update data provided")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Handle status changes
+    if update.status:
+        if update.status == "under_review":
+            update_data["reviewed_by"] = current_user.get("id", "admin")
+        elif update.status == "approved":
+            update_data["reviewed_at"] = datetime.now(timezone.utc).isoformat()
+            update_data["reviewed_by"] = current_user.get("id", "admin")
+            
+            # Create project in 04_Projects
+            proposal = await db.proposals.find_one({"id": proposal_id})
+            if proposal and not proposal.get("assigned_project_id"):
+                new_project_id = f"P-{str(uuid.uuid4())[:4]}"
+                new_project = {
+                    "id": new_project_id,
+                    "project_id": new_project_id,
+                    "title": proposal["title"],
+                    "platform": ", ".join(proposal.get("platforms", [])),
+                    "status": "Planning",
+                    "user_id": proposal["user_id"],
+                    "priority_level": proposal.get("priority", "Medium").capitalize(),
+                    "start_date": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.projects.insert_one(new_project)
+                update_data["assigned_project_id"] = new_project_id
+                update_data["status"] = "in_progress"
+        elif update.status == "rejected":
+            update_data["reviewed_at"] = datetime.now(timezone.utc).isoformat()
+            update_data["reviewed_by"] = current_user.get("id", "admin")
+    
+    result = await db.proposals.update_one({"id": proposal_id}, {"$set": update_data})
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    if update.status == "approved" and update_data.get("assigned_project_id"):
+        return {
+            "message": "Proposal approved and project created",
+            "project_id": update_data["assigned_project_id"]
+        }
+    
+    return {"message": "Proposal updated successfully"}
+
+@api_router.get("/proposals/stats/summary")
+async def get_proposal_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get proposal statistics"""
+    await get_current_user(credentials, db)
+    
+    pipeline = [
+        {"$group": {
+            "_id": "$status",
+            "count": {"$sum": 1}
+        }}
+    ]
+    status_counts = await db.proposals.aggregate(pipeline).to_list(10)
+    
+    priority_pipeline = [
+        {"$group": {
+            "_id": "$priority",
+            "count": {"$sum": 1}
+        }}
+    ]
+    priority_counts = await db.proposals.aggregate(priority_pipeline).to_list(10)
+    
+    total = await db.proposals.count_documents({})
+    
+    return {
+        "total_proposals": total,
+        "by_status": {item["_id"]: item["count"] for item in status_counts},
+        "by_priority": {item["_id"]: item["count"] for item in priority_counts}
+    }
+
 # ============== SCHEMA INDEX (Sheet 15) ==============
 
 @api_router.get("/schema")
