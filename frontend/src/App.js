@@ -32,11 +32,150 @@ const Icons = {
   Activity: () => <span className="text-xl">📈</span>,
   Settings: () => <span className="text-xl">⚙️</span>,
   Menu: () => <span className="text-xl">☰</span>,
+  Logout: () => <span className="text-xl">🚪</span>,
+};
+
+// Login Page
+const LoginPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login, register } = useAuth();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      let result;
+      if (isLogin) {
+        result = await login(email, password);
+      } else {
+        result = await register(name, email, password);
+      }
+
+      if (!result.success) {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4" data-testid="login-page">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-amber-500">Creators Hive HQ</h1>
+            <p className="text-sm text-slate-500">Zero-Human Operational Model</p>
+          </div>
+          <CardTitle>{isLogin ? "Admin Login" : "Register Admin"}</CardTitle>
+          <CardDescription>
+            {isLogin ? "Sign in to access the admin dashboard" : "Create a new admin account"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required={!isLogin}
+                  data-testid="input-name"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@hivehq.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                data-testid="input-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                data-testid="input-password"
+              />
+            </div>
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" data-testid="error-message">
+                {error}
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={loading} data-testid="submit-btn">
+              {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+            </Button>
+          </form>
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => { setIsLogin(!isLogin); setError(""); }}
+              className="text-sm text-amber-600 hover:underline"
+              data-testid="toggle-auth-mode"
+            >
+              {isLogin ? "Need an account? Register" : "Already have an account? Sign In"}
+            </button>
+          </div>
+          {isLogin && (
+            <div className="mt-4 p-3 bg-slate-50 rounded-lg text-sm text-slate-600">
+              <p className="font-medium">Default Admin Credentials:</p>
+              <p>Email: admin@hivehq.com</p>
+              <p>Password: admin123</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
 };
 
 // Navigation Sidebar
 const Sidebar = () => {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const navItems = [
     { path: "/", label: "Dashboard", icon: "📊" },
     { path: "/users", label: "Users", icon: "👥" },
@@ -71,7 +210,31 @@ const Sidebar = () => {
           </Link>
         ))}
       </nav>
-      <div className="absolute bottom-4 left-4 right-4">
+      <div className="absolute bottom-4 left-4 right-4 space-y-3">
+        {/* User Info */}
+        {user && (
+          <div className="bg-slate-800 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-sm font-bold text-slate-900">
+                {user.name?.charAt(0)?.toUpperCase() || "A"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full mt-2 text-slate-400 hover:text-white hover:bg-slate-700"
+              onClick={logout}
+              data-testid="logout-btn"
+            >
+              <Icons.Logout /> <span className="ml-2">Sign Out</span>
+            </Button>
+          </div>
+        )}
+        {/* System Status */}
         <div className="bg-slate-800 rounded-lg p-3">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
