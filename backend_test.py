@@ -390,6 +390,235 @@ class CreatorsHiveAPITester:
             print(f"   🧠 ARRIS Queries: {arris.get('total_queries', 0)}")
             print(f"   🔄 System Status: {dashboard_data.get('system_status', 'Unknown')}")
 
+    def test_creator_registration_endpoints(self):
+        """Test Creator Registration endpoints - Public and Admin"""
+        print("\n🔍 Testing Creator Registration System...")
+        
+        # Test 1: Get form options (public endpoint)
+        success, form_options = self.test_endpoint("Get Creator Form Options", "GET", "creators/form-options")
+        
+        if success and form_options:
+            platforms = form_options.get("platforms", [])
+            niches = form_options.get("niches", [])
+            arris_question = form_options.get("arris_question", "")
+            
+            print(f"   📋 Found {len(platforms)} platform options")
+            print(f"   📋 Found {len(niches)} niche options")
+            print(f"   🧠 ARRIS Question: {arris_question[:50]}..." if arris_question else "   ❌ No ARRIS question")
+            
+            # Validate form options structure
+            if platforms and isinstance(platforms, list) and len(platforms) > 0:
+                first_platform = platforms[0]
+                if isinstance(first_platform, dict) and "value" in first_platform and "label" in first_platform:
+                    self.log_result("Form Options Structure", True, "Platform options properly structured")
+                else:
+                    self.log_result("Form Options Structure", False, "Platform options missing required fields")
+            else:
+                self.log_result("Form Options Structure", False, "No platform options found")
+        
+        # Test 2: Register a new creator (public endpoint)
+        import uuid
+        test_creator_email = f"test-creator-{str(uuid.uuid4())[:8]}@example.com"
+        creator_data = {
+            "name": "Test Creator",
+            "email": test_creator_email,
+            "platforms": ["youtube", "instagram"],
+            "niche": "Tech & Software",
+            "goals": "Grow my audience and monetize content",
+            "arris_intake_question": "My biggest challenge is creating consistent content while managing my day job."
+        }
+        
+        success, registration_response = self.test_endpoint(
+            "Register New Creator", 
+            "POST", 
+            "creators/register", 
+            200, 
+            creator_data
+        )
+        
+        creator_id = None
+        if success and registration_response:
+            creator_id = registration_response.get("id")
+            expected_fields = ["id", "name", "email", "status", "message", "submitted_at"]
+            missing_fields = [field for field in expected_fields if field not in registration_response]
+            
+            if missing_fields:
+                self.log_result("Creator Registration Response", False, f"Missing fields: {missing_fields}")
+            else:
+                self.log_result("Creator Registration Response", True, "All required fields present")
+                print(f"   ✅ Creator registered with ID: {creator_id}")
+                print(f"   📧 Registration email: {registration_response.get('email')}")
+                print(f"   📝 Status: {registration_response.get('status')}")
+        
+        # Test 3: Try to register with same email (should fail)
+        duplicate_creator_data = {
+            "name": "Duplicate Creator",
+            "email": test_creator_email,  # Same email as above
+            "platforms": ["tiktok"],
+            "niche": "Entertainment",
+            "goals": "Test duplicate registration",
+            "arris_intake_question": "Testing duplicate email handling."
+        }
+        
+        self.test_endpoint(
+            "Register Creator with Duplicate Email", 
+            "POST", 
+            "creators/register", 
+            400, 
+            duplicate_creator_data
+        )
+        
+        # Test 4: Register creator with missing required fields
+        incomplete_creator_data = {
+            "name": "Incomplete Creator",
+            # Missing email, platforms, niche
+            "goals": "Test validation",
+            "arris_intake_question": "Testing validation."
+        }
+        
+        self.test_endpoint(
+            "Register Creator with Missing Fields", 
+            "POST", 
+            "creators/register", 
+            422,  # Validation error
+            incomplete_creator_data
+        )
+        
+        # Admin-only endpoints (require authentication)
+        if not self.auth_token:
+            print("   ⚠️  Skipping admin endpoints - no auth token available")
+            return
+        
+        # Test 5: Get all creator registrations (admin only)
+        success, creators_list = self.test_endpoint(
+            "Get All Creator Registrations", 
+            "GET", 
+            "creators", 
+            200, 
+            auth_required=True
+        )
+        
+        if success and creators_list:
+            print(f"   👥 Found {len(creators_list)} creator registrations")
+            
+            # Check if our test creator is in the list
+            test_creator_found = any(c.get("email") == test_creator_email for c in creators_list)
+            if test_creator_found:
+                self.log_result("Test Creator in List", True, "Newly registered creator found in admin list")
+            else:
+                self.log_result("Test Creator in List", False, "Newly registered creator not found in admin list")
+        
+        # Test 6: Filter creators by status
+        success, pending_creators = self.test_endpoint(
+            "Filter Creators by Status (Pending)", 
+            "GET", 
+            "creators?status=pending", 
+            200, 
+            auth_required=True
+        )
+        
+        if success and pending_creators:
+            print(f"   ⏳ Found {len(pending_creators)} pending creators")
+        
+        # Test 7: Get creator statistics
+        success, creator_stats = self.test_endpoint(
+            "Get Creator Statistics", 
+            "GET", 
+            "creators/stats/summary", 
+            200, 
+            auth_required=True
+        )
+        
+        if success and creator_stats:
+            total_registrations = creator_stats.get("total_registrations", 0)
+            by_status = creator_stats.get("by_status", {})
+            top_platforms = creator_stats.get("top_platforms", [])
+            top_niches = creator_stats.get("top_niches", [])
+            
+            print(f"   📊 Total Registrations: {total_registrations}")
+            print(f"   📊 By Status: {by_status}")
+            print(f"   📊 Top Platforms: {len(top_platforms)} entries")
+            print(f"   📊 Top Niches: {len(top_niches)} entries")
+            
+            # Validate stats structure
+            if isinstance(by_status, dict) and isinstance(top_platforms, list):
+                self.log_result("Creator Stats Structure", True, "Statistics properly structured")
+            else:
+                self.log_result("Creator Stats Structure", False, "Statistics structure invalid")
+        
+        # Test 8: Get specific creator by ID (if we have one)
+        if creator_id:
+            success, creator_details = self.test_endpoint(
+                f"Get Creator by ID: {creator_id}", 
+                "GET", 
+                f"creators/{creator_id}", 
+                200, 
+                auth_required=True
+            )
+            
+            if success and creator_details:
+                if creator_details.get("email") == test_creator_email:
+                    self.log_result("Creator Details Match", True, "Retrieved creator matches registered data")
+                else:
+                    self.log_result("Creator Details Match", False, "Retrieved creator data mismatch")
+        
+        # Test 9: Update creator status (approve)
+        if creator_id:
+            update_data = {
+                "status": "approved",
+                "assigned_tier": "Free"
+            }
+            
+            success, update_response = self.test_endpoint(
+                f"Approve Creator: {creator_id}", 
+                "PATCH", 
+                f"creators/{creator_id}", 
+                200, 
+                update_data,
+                auth_required=True
+            )
+            
+            if success and update_response:
+                message = update_response.get("message", "")
+                if "approved" in message.lower() and "user" in message.lower():
+                    self.log_result("Creator Approval with User Creation", True, "Creator approved and user account created")
+                    print(f"   ✅ {message}")
+                    
+                    # Check if user was created in users collection
+                    user_id = update_response.get("user_id")
+                    if user_id:
+                        print(f"   👤 New User ID: {user_id}")
+                else:
+                    self.log_result("Creator Approval", True, "Creator status updated")
+        
+        # Test 10: Try to update non-existent creator
+        fake_creator_id = "CR-FAKE123"
+        update_data = {"status": "approved"}
+        
+        self.test_endpoint(
+            "Update Non-existent Creator", 
+            "PATCH", 
+            f"creators/{fake_creator_id}", 
+            404, 
+            update_data,
+            auth_required=True
+        )
+        
+        # Test 11: Access admin endpoints without authentication
+        self.test_endpoint(
+            "Access Creators List Without Auth", 
+            "GET", 
+            "creators", 
+            401
+        )
+        
+        self.test_endpoint(
+            "Access Creator Stats Without Auth", 
+            "GET", 
+            "creators/stats/summary", 
+            401
+        )
+
     def test_additional_endpoints(self):
         """Test additional endpoints"""
         print("\n🔍 Testing Additional Endpoints...")
