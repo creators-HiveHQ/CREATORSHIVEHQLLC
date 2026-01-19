@@ -661,6 +661,7 @@ class CreatorsHiveAPITester:
         # Run all test suites
         self.test_health_and_root()
         self.test_authentication_endpoints()  # Test auth first to get token
+        self.test_creator_registration_endpoints()  # Test creator registration system
         self.test_schema_endpoints()
         self.test_users_endpoints()
         self.test_projects_endpoints()
