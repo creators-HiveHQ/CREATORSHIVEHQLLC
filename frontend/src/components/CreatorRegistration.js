@@ -59,10 +59,23 @@ export const CreatorRegistrationForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
+    // Password validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/creators/register`, formData);
+      // Don't send confirmPassword to backend
+      const { confirmPassword, ...submitData } = formData;
+      const response = await axios.post(`${API}/creators/register`, submitData);
       setSubmissionResult(response.data);
       setSubmitted(true);
     } catch (err) {
