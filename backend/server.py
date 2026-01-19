@@ -104,7 +104,7 @@ from auth import (
     AdminUserCreate, AdminUserLogin, Token,
     get_current_user, create_admin_user, login_user,
     seed_default_admin, security, get_password_hash,
-    login_creator, get_current_creator
+    login_creator, get_current_creator, decode_token
 )
 
 # Configure logging
@@ -113,6 +113,48 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# ============== AUTH HELPERS ==============
+
+async def get_any_authenticated_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Validates token and returns user info for either admin or creator.
+    Returns dict with user_type, user_id, email, and full user/creator data.
+    """
+    token = credentials.credentials
+    token_data = decode_token(token)
+    
+    if token_data is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    role = getattr(token_data, 'role', 'admin')  # Default to admin for backward compatibility
+    
+    if role == "creator":
+        creator = await db.creators.find_one({"email": token_data.email}, {"_id": 0, "hashed_password": 0})
+        if not creator:
+            raise HTTPException(status_code=401, detail="Creator not found")
+        return {
+            "user_type": "creator",
+            "user_id": creator["id"],
+            "email": creator["email"],
+            "name": creator["name"],
+            "data": creator
+        }
+    else:
+        admin = await db.admin_users.find_one({"email": token_data.email}, {"_id": 0, "hashed_password": 0})
+        if not admin:
+            raise HTTPException(status_code=401, detail="Admin not found")
+        return {
+            "user_type": "admin",
+            "user_id": admin["id"],
+            "email": admin["email"],
+            "name": admin["name"],
+            "data": admin
+        }
 
 # ============== STARTUP ==============
 
