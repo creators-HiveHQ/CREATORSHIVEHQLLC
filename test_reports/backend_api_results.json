@@ -1,9 +1,14 @@
 {
-  "timestamp": "2026-01-19T21:33:04.471871",
-  "total_tests": 33,
-  "passed_tests": 33,
-  "failed_tests": [],
-  "success_rate": 100.0,
+  "timestamp": "2026-01-19T21:48:19.173584",
+  "total_tests": 47,
+  "passed_tests": 46,
+  "failed_tests": [
+    {
+      "test": "Access Protected Endpoint Without Token",
+      "error": "Expected 401, got 403"
+    }
+  ],
+  "success_rate": 97.87234042553192,
   "detailed_results": {
     "Root API": {
       "success": true,
@@ -12,6 +17,62 @@
     "Health Check": {
       "success": true,
       "details": "Status: 200"
+    },
+    "Login with Default Admin Credentials": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "User Data Completeness": {
+      "success": true,
+      "details": "All required fields present"
+    },
+    "Login with Invalid Credentials": {
+      "success": true,
+      "details": "Status: 401"
+    },
+    "Login with Non-existent User": {
+      "success": true,
+      "details": "Status: 401"
+    },
+    "Verify Valid Token": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Token Verification Response": {
+      "success": true,
+      "details": "Valid token confirmed"
+    },
+    "Get Current User (/auth/me)": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Current User Data": {
+      "success": true,
+      "details": "Correct user returned"
+    },
+    "Access Protected Endpoint Without Token": {
+      "success": false,
+      "details": "Expected 401, got 403"
+    },
+    "Register New Admin User": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Registration Response": {
+      "success": true,
+      "details": "User created successfully"
+    },
+    "Login with Newly Created User": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "New User Login": {
+      "success": true,
+      "details": "New user can login successfully"
+    },
+    "Register with Existing Email": {
+      "success": true,
+      "details": "Status: 400"
     },
     "Get Schema Index": {
       "success": true,
