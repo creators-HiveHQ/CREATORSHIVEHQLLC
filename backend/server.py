@@ -613,11 +613,15 @@ async def submit_proposal(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Submit a proposal for review and generate ARRIS insights"""
-    current_user = await get_current_user(credentials, db)
+    auth_user = await get_any_authenticated_user(credentials)
     
     proposal = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    # Verify ownership for creators
+    if auth_user["user_type"] == "creator" and proposal.get("user_id") != auth_user["user_id"]:
+        raise HTTPException(status_code=403, detail="You can only submit your own proposals")
     
     if proposal.get("status") not in ["draft"]:
         raise HTTPException(status_code=400, detail="Only draft proposals can be submitted")
