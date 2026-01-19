@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-01-19T21:33:04.471871",
+  "total_tests": 33,
+  "passed_tests": 33,
+  "failed_tests": [],
+  "success_rate": 100.0,
+  "detailed_results": {
+    "Root API": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Health Check": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Schema Index": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Schema by Name: Users": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get All Users": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Filter Users by Role": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Filter Users by Tier": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get User by ID: U-1001": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get All Projects": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Filter Projects by Status": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Project by ID: P-2001": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Calculator Entries": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Revenue Summary": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get All Subscriptions": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Subscription Revenue": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get ARRIS Usage Logs": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get ARRIS Performance": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get ARRIS Training Data": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Analyze Usage Patterns": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Analyze Revenue Patterns": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Analyze Engagement Patterns": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Memory Palace": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Dashboard": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Lookups": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Analytics": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Customers": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Affiliates": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Rolodex": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Integrations": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Marketing Campaigns": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Dev Approaches": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Branding Kits": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Coach Kits": {
+      "success": true,
+      "details": "Status: 200"
+    }
+  }
+}
