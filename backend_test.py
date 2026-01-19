@@ -79,6 +79,160 @@ class CreatorsHiveAPITester:
         # Test health check
         self.test_endpoint("Health Check", "GET", "health")
 
+    def test_authentication_endpoints(self):
+        """Test authentication system - JWT-based admin access"""
+        print("\n🔍 Testing Authentication System...")
+        
+        # Test 1: Login with default admin credentials
+        login_data = {
+            "email": "admin@hivehq.com",
+            "password": "admin123"
+        }
+        success, login_response = self.test_endpoint(
+            "Login with Default Admin Credentials", 
+            "POST", 
+            "auth/login", 
+            200, 
+            login_data
+        )
+        
+        if success and login_response:
+            # Store token for subsequent tests
+            self.auth_token = login_response.get("access_token")
+            self.auth_user = login_response.get("user")
+            
+            print(f"   🔑 Token received: {self.auth_token[:20]}..." if self.auth_token else "   ❌ No token received")
+            print(f"   👤 User: {self.auth_user.get('name')} ({self.auth_user.get('email')})" if self.auth_user else "   ❌ No user data")
+            
+            # Verify token structure
+            if self.auth_token and self.auth_user:
+                expected_fields = ["id", "email", "name", "role"]
+                missing_fields = [field for field in expected_fields if field not in self.auth_user]
+                if missing_fields:
+                    self.log_result("User Data Completeness", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_result("User Data Completeness", True, "All required fields present")
+        
+        # Test 2: Invalid login credentials
+        invalid_login_data = {
+            "email": "admin@hivehq.com",
+            "password": "wrongpassword"
+        }
+        self.test_endpoint(
+            "Login with Invalid Credentials", 
+            "POST", 
+            "auth/login", 
+            401, 
+            invalid_login_data
+        )
+        
+        # Test 3: Login with non-existent user
+        nonexistent_login_data = {
+            "email": "nonexistent@hivehq.com",
+            "password": "admin123"
+        }
+        self.test_endpoint(
+            "Login with Non-existent User", 
+            "POST", 
+            "auth/login", 
+            401, 
+            nonexistent_login_data
+        )
+        
+        # Test 4: Verify token endpoint (requires valid token)
+        if self.auth_token:
+            success, verify_response = self.test_endpoint(
+                "Verify Valid Token", 
+                "GET", 
+                "auth/verify", 
+                200, 
+                auth_required=True
+            )
+            
+            if success and verify_response:
+                if verify_response.get("valid") and verify_response.get("user"):
+                    self.log_result("Token Verification Response", True, "Valid token confirmed")
+                else:
+                    self.log_result("Token Verification Response", False, "Invalid response structure")
+        
+        # Test 5: Get current user endpoint (requires valid token)
+        if self.auth_token:
+            success, me_response = self.test_endpoint(
+                "Get Current User (/auth/me)", 
+                "GET", 
+                "auth/me", 
+                200, 
+                auth_required=True
+            )
+            
+            if success and me_response:
+                if me_response.get("email") == "admin@hivehq.com":
+                    self.log_result("Current User Data", True, "Correct user returned")
+                else:
+                    self.log_result("Current User Data", False, "Incorrect user data")
+        
+        # Test 6: Access protected endpoint without token
+        success, _ = self.test_endpoint(
+            "Access Protected Endpoint Without Token", 
+            "GET", 
+            "auth/verify", 
+            401
+        )
+        
+        # Test 7: Register new admin user
+        import uuid
+        test_email = f"test-admin-{str(uuid.uuid4())[:8]}@hivehq.com"
+        register_data = {
+            "name": "Test Admin",
+            "email": test_email,
+            "password": "testpass123"
+        }
+        success, register_response = self.test_endpoint(
+            "Register New Admin User", 
+            "POST", 
+            "auth/register", 
+            200, 
+            register_data
+        )
+        
+        if success and register_response:
+            if register_response.get("message") and register_response.get("user"):
+                self.log_result("Registration Response", True, "User created successfully")
+                
+                # Test login with newly created user
+                new_login_data = {
+                    "email": test_email,
+                    "password": "testpass123"
+                }
+                success, new_login_response = self.test_endpoint(
+                    "Login with Newly Created User", 
+                    "POST", 
+                    "auth/login", 
+                    200, 
+                    new_login_data
+                )
+                
+                if success and new_login_response.get("access_token"):
+                    self.log_result("New User Login", True, "New user can login successfully")
+                else:
+                    self.log_result("New User Login", False, "New user cannot login")
+            else:
+                self.log_result("Registration Response", False, "Invalid registration response")
+        
+        # Test 8: Try to register with existing email
+        duplicate_register_data = {
+            "name": "Duplicate Admin",
+            "email": "admin@hivehq.com",  # Already exists
+            "password": "testpass123"
+        }
+        self.test_endpoint(
+            "Register with Existing Email", 
+            "POST", 
+            "auth/register", 
+            400, 
+            duplicate_register_data
+        )
+
     def test_schema_endpoints(self):
         """Test schema index endpoints (Sheet 15)"""
         print("\n🔍 Testing Schema Index (Sheet 15)...")
