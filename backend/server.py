@@ -234,6 +234,20 @@ async def register_creator(registration: CreatorRegistrationCreate):
     }
     await db.arris_usage_log.insert_one(arris_log)
     
+    # WEBHOOK: Emit creator registered event
+    await webhook_service.emit(
+        event_type=WebhookEventType.CREATOR_REGISTERED,
+        payload={
+            "name": creator.name,
+            "email": creator.email,
+            "platforms": creator.platforms,
+            "niche": creator.niche
+        },
+        source_entity="creator",
+        source_id=creator.id,
+        user_id=creator.id
+    )
+    
     return CreatorRegistrationResponse(
         id=creator.id,
         name=creator.name,
