@@ -86,9 +86,10 @@ def decode_token(token: str) -> Optional[TokenData]:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         user_id: str = payload.get("user_id")
+        role: str = payload.get("role", "admin")  # Default to admin for backward compatibility
         if email is None:
             return None
-        return TokenData(email=email, user_id=user_id)
+        return TokenData(email=email, user_id=user_id, role=role)
     except JWTError:
         return None
 
