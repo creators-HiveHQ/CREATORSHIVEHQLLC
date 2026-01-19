@@ -625,6 +625,7 @@ export const CreatorDashboard = () => {
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showNewProposal, setShowNewProposal] = useState(false);
   const navigate = useNavigate();
 
   const getAuthHeaders = () => {
@@ -654,6 +655,16 @@ export const CreatorDashboard = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleNewProposalSuccess = (proposal) => {
+    // Refresh data and switch to proposals tab
+    fetchData();
+    setActiveTab("proposals");
+    // Select the new proposal
+    if (proposal?.id) {
+      setSelectedProposal(proposal);
+    }
+  };
 
   const getStatusBadge = (status) => {
     const styles = {
