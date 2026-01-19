@@ -561,12 +561,16 @@ async def create_proposal(
     proposal: ProjectProposalCreate,
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
-    """Create a new project proposal (authenticated users)"""
-    current_user = await get_current_user(credentials, db)
+    """Create a new project proposal (authenticated users - admin or creator)"""
+    auth_user = await get_any_authenticated_user(credentials)
     
-    # Get user/creator info
+    # For creators, auto-fill the user_id if not provided
+    if auth_user["user_type"] == "creator" and not proposal.user_id:
+        proposal.user_id = auth_user["user_id"]
+    
+    # Get user/creator info for display
     user_info = await db.users.find_one({"id": proposal.user_id}, {"_id": 0})
-    creator_info = await db.creators.find_one({"assigned_user_id": proposal.user_id}, {"_id": 0})
+    creator_info = await db.creators.find_one({"id": proposal.user_id}, {"_id": 0})
     
     # Create proposal
     proposal_obj = ProjectProposal(**proposal.model_dump())
@@ -588,7 +592,7 @@ async def create_proposal(
         event_type=WebhookEventType.PROPOSAL_CREATED,
         payload={
             "title": proposal_obj.title,
-            "description": proposal_obj.description[:200],
+            "description": proposal_obj.description[:200] if proposal_obj.description else "",
             "priority": proposal_obj.priority
         },
         source_entity="proposal",
