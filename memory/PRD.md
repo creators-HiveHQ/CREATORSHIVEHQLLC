@@ -11,7 +11,7 @@ Creators Hive HQ is a comprehensive database management system designed to power
 1. **Schema Map (Sheet 15 Index)**: Absolute source of truth for all data relationships
 2. **Self-Funding Loop**: 17_Subscriptions → 06_Calculator revenue routing
 3. **No-Assumption Protocol**: All relationships verified against Sheet 15 before implementation
-4. **Zero-Human Operational Model**: Fully automated operations
+4. **Zero-Human Operational Model**: Fully automated operations via Webhook Automations
 
 ### Database Collections (37+)
 
@@ -24,6 +24,7 @@ Creators Hive HQ is a comprehensive database management system designed to power
 | AI System (ARRIS) | 19_ARRIS_Usage_Log, 20_ARRIS_Performance, 21_ARRIS_Training_Data | log_id, review_id, data_source_id |
 | System & Compliance | 12_Notepad, 13_Integrations, 14_Audit, 15_Index, 16_Lookups, 23_TOS, 24_Privacy, 26_Forms, 27_Intl_Taxes, 31_System_Health | Various |
 | Strategic | 28_Product_Roadmaps, 29_Marketing_Campaigns, 34_Dev_Approaches, 36_User_Activity_Log, 37_Internal_Content | Various |
+| Webhooks & Automation | webhook_events, automation_rules | event_id, rule_id |
 
 ## Key Features
 
@@ -43,11 +44,23 @@ AI Agent capabilities:
 - **Training Data (21)**: Data sources with compliance status
 - **Pattern Analysis**: Temporal analysis over time ranges
 - **Memory Palace**: Comprehensive view across all data sources
+- **AI Insights**: GPT-powered project proposal analysis
 
-### 3. Admin Dashboard
+### 3. Webhook Automations (Zero-Human Ops)
+
+Event-driven automation system:
+- **8 Default Automation Rules** covering all key workflows
+- **Event Types**: creator.registered, creator.approved, proposal.submitted, proposal.approved, project.created, task.completed, revenue.recorded, arris.pattern_detected
+- **Automated Actions**: log_event, update_arris_memory, create_welcome_task, create_onboarding_project, queue_for_review, create_project_tasks, initialize_project_tracking, check_project_completion, update_financial_patterns, create_insight_notification
+- **Admin Dashboard**: View events, manage rules, test webhooks
+
+### 4. Admin Dashboard
 
 Full management interface:
 - Master Dashboard with system overview
+- Creators management (registration, approval workflow)
+- Project Proposals with AI insights
+- **Webhooks Admin** - Event monitoring & rule management
 - Users management with role/tier filtering
 - Projects and Tasks tracking
 - Calculator (Revenue Hub) with financial summary
@@ -63,6 +76,31 @@ Full management interface:
 - `GET /api/health` - Health check
 - `GET /api/dashboard` - Master dashboard data
 - `GET /api/schema` - Schema index (Sheet 15)
+
+### Authentication
+- `POST /api/auth/login` - Admin login (JWT)
+- `POST /api/auth/register` - Admin registration
+- `GET /api/auth/me` - Current user info
+- `GET /api/auth/verify` - Token verification
+
+### Creator Management
+- `POST /api/creators/register` - Public creator registration
+- `GET /api/creators` - List creators (admin)
+- `PATCH /api/creators/{id}` - Update creator status (approve/reject)
+
+### Project Proposals
+- `POST /api/proposals` - Create proposal
+- `POST /api/proposals/{id}/submit` - Submit for review (triggers AI insights)
+- `GET /api/proposals` - List proposals
+- `PATCH /api/proposals/{id}` - Update proposal status
+
+### Webhook Automations
+- `GET /api/webhooks/events` - Get webhook event log
+- `GET /api/webhooks/events/{id}` - Get specific event
+- `GET /api/webhooks/rules` - Get automation rules
+- `PATCH /api/webhooks/rules/{id}` - Toggle rule active/inactive
+- `GET /api/webhooks/stats` - Webhook statistics
+- `POST /api/webhooks/test` - Trigger test webhook
 
 ### Data Management
 - `GET/POST /api/users` - User CRUD
@@ -84,15 +122,18 @@ Full management interface:
 - **Database**: MongoDB
 - **Frontend**: React with Tailwind CSS
 - **UI Components**: Radix UI / shadcn
+- **AI Integration**: OpenAI via Emergent LLM Key
 
 ## Data Flow
 
 ```
-User Action → ARRIS Logs Usage → Pattern Engine Analyzes
+User Action → Webhook Event → Automation Rules → Actions Executed
+                    ↓
+ARRIS Logs Usage → Pattern Engine Analyzes → Insights Generated
                     ↓
 Subscription Created → Calculator Entry → Revenue Tracked
                     ↓
-Dashboard Updates → Memory Palace Synthesizes → Insights Generated
+Dashboard Updates → Memory Palace Synthesizes
 ```
 
 ## Zero-Human Operational Status
@@ -102,6 +143,23 @@ Dashboard Updates → Memory Palace Synthesizes → Insights Generated
 - ✅ Database Normalization: Complete
 - ✅ Schema Index: Deployed
 - ✅ ARRIS AI System: Operational
+- ✅ Webhook Automations: Active (8 rules)
+- ✅ Creator Registration: Live
+- ✅ Project Proposals with AI Insights: Live
+
+## Completed Features (January 2026)
+
+1. **Full Database Schema** - 37+ collections based on Excel schema
+2. **Admin Authentication** - JWT-based secure login
+3. **Creator Registration Workflow** - Public form + admin review panel
+4. **Project Proposal System** - With ARRIS AI-generated insights
+5. **Webhook Automations** - Event-driven Zero-Human Ops
+
+## Upcoming Tasks
+
+- **P0**: Creator-facing proposal dashboard (view status & feedback)
+- **P1**: Stripe integration for Self-Funding Loop (subscriptions & payments)
+- **P2**: Advanced ARRIS Memory/Learning capabilities
 
 ---
 
