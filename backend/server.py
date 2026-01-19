@@ -211,8 +211,13 @@ async def register_creator(registration: CreatorRegistrationCreate):
             detail="This email is already registered. Please use a different email or contact support."
         )
     
-    # Create registration record
-    creator = CreatorRegistration(**registration.model_dump())
+    # Create registration record with hashed password
+    registration_data = registration.model_dump()
+    password = registration_data.pop("password")  # Remove plain password
+    
+    creator = CreatorRegistration(**registration_data)
+    creator.hashed_password = get_password_hash(password)  # Store hashed password
+    
     doc = creator.model_dump()
     doc['submitted_at'] = doc['submitted_at'].isoformat()
     
@@ -258,6 +263,88 @@ async def register_creator(registration: CreatorRegistrationCreate):
         message="Thank you for registering! Your application is being reviewed. We'll be in touch soon.",
         submitted_at=doc['submitted_at']
     )
+
+# ============== CREATOR AUTHENTICATION ==============
+
+@api_router.post("/creators/login", response_model=CreatorToken)
+async def creator_login(credentials: CreatorLogin):
+    """
+    Creator login endpoint - returns JWT token
+    Only approved/active creators can login
+    """
+    token = await login_creator(db, credentials.email, credentials.password)
+    return token
+
+@api_router.get("/creators/me")
+async def get_current_creator_profile(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current logged-in creator's profile"""
+    creator = await get_current_creator(credentials, db)
+    return creator
+
+@api_router.get("/creators/me/proposals")
+async def get_my_proposals(
+    status: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all proposals for the current logged-in creator"""
+    creator = await get_current_creator(credentials, db)
+    
+    query = {"user_id": creator["id"]}
+    if status:
+        query["status"] = status
+    
+    proposals = await db.proposals.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return proposals
+
+@api_router.get("/creators/me/dashboard")
+async def get_creator_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get dashboard data for the current logged-in creator"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Get proposal counts
+    proposals_pipeline = [
+        {"$match": {"user_id": creator_id}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]
+    proposal_stats = await db.proposals.aggregate(proposals_pipeline).to_list(10)
+    proposals_by_status = {item["_id"]: item["count"] for item in proposal_stats}
+    
+    # Get recent proposals
+    recent_proposals = await db.proposals.find(
+        {"user_id": creator_id},
+        {"_id": 0, "id": 1, "title": 1, "status": 1, "created_at": 1, "arris_insights": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    # Get project counts (if any projects created from approved proposals)
+    project_count = await db.projects.count_documents({"user_id": creator_id})
+    
+    # Get tasks if any
+    task_stats = {
+        "total": await db.tasks.count_documents({"assigned_to_user_id": creator_id}),
+        "completed": await db.tasks.count_documents({"assigned_to_user_id": creator_id, "completion_status": 1})
+    }
+    
+    return {
+        "creator": {
+            "id": creator["id"],
+            "name": creator["name"],
+            "email": creator["email"],
+            "status": creator.get("status"),
+            "tier": creator.get("assigned_tier", "Free"),
+            "platforms": creator.get("platforms", []),
+            "niche": creator.get("niche", "")
+        },
+        "proposals": {
+            "total": sum(proposals_by_status.values()),
+            "by_status": proposals_by_status,
+            "recent": recent_proposals
+        },
+        "projects": {
+            "total": project_count
+        },
+        "tasks": task_stats
+    }
 
 @api_router.get("/creators")
 async def get_creators(
