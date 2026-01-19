@@ -331,12 +331,12 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
           <p className="text-slate-500">Review and manage creator applications</p>
         </div>
         <div className="flex gap-2">
-          <Select value={filter} onValueChange={setFilter}>
+          <Select value={filter || "all"} onValueChange={(v) => setFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="w-36" data-testid="filter-status">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="active">Active</SelectItem>
