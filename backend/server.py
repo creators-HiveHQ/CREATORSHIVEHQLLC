@@ -74,6 +74,13 @@ from models_extended import (
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
+# Import authentication
+from auth import (
+    AdminUserCreate, AdminUserLogin, Token,
+    get_current_user, create_admin_user, login_user,
+    seed_default_admin, security
+)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
