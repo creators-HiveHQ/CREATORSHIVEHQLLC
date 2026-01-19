@@ -1336,6 +1336,14 @@ function App() {
               <Layout><SchemaPage /></Layout>
             </ProtectedRoute>
           } />
+          <Route path="/creators" element={
+            <ProtectedRoute>
+              <Layout><AdminCreatorsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          {/* Public Creator Registration Form */}
+          <Route path="/register" element={<CreatorRegistrationForm />} />
           
           {/* Catch-all redirect to login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
