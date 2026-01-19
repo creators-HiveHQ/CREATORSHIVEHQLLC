@@ -71,6 +71,13 @@ from models_extended import (
     SupportLog, SupportLogCreate
 )
 
+# Import creator registration models
+from models_creator import (
+    CreatorRegistration, CreatorRegistrationCreate,
+    CreatorRegistrationUpdate, CreatorRegistrationResponse,
+    PLATFORM_OPTIONS, NICHE_OPTIONS, ARRIS_INTAKE_QUESTIONS
+)
+
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
