@@ -128,6 +128,8 @@ async def startup_db():
     admin_seeded = await seed_default_admin(db)
     if admin_seeded:
         logger.info("Default admin user created: admin@hivehq.com / admin123")
+    # Initialize webhook service
+    await webhook_service.initialize(db)
     logger.info("Database ready - Zero-Human Operational Model active")
 
 @app.on_event("shutdown")
