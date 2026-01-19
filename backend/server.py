@@ -691,11 +691,69 @@ async def update_proposal(
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Proposal not found")
     
+    # Get updated proposal for webhook data
+    updated_proposal = await db.proposals.find_one({"id": proposal_id})
+    
     if update.status == "approved" and update_data.get("assigned_project_id"):
+        # WEBHOOK: Emit proposal approved event
+        await webhook_service.emit(
+            event_type=WebhookEventType.PROPOSAL_APPROVED,
+            payload={
+                "title": updated_proposal.get("title"),
+                "project_id": update_data["assigned_project_id"],
+                "proposal_id": proposal_id,
+                "milestones": updated_proposal.get("arris_insights", {}).get("suggested_milestones", [])
+            },
+            source_entity="proposal",
+            source_id=proposal_id,
+            user_id=updated_proposal.get("user_id")
+        )
+        
+        # WEBHOOK: Emit project created event
+        await webhook_service.emit(
+            event_type=WebhookEventType.PROJECT_CREATED,
+            payload={
+                "title": updated_proposal.get("title"),
+                "platforms": updated_proposal.get("platforms", []),
+                "priority": updated_proposal.get("priority"),
+                "from_proposal": proposal_id
+            },
+            source_entity="project",
+            source_id=update_data["assigned_project_id"],
+            user_id=updated_proposal.get("user_id")
+        )
+        
         return {
             "message": "Proposal approved and project created",
             "project_id": update_data["assigned_project_id"]
         }
+    
+    if update.status == "rejected":
+        # WEBHOOK: Emit proposal rejected event
+        await webhook_service.emit(
+            event_type=WebhookEventType.PROPOSAL_REJECTED,
+            payload={
+                "title": updated_proposal.get("title"),
+                "reason": update.review_notes or "Not specified"
+            },
+            source_entity="proposal",
+            source_id=proposal_id,
+            user_id=updated_proposal.get("user_id")
+        )
+    
+    if update.status and update.status not in ["approved", "rejected"]:
+        # WEBHOOK: Emit status changed event
+        await webhook_service.emit(
+            event_type=WebhookEventType.PROPOSAL_STATUS_CHANGED,
+            payload={
+                "title": updated_proposal.get("title"),
+                "new_status": update.status,
+                "previous_status": updated_proposal.get("status")
+            },
+            source_entity="proposal",
+            source_id=proposal_id,
+            user_id=updated_proposal.get("user_id")
+        )
     
     return {"message": "Proposal updated successfully"}
 
