@@ -75,6 +75,7 @@ from models_extended import (
 from models_creator import (
     CreatorRegistration, CreatorRegistrationCreate,
     CreatorRegistrationUpdate, CreatorRegistrationResponse,
+    CreatorLogin, CreatorToken,
     PLATFORM_OPTIONS, NICHE_OPTIONS, ARRIS_INTAKE_QUESTIONS
 )
 
