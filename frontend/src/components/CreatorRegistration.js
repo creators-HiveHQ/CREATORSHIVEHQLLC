@@ -98,14 +98,27 @@ export const CreatorRegistrationForm = () => {
               {submissionResult.message}
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <div className="bg-slate-50 rounded-lg p-4 mb-4">
+          <CardContent className="text-center space-y-4">
+            <div className="bg-slate-50 rounded-lg p-4">
               <p className="text-sm text-slate-500">Your Registration ID</p>
               <p className="text-lg font-mono font-bold text-slate-900">{submissionResult.id}</p>
             </div>
             <p className="text-sm text-slate-600">
               Keep this ID for your records. We'll send updates to <strong>{submissionResult.email}</strong>
             </p>
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <p className="text-sm text-purple-700">
+                <strong>Next Steps:</strong> Once approved, you can login to your Creator Dashboard using your email and password.
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => window.location.href = '/creator/login'}
+              data-testid="go-to-login-btn"
+            >
+              Go to Creator Login
+            </Button>
           </CardContent>
         </Card>
       </div>
