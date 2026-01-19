@@ -867,7 +867,17 @@ export const CreatorDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Proposals List */}
               <div className="lg:col-span-1 space-y-3">
-                <h3 className="font-semibold text-slate-700 mb-4">All Proposals</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-slate-700">All Proposals</h3>
+                  <Button 
+                    onClick={() => setShowNewProposal(true)} 
+                    size="sm"
+                    className="bg-purple-600 hover:bg-purple-700"
+                    data-testid="new-proposal-list-btn"
+                  >
+                    + New
+                  </Button>
+                </div>
                 {proposals.length > 0 ? (
                   proposals.map((proposal) => (
                     <Card
@@ -898,6 +908,14 @@ export const CreatorDashboard = () => {
                     <CardContent className="p-6 text-center text-slate-500">
                       <p className="text-4xl mb-2">📋</p>
                       <p>No proposals yet</p>
+                      <Button 
+                        onClick={() => setShowNewProposal(true)} 
+                        size="sm"
+                        className="mt-3 bg-purple-600 hover:bg-purple-700"
+                        data-testid="new-proposal-empty-list-btn"
+                      >
+                        + Create Proposal
+                      </Button>
                     </CardContent>
                   </Card>
                 )}
