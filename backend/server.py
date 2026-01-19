@@ -100,6 +100,10 @@ async def startup_db():
     seeded = await seed_all_data(db)
     if seeded:
         logger.info(f"Seeded collections: {seeded}")
+    # Seed default admin user
+    admin_seeded = await seed_default_admin(db)
+    if admin_seeded:
+        logger.info("Default admin user created: admin@hivehq.com / admin123")
     logger.info("Database ready - Zero-Human Operational Model active")
 
 @app.on_event("shutdown")
