@@ -36,7 +36,7 @@ const WebhooksAdmin = () => {
 
   // Get auth token
   const getAuthHeaders = () => {
-    const token = localStorage.getItem("hive_token");
+    const token = localStorage.getItem("hivehq_token");
     return { Authorization: `Bearer ${token}` };
   };
 
