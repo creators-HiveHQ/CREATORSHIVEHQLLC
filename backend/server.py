@@ -336,7 +336,37 @@ async def update_creator(
                 {"$set": {"assigned_user_id": new_user_id, "status": "active"}}
             )
             
+            # WEBHOOK: Emit creator approved event
+            await webhook_service.emit(
+                event_type=WebhookEventType.CREATOR_APPROVED,
+                payload={
+                    "name": creator["name"],
+                    "email": creator["email"],
+                    "user_id": new_user_id,
+                    "tier": update.assigned_tier or "Free"
+                },
+                source_entity="creator",
+                source_id=creator_id,
+                user_id=new_user_id
+            )
+            
             return {"message": "Creator approved and user account created", "user_id": new_user_id}
+    
+    # WEBHOOK: Emit creator rejected if rejected
+    if update.status == "rejected":
+        creator = await db.creators.find_one({"id": creator_id})
+        if creator:
+            await webhook_service.emit(
+                event_type=WebhookEventType.CREATOR_REJECTED,
+                payload={
+                    "name": creator.get("name"),
+                    "email": creator.get("email"),
+                    "reason": update.notes or "Not specified"
+                },
+                source_entity="creator",
+                source_id=creator_id,
+                user_id=creator_id
+            )
     
     return {"message": "Creator updated successfully"}
 
