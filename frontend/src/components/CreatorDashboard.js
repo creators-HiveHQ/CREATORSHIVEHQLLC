@@ -211,6 +211,411 @@ export const CreatorProtectedRoute = ({ children }) => {
   return children;
 };
 
+// ============== NEW PROPOSAL FORM ==============
+
+const NewProposalModal = ({ isOpen, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    goals: "",
+    platforms: [],
+    timeline: "",
+    estimated_hours: 0,
+    arris_intake_question: "",
+    priority: "medium"
+  });
+  const [formOptions, setFormOptions] = useState({
+    platforms: [],
+    timelines: [],
+    priorities: [],
+    arris_question: ""
+  });
+  const [step, setStep] = useState(1); // 1: Form, 2: Review, 3: Submitting, 4: Complete
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [createdProposal, setCreatedProposal] = useState(null);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("creator_token");
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  // Fetch form options
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await axios.get(`${API}/proposals/form-options`);
+        setFormOptions(response.data);
+        // Set ARRIS question as placeholder
+        if (response.data.arris_question) {
+          setFormData(prev => ({ ...prev, arris_intake_question: "" }));
+        }
+      } catch (err) {
+        console.error("Error fetching form options:", err);
+      }
+    };
+    if (isOpen) {
+      fetchOptions();
+    }
+  }, [isOpen]);
+
+  const handlePlatformToggle = (platform) => {
+    setFormData(prev => ({
+      ...prev,
+      platforms: prev.platforms.includes(platform)
+        ? prev.platforms.filter(p => p !== platform)
+        : [...prev.platforms, platform]
+    }));
+  };
+
+  const handleSaveDraft = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.post(`${API}/proposals`, formData, { headers });
+      setCreatedProposal(response.data);
+      setStep(2);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to save draft");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitForReview = async () => {
+    setError("");
+    setLoading(true);
+    setStep(3);
+
+    try {
+      const headers = getAuthHeaders();
+      
+      let proposalId = createdProposal?.id;
+      
+      // If no draft exists, create one first
+      if (!proposalId) {
+        const createResponse = await axios.post(`${API}/proposals`, formData, { headers });
+        proposalId = createResponse.data.id;
+        setCreatedProposal(createResponse.data);
+      }
+      
+      // Submit for ARRIS review
+      const submitResponse = await axios.post(`${API}/proposals/${proposalId}/submit`, {}, { headers });
+      setCreatedProposal(submitResponse.data);
+      setStep(4);
+      
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to submit proposal");
+      setStep(2);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (step === 4 && onSuccess) {
+      onSuccess(createdProposal);
+    }
+    // Reset form
+    setFormData({
+      title: "",
+      description: "",
+      goals: "",
+      platforms: [],
+      timeline: "",
+      estimated_hours: 0,
+      arris_intake_question: "",
+      priority: "medium"
+    });
+    setStep(1);
+    setCreatedProposal(null);
+    setError("");
+    onClose();
+  };
+
+  const isFormValid = formData.title.length >= 3 && formData.description.length >= 10;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="new-proposal-modal">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {step === 1 && "📋 New Project Proposal"}
+            {step === 2 && "📝 Review Your Proposal"}
+            {step === 3 && "🧠 ARRIS is Analyzing..."}
+            {step === 4 && "✅ Proposal Submitted!"}
+          </DialogTitle>
+          <DialogDescription>
+            {step === 1 && "Describe your project and ARRIS will provide strategic insights"}
+            {step === 2 && "Review your proposal before submitting for ARRIS analysis"}
+            {step === 3 && "Please wait while ARRIS generates insights for your proposal"}
+            {step === 4 && "Your proposal has been submitted and analyzed by ARRIS"}
+          </DialogDescription>
+        </DialogHeader>
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" data-testid="error-message">
+            {error}
+          </div>
+        )}
+
+        {/* Step 1: Form */}
+        {step === 1 && (
+          <div className="space-y-5 py-4">
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">Project Title *</Label>
+              <Input
+                id="title"
+                placeholder="e.g., Q1 YouTube Series Launch"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+                data-testid="input-title"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Project Description *</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe what you want to accomplish with this project..."
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                required
+                data-testid="input-description"
+              />
+              <p className="text-xs text-slate-500">Min 10 characters</p>
+            </div>
+
+            {/* Goals */}
+            <div className="space-y-2">
+              <Label htmlFor="goals">Project Goals</Label>
+              <Textarea
+                id="goals"
+                placeholder="What specific outcomes do you want to achieve?"
+                value={formData.goals}
+                onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
+                rows={2}
+                data-testid="input-goals"
+              />
+            </div>
+
+            {/* Platforms */}
+            <div className="space-y-2">
+              <Label>Platforms Involved</Label>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                {formOptions.platforms?.map((platform) => (
+                  <div
+                    key={platform.value}
+                    onClick={() => handlePlatformToggle(platform.value)}
+                    className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer text-sm transition-all ${
+                      formData.platforms.includes(platform.value)
+                        ? "bg-purple-50 border-purple-500 text-purple-700"
+                        : "bg-white border-slate-200 hover:border-slate-300"
+                    }`}
+                    data-testid={`platform-${platform.value}`}
+                  >
+                    <span>{platform.icon}</span>
+                    <span className="truncate">{platform.label}</span>
+                    {formData.platforms.includes(platform.value) && (
+                      <span className="ml-auto text-purple-500">✓</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Timeline & Priority */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Timeline</Label>
+                <Select
+                  value={formData.timeline}
+                  onValueChange={(value) => setFormData({ ...formData, timeline: value })}
+                >
+                  <SelectTrigger data-testid="select-timeline">
+                    <SelectValue placeholder="Select timeline" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formOptions.timelines?.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value) => setFormData({ ...formData, priority: value })}
+                >
+                  <SelectTrigger data-testid="select-priority">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formOptions.priorities?.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.icon} {p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* ARRIS Intake Question */}
+            {formOptions.arris_question && (
+              <div className="space-y-2 bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🧠</span>
+                  <Label className="text-purple-700 font-medium">ARRIS Wants to Know</Label>
+                </div>
+                <p className="text-sm text-purple-600 italic">{formOptions.arris_question}</p>
+                <Textarea
+                  placeholder="Share your thoughts..."
+                  value={formData.arris_intake_question}
+                  onChange={(e) => setFormData({ ...formData, arris_intake_question: e.target.value })}
+                  rows={2}
+                  className="bg-white"
+                  data-testid="input-arris-question"
+                />
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={handleClose} data-testid="cancel-btn">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveDraft}
+                disabled={!isFormValid || loading}
+                className="bg-purple-600 hover:bg-purple-700"
+                data-testid="continue-btn"
+              >
+                {loading ? "Saving..." : "Continue →"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Review */}
+        {step === 2 && createdProposal && (
+          <div className="space-y-5 py-4">
+            <div className="bg-slate-50 p-4 rounded-lg space-y-3">
+              <div>
+                <p className="text-xs text-slate-500">Project Title</p>
+                <p className="font-medium">{formData.title}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Description</p>
+                <p className="text-sm text-slate-700">{formData.description}</p>
+              </div>
+              {formData.goals && (
+                <div>
+                  <p className="text-xs text-slate-500">Goals</p>
+                  <p className="text-sm text-slate-700">{formData.goals}</p>
+                </div>
+              )}
+              {formData.platforms.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500">Platforms</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {formData.platforms.map((p) => (
+                      <Badge key={p} variant="outline">{p}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-500">Timeline</p>
+                  <p className="text-sm">{formData.timeline || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Priority</p>
+                  <Badge className={
+                    formData.priority === "high" ? "bg-red-100 text-red-700" :
+                    formData.priority === "critical" ? "bg-red-500 text-white" :
+                    formData.priority === "low" ? "bg-slate-100 text-slate-700" :
+                    "bg-blue-100 text-blue-700"
+                  }>{formData.priority}</Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <p className="text-sm text-purple-700">
+                <strong>🧠 ARRIS Analysis:</strong> When you submit, ARRIS will analyze your proposal and provide strategic insights including strengths, risks, recommendations, and suggested milestones.
+              </p>
+            </div>
+
+            <div className="flex justify-between gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={() => setStep(1)} data-testid="back-btn">
+                ← Edit
+              </Button>
+              <Button
+                onClick={handleSubmitForReview}
+                disabled={loading}
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="submit-btn"
+              >
+                {loading ? "Submitting..." : "Submit for ARRIS Review 🚀"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Submitting */}
+        {step === 3 && (
+          <div className="py-12 text-center space-y-4">
+            <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center animate-pulse">
+              <span className="text-3xl">🧠</span>
+            </div>
+            <p className="text-lg font-medium text-purple-700">ARRIS is analyzing your proposal...</p>
+            <p className="text-sm text-slate-500">This usually takes a few seconds</p>
+            <Progress value={66} className="w-48 mx-auto" />
+          </div>
+        )}
+
+        {/* Step 4: Complete */}
+        {step === 4 && createdProposal && (
+          <div className="py-8 text-center space-y-4">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <span className="text-3xl">✅</span>
+            </div>
+            <p className="text-lg font-medium text-green-700">Proposal Submitted!</p>
+            <p className="text-sm text-slate-500">
+              ARRIS has analyzed your proposal and generated strategic insights.
+            </p>
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <p className="text-xs text-slate-500">Proposal ID</p>
+              <p className="font-mono text-sm">{createdProposal.id}</p>
+            </div>
+            {createdProposal.arris_insights?.summary && (
+              <div className="bg-purple-50 p-4 rounded-lg text-left border border-purple-200">
+                <p className="text-xs text-purple-600 font-medium mb-1">🧠 ARRIS Summary</p>
+                <p className="text-sm text-purple-700 italic">"{createdProposal.arris_insights.summary}"</p>
+              </div>
+            )}
+            <Button
+              onClick={handleClose}
+              className="bg-purple-600 hover:bg-purple-700"
+              data-testid="done-btn"
+            >
+              View in My Proposals
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // ============== CREATOR DASHBOARD ==============
 
 export const CreatorDashboard = () => {
