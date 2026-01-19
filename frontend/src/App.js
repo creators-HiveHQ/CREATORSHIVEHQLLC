@@ -1280,20 +1280,59 @@ const Layout = ({ children }) => {
 // Main App
 function App() {
   return (
-    <BrowserRouter>
-      <Layout>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/calculator" element={<CalculatorPage />} />
-          <Route path="/subscriptions" element={<SubscriptionsPage />} />
-          <Route path="/arris" element={<ArrisPage />} />
-          <Route path="/patterns" element={<PatternsPage />} />
-          <Route path="/schema" element={<SchemaPage />} />
+          {/* Public route - Login */}
+          <Route path="/login" element={<LoginPage />} />
+          
+          {/* Protected routes */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout><Dashboard /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/users" element={
+            <ProtectedRoute>
+              <Layout><UsersPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/projects" element={
+            <ProtectedRoute>
+              <Layout><ProjectsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/calculator" element={
+            <ProtectedRoute>
+              <Layout><CalculatorPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/subscriptions" element={
+            <ProtectedRoute>
+              <Layout><SubscriptionsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/arris" element={
+            <ProtectedRoute>
+              <Layout><ArrisPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/patterns" element={
+            <ProtectedRoute>
+              <Layout><PatternsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/schema" element={
+            <ProtectedRoute>
+              <Layout><SchemaPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          {/* Catch-all redirect to login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </Layout>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
