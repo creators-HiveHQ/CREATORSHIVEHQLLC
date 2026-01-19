@@ -284,7 +284,7 @@ export const CreatorRegistrationForm = () => {
               <Button 
                 type="submit" 
                 className="w-full bg-purple-600 hover:bg-purple-700" 
-                disabled={loading || !formData.name || !formData.email || formData.platforms.length === 0 || !formData.niche}
+                disabled={loading || !formData.name || !formData.email || !formData.password || !formData.confirmPassword || formData.platforms.length === 0 || !formData.niche}
                 data-testid="submit-btn"
               >
                 {loading ? (
