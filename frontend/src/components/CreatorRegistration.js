@@ -17,6 +17,8 @@ export const CreatorRegistrationForm = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     platforms: [],
     niche: "",
     goals: "",
