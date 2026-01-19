@@ -828,6 +828,13 @@ export const CreatorDashboard = () => {
                     <div className="text-center py-8 text-slate-500">
                       <p className="text-4xl mb-2">📋</p>
                       <p>No proposals yet. Submit your first project idea!</p>
+                      <Button 
+                        onClick={() => setShowNewProposal(true)} 
+                        className="mt-4 bg-purple-600 hover:bg-purple-700"
+                        data-testid="new-proposal-empty-btn"
+                      >
+                        + Create Your First Proposal
+                      </Button>
                     </div>
                   )}
                 </CardContent>
