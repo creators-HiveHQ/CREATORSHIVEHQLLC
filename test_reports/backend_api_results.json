@@ -1,14 +1,22 @@
 {
-  "timestamp": "2026-01-19T21:48:19.173584",
-  "total_tests": 47,
-  "passed_tests": 46,
+  "timestamp": "2026-01-19T22:01:12.944566",
+  "total_tests": 65,
+  "passed_tests": 62,
   "failed_tests": [
     {
       "test": "Access Protected Endpoint Without Token",
       "error": "Expected 401, got 403"
+    },
+    {
+      "test": "Access Creators List Without Auth",
+      "error": "Expected 401, got 403"
+    },
+    {
+      "test": "Access Creator Stats Without Auth",
+      "error": "Expected 401, got 403"
     }
   ],
-  "success_rate": 97.87234042553192,
+  "success_rate": 95.38461538461539,
   "detailed_results": {
     "Root API": {
       "success": true,
@@ -73,6 +81,78 @@
     "Register with Existing Email": {
       "success": true,
       "details": "Status: 400"
+    },
+    "Get Creator Form Options": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Form Options Structure": {
+      "success": true,
+      "details": "Platform options properly structured"
+    },
+    "Register New Creator": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Creator Registration Response": {
+      "success": true,
+      "details": "All required fields present"
+    },
+    "Register Creator with Duplicate Email": {
+      "success": true,
+      "details": "Status: 400"
+    },
+    "Register Creator with Missing Fields": {
+      "success": true,
+      "details": "Status: 422"
+    },
+    "Get All Creator Registrations": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Test Creator in List": {
+      "success": true,
+      "details": "Newly registered creator found in admin list"
+    },
+    "Filter Creators by Status (Pending)": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Get Creator Statistics": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Creator Stats Structure": {
+      "success": true,
+      "details": "Statistics properly structured"
+    },
+    "Get Creator by ID: CR-a99cef27": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Creator Details Match": {
+      "success": true,
+      "details": "Retrieved creator matches registered data"
+    },
+    "Approve Creator: CR-a99cef27": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Creator Approval with User Creation": {
+      "success": true,
+      "details": "Creator approved and user account created"
+    },
+    "Update Non-existent Creator": {
+      "success": true,
+      "details": "Status: 404"
+    },
+    "Access Creators List Without Auth": {
+      "success": false,
+      "details": "Expected 401, got 403"
+    },
+    "Access Creator Stats Without Auth": {
+      "success": false,
+      "details": "Expected 401, got 403"
     },
     "Get Schema Index": {
       "success": true,
