@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-01-19T22:01:12.944566",
-  "total_tests": 65,
-  "passed_tests": 62,
+  "timestamp": "2026-01-19T22:19:19.914869",
+  "total_tests": 89,
+  "passed_tests": 84,
   "failed_tests": [
     {
       "test": "Access Protected Endpoint Without Token",
@@ -14,9 +14,17 @@
     {
       "test": "Access Creator Stats Without Auth",
       "error": "Expected 401, got 403"
+    },
+    {
+      "test": "Regenerate ARRIS Insights: PP-03cb42d4",
+      "error": "Request failed: HTTPSConnectionPool(host='hive-matrix.preview.emergentagent.com', port=443): Read timed out. (read timeout=10)"
+    },
+    {
+      "test": "Access Proposals Without Auth",
+      "error": "Expected 401, got 403"
     }
   ],
-  "success_rate": 95.38461538461539,
+  "success_rate": 94.3820224719101,
   "detailed_results": {
     "Root API": {
       "success": true,
@@ -126,7 +134,7 @@
       "success": true,
       "details": "Statistics properly structured"
     },
-    "Get Creator by ID: CR-a99cef27": {
+    "Get Creator by ID: CR-37ee183b": {
       "success": true,
       "details": "Status: 200"
     },
@@ -134,7 +142,7 @@
       "success": true,
       "details": "Retrieved creator matches registered data"
     },
-    "Approve Creator: CR-a99cef27": {
+    "Approve Creator: CR-37ee183b": {
       "success": true,
       "details": "Status: 200"
     },
@@ -153,6 +161,102 @@
     "Access Creator Stats Without Auth": {
       "success": false,
       "details": "Expected 401, got 403"
+    },
+    "Get Proposal Form Options": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Proposal Form Options Structure": {
+      "success": true,
+      "details": "Platform options properly structured"
+    },
+    "Create New Proposal": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Proposal Creation Response": {
+      "success": true,
+      "details": "All required fields present"
+    },
+    "Submit Proposal for Review: PP-03cb42d4": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "ARRIS Insights Generation": {
+      "success": true,
+      "details": "ARRIS insights generated successfully"
+    },
+    "ARRIS Insights Structure": {
+      "success": true,
+      "details": "All required insight fields present"
+    },
+    "Get All Proposals": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Test Proposal in List": {
+      "success": true,
+      "details": "Newly created proposal found in list"
+    },
+    "Get Proposal by ID: PP-03cb42d4": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Proposal Details Match": {
+      "success": true,
+      "details": "Retrieved proposal matches created data"
+    },
+    "ARRIS Insights in Details": {
+      "success": true,
+      "details": "ARRIS insights included in proposal details"
+    },
+    "Update Proposal Status: PP-03cb42d4": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Proposal Status Update": {
+      "success": true,
+      "details": "Proposal status updated successfully"
+    },
+    "Approve Proposal: PP-03cb42d4": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Proposal Approval with Project Creation": {
+      "success": true,
+      "details": "Proposal approved and project created"
+    },
+    "Regenerate ARRIS Insights: PP-03cb42d4": {
+      "success": false,
+      "details": "Request failed: HTTPSConnectionPool(host='hive-matrix.preview.emergentagent.com', port=443): Read timed out. (read timeout=10)"
+    },
+    "Get Proposal Statistics": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Proposal Stats Structure": {
+      "success": true,
+      "details": "Statistics properly structured"
+    },
+    "Filter Proposals by Status": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Filter Proposals by Priority": {
+      "success": true,
+      "details": "Status: 200"
+    },
+    "Access Proposals Without Auth": {
+      "success": false,
+      "details": "Expected 401, got 403"
+    },
+    "Create Proposal with Missing Fields": {
+      "success": true,
+      "details": "Status: 422"
+    },
+    "Submit Non-existent Proposal": {
+      "success": true,
+      "details": "Status: 404"
     },
     "Get Schema Index": {
       "success": true,
