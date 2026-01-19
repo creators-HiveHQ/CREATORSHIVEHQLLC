@@ -188,6 +188,7 @@ const Sidebar = () => {
   const navItems = [
     { path: "/", label: "Dashboard", icon: "📊" },
     { path: "/creators", label: "Creators", icon: "✨" },
+    { path: "/proposals", label: "Proposals", icon: "📋" },
     { path: "/users", label: "Users", icon: "👥" },
     { path: "/projects", label: "Projects", icon: "📁" },
     { path: "/calculator", label: "Calculator", icon: "💰" },
