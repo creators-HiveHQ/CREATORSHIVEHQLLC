@@ -1350,6 +1350,11 @@ function App() {
               <Layout><AdminProposalsPage /></Layout>
             </ProtectedRoute>
           } />
+          <Route path="/webhooks" element={
+            <ProtectedRoute>
+              <Layout><WebhooksAdmin /></Layout>
+            </ProtectedRoute>
+          } />
           
           {/* Public Creator Registration Form */}
           <Route path="/register" element={<CreatorRegistrationForm />} />
