@@ -707,6 +707,13 @@ export const CreatorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50" data-testid="creator-dashboard">
+      {/* New Proposal Modal */}
+      <NewProposalModal
+        isOpen={showNewProposal}
+        onClose={() => setShowNewProposal(false)}
+        onSuccess={handleNewProposalSuccess}
+      />
+
       {/* Header */}
       <header className="bg-white border-b shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -715,6 +722,13 @@ export const CreatorDashboard = () => {
             <p className="text-xs text-slate-500">Creator Dashboard</p>
           </div>
           <div className="flex items-center gap-4">
+            <Button 
+              onClick={() => setShowNewProposal(true)} 
+              className="bg-purple-600 hover:bg-purple-700"
+              data-testid="new-proposal-btn"
+            >
+              + New Proposal
+            </Button>
             <div className="text-right">
               <p className="font-medium text-slate-900">{creator?.name}</p>
               <p className="text-xs text-slate-500">{creator?.email}</p>
