@@ -786,6 +786,129 @@ async def get_proposal_stats(credentials: HTTPAuthorizationCredentials = Depends
         "by_priority": {item["_id"]: item["count"] for item in priority_counts}
     }
 
+# ============== WEBHOOK AUTOMATIONS ==============
+
+@api_router.get("/webhooks/events")
+async def get_webhook_events(
+    event_type: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = Query(default=100, le=1000),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get webhook events log (admin only)"""
+    await get_current_user(credentials, db)
+    
+    query = {}
+    if event_type:
+        query["event_type"] = event_type
+    if status:
+        query["status"] = status
+    
+    events = await db.webhook_events.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)
+    return events
+
+@api_router.get("/webhooks/events/{event_id}")
+async def get_webhook_event(
+    event_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific webhook event"""
+    await get_current_user(credentials, db)
+    
+    event = await db.webhook_events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
+@api_router.get("/webhooks/rules")
+async def get_automation_rules(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get all automation rules"""
+    await get_current_user(credentials, db)
+    
+    rules = await db.automation_rules.find({}, {"_id": 0}).to_list(100)
+    return rules
+
+@api_router.patch("/webhooks/rules/{rule_id}")
+async def update_automation_rule(
+    rule_id: str,
+    is_active: bool,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Enable/disable an automation rule"""
+    await get_current_user(credentials, db)
+    
+    result = await db.automation_rules.update_one(
+        {"id": rule_id},
+        {"$set": {"is_active": is_active}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    
+    # Reload rules in webhook service
+    await webhook_service._load_automation_rules()
+    
+    return {"message": f"Rule {'enabled' if is_active else 'disabled'}", "rule_id": rule_id}
+
+@api_router.get("/webhooks/stats")
+async def get_webhook_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get webhook statistics"""
+    await get_current_user(credentials, db)
+    
+    # Event counts by type
+    type_pipeline = [
+        {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
+    ]
+    type_counts = await db.webhook_events.aggregate(type_pipeline).to_list(50)
+    
+    # Event counts by status
+    status_pipeline = [
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]
+    status_counts = await db.webhook_events.aggregate(status_pipeline).to_list(10)
+    
+    # Recent events (last 24 hours)
+    from datetime import timedelta
+    yesterday = datetime.now(timezone.utc) - timedelta(hours=24)
+    recent_count = await db.webhook_events.count_documents({
+        "timestamp": {"$gte": yesterday.isoformat()}
+    })
+    
+    # Active rules
+    active_rules = await db.automation_rules.count_documents({"is_active": True})
+    total_rules = await db.automation_rules.count_documents({})
+    
+    total_events = await db.webhook_events.count_documents({})
+    
+    return {
+        "total_events": total_events,
+        "events_last_24h": recent_count,
+        "by_type": {item["_id"]: item["count"] for item in type_counts},
+        "by_status": {item["_id"]: item["count"] for item in status_counts},
+        "automation_rules": {
+            "total": total_rules,
+            "active": active_rules
+        }
+    }
+
+@api_router.post("/webhooks/test")
+async def test_webhook(
+    event_type: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Test webhook by emitting a test event"""
+    current_user = await get_current_user(credentials, db)
+    
+    event = await webhook_service.emit(
+        event_type=event_type,
+        payload={"test": True, "triggered_by": current_user.get("email")},
+        source_entity="test",
+        source_id=f"TEST-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+        user_id=current_user.get("id")
+    )
+    
+    return {"message": "Test event emitted", "event_id": event.id if event else None}
+
 # ============== SCHEMA INDEX (Sheet 15) ==============
 
 @api_router.get("/schema")
