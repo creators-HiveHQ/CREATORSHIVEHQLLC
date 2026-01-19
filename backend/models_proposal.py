@@ -58,7 +58,7 @@ class ProjectProposal(BaseModel):
 
 class ProjectProposalCreate(BaseModel):
     """Create a new project proposal"""
-    user_id: str
+    user_id: Optional[str] = None  # Optional - will be auto-filled from token for creators
     title: str = Field(..., min_length=3, max_length=200)
     description: str = Field(..., min_length=10, max_length=5000)
     goals: str = Field(default="", max_length=2000)
