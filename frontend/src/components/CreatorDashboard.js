@@ -1589,6 +1589,573 @@ export const CreatorDashboard = () => {
               </Card>
             )}
           </TabsContent>
+
+          {/* Premium Analytics Tab (Premium/Elite only) */}
+          <TabsContent value="premium-analytics" data-testid="premium-analytics-tab-content">
+            {!hasPremiumAnalytics ? (
+              /* Upgrade Prompt for non-Premium users */
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                <CardContent className="py-12 text-center">
+                  <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+                    <span className="text-4xl">🚀</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-amber-800 mb-3">Premium Analytics</h2>
+                  <p className="text-amber-600 max-w-md mx-auto mb-6">
+                    Unlock the most powerful analytics suite with comparative insights, 
+                    revenue tracking, AI predictions, and exportable reports.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">📊</span>
+                      <p className="text-xs text-slate-600 mt-2">Comparative Analytics</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">💰</span>
+                      <p className="text-xs text-slate-600 mt-2">Revenue Tracking</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">🔮</span>
+                      <p className="text-xs text-slate-600 mt-2">Predictive Insights</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">🧠</span>
+                      <p className="text-xs text-slate-600 mt-2">ARRIS Deep Analytics</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">📈</span>
+                      <p className="text-xs text-slate-600 mt-2">Growth Metrics</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">📥</span>
+                      <p className="text-xs text-slate-600 mt-2">Export Reports</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => navigate("/creator/subscription")}
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                    data-testid="upgrade-to-premium-btn"
+                  >
+                    ⚡ Upgrade to Premium
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : premiumLoading ? (
+              /* Loading State */
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+              </div>
+            ) : premiumData ? (
+              /* Premium Analytics Dashboard */
+              <div className="space-y-6">
+                {/* Header with Date Range Selector */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                      <span>🚀</span> Premium Analytics
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                      Deep insights powered by ARRIS AI
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-500">Time Range:</span>
+                    <Select value={premiumDateRange} onValueChange={handleDateRangeChange}>
+                      <SelectTrigger className="w-32" data-testid="date-range-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7d">7 Days</SelectItem>
+                        <SelectItem value="30d">30 Days</SelectItem>
+                        <SelectItem value="90d">90 Days</SelectItem>
+                        <SelectItem value="1y">1 Year</SelectItem>
+                        <SelectItem value="all">All Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Summary Cards Row */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                    <CardContent className="pt-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {premiumData.summary?.total_proposals || 0}
+                      </div>
+                      <p className="text-xs text-blue-700">Total Proposals</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                    <CardContent className="pt-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {premiumData.summary?.approval_rate || 0}%
+                      </div>
+                      <p className="text-xs text-green-700">Approval Rate</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+                    <CardContent className="pt-4 text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {premiumData.summary?.completed_projects || 0}
+                      </div>
+                      <p className="text-xs text-purple-700">Completed</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                    <CardContent className="pt-4 text-center">
+                      <div className="text-2xl font-bold text-amber-600">
+                        {premiumData.summary?.engagement_score || 0}
+                      </div>
+                      <p className="text-xs text-amber-700">Engagement</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200">
+                    <CardContent className="pt-4 text-center">
+                      <div className="text-2xl font-bold text-rose-600">
+                        {premiumData.summary?.predicted_success || 0}
+                      </div>
+                      <p className="text-xs text-rose-700">Success Score</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Comparative Analytics + Predictive Insights */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Comparative Analytics */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>📊</span> Comparative Analytics
+                      </CardTitle>
+                      <CardDescription>How you compare to platform averages</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <span className="text-sm text-slate-600">Your Approval Rate</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-green-600">
+                            {premiumData.comparative_analytics?.your_approval_rate || 0}%
+                          </span>
+                          <Badge className={
+                            (premiumData.comparative_analytics?.approval_rate_diff || 0) > 0 
+                              ? "bg-green-100 text-green-700" 
+                              : "bg-red-100 text-red-700"
+                          }>
+                            {(premiumData.comparative_analytics?.approval_rate_diff || 0) > 0 ? "+" : ""}
+                            {premiumData.comparative_analytics?.approval_rate_diff || 0}%
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <span className="text-sm text-slate-600">Platform Average</span>
+                        <span className="font-medium text-slate-700">
+                          {premiumData.comparative_analytics?.platform_approval_rate || 0}%
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <span className="text-sm text-slate-600">Your Proposals</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold">{premiumData.comparative_analytics?.your_proposals || 0}</span>
+                          <span className="text-xs text-slate-500">
+                            (avg: {premiumData.comparative_analytics?.avg_proposals_per_creator || 0})
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <span className="text-sm text-purple-700">Percentile Rank</span>
+                        <Badge className="bg-purple-200 text-purple-800">
+                          Top {100 - (premiumData.comparative_analytics?.percentile_rank || 50)}%
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Predictive Insights */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>🔮</span> Predictive Insights
+                      </CardTitle>
+                      <CardDescription>AI-powered success prediction</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-center py-4">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 mb-3">
+                          <span className="text-3xl font-bold text-purple-600">
+                            {premiumData.predictive_insights?.success_score || 0}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-700">
+                          {premiumData.predictive_insights?.score_label || "N/A"}
+                        </p>
+                      </div>
+                      {premiumData.predictive_insights?.success_factors?.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-green-700">✅ Success Factors</p>
+                          {premiumData.predictive_insights.success_factors.map((f, i) => (
+                            <p key={i} className="text-xs text-slate-600 pl-4">• {f}</p>
+                          ))}
+                        </div>
+                      )}
+                      {premiumData.predictive_insights?.risk_factors?.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-amber-700">⚠️ Risk Factors</p>
+                          {premiumData.predictive_insights.risk_factors.map((f, i) => (
+                            <p key={i} className="text-xs text-slate-600 pl-4">• {f}</p>
+                          ))}
+                        </div>
+                      )}
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-xs text-blue-700">
+                          💡 {premiumData.predictive_insights?.recommendation || "Keep up the great work!"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Revenue Tracking */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <span>💰</span> Revenue & Value Tracking
+                    </CardTitle>
+                    <CardDescription>Estimated project value based on complexity analysis</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="p-4 bg-slate-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-slate-800">
+                          ${(premiumData.revenue_tracking?.total_estimated_value || 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-500">Total Estimated</p>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-green-600">
+                          ${(premiumData.revenue_tracking?.realized_value || 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-green-700">Realized</p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-purple-600">
+                          ${(premiumData.revenue_tracking?.pipeline_value || 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-purple-700">In Pipeline</p>
+                      </div>
+                      <div className="p-4 bg-amber-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-amber-600">
+                          ${(premiumData.revenue_tracking?.pending_value || 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-amber-700">Pending</p>
+                      </div>
+                      <div className="p-4 bg-blue-50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {premiumData.revenue_tracking?.realization_rate || 0}%
+                        </p>
+                        <p className="text-xs text-blue-700">Realization Rate</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ARRIS Analytics + Platform Performance */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* ARRIS Deep Analytics */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>🧠</span> ARRIS Deep Analytics
+                      </CardTitle>
+                      <CardDescription>AI processing performance & insights</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-purple-50 rounded-lg text-center">
+                          <p className="text-xl font-bold text-purple-600">
+                            {premiumData.arris_analytics?.total_interactions || 0}
+                          </p>
+                          <p className="text-xs text-purple-700">Total Interactions</p>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg text-center">
+                          <p className="text-xl font-bold text-green-600">
+                            {premiumData.arris_analytics?.success_rate || 0}%
+                          </p>
+                          <p className="text-xs text-green-700">Success Rate</p>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-lg">
+                        <p className="text-xs font-medium text-slate-600 mb-2">Processing Times</p>
+                        <div className="flex justify-between text-sm">
+                          <span>Avg: <strong>{premiumData.arris_analytics?.processing_times?.average || 0}s</strong></span>
+                          <span>Min: {premiumData.arris_analytics?.processing_times?.min || 0}s</span>
+                          <span>Max: {premiumData.arris_analytics?.processing_times?.max || 0}s</span>
+                        </div>
+                      </div>
+                      {premiumData.arris_analytics?.category_breakdown?.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-slate-600">Category Breakdown</p>
+                          {premiumData.arris_analytics.category_breakdown.slice(0, 5).map((cat, i) => (
+                            <div key={i} className="flex items-center justify-between text-sm">
+                              <span className="text-slate-600">{cat.category}</span>
+                              <Badge variant="outline">{cat.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Platform Performance */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>📱</span> Platform Performance
+                      </CardTitle>
+                      <CardDescription>Success metrics by platform</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {premiumData.platform_performance?.length > 0 ? (
+                        <div className="space-y-3">
+                          {premiumData.platform_performance.map((platform, i) => (
+                            <div key={i} className="p-3 bg-slate-50 rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium text-slate-700">{platform.platform}</span>
+                                <Badge className="bg-green-100 text-green-700">
+                                  {platform.approval_rate}% approved
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between text-xs text-slate-500">
+                                <span>Total: {platform.total}</span>
+                                <span>Approved: {platform.approved}</span>
+                                <span>Completed: {platform.completed}</span>
+                              </div>
+                              <Progress 
+                                value={platform.approval_rate} 
+                                className="mt-2 h-1"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No platform data yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Growth Metrics + Trends */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Month-over-Month Growth */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>📈</span> Growth Metrics
+                      </CardTitle>
+                      <CardDescription>Month-over-month performance</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-4">
+                        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-3 ${
+                          (premiumData.growth_metrics?.mom_growth_percent || 0) > 0 
+                            ? "bg-green-100" 
+                            : (premiumData.growth_metrics?.mom_growth_percent || 0) < 0 
+                              ? "bg-red-100" 
+                              : "bg-slate-100"
+                        }`}>
+                          <span className={`text-2xl font-bold ${
+                            (premiumData.growth_metrics?.mom_growth_percent || 0) > 0 
+                              ? "text-green-600" 
+                              : (premiumData.growth_metrics?.mom_growth_percent || 0) < 0 
+                                ? "text-red-600" 
+                                : "text-slate-600"
+                          }`}>
+                            {(premiumData.growth_metrics?.mom_growth_percent || 0) > 0 ? "+" : ""}
+                            {premiumData.growth_metrics?.mom_growth_percent || 0}%
+                          </span>
+                        </div>
+                        <p className="text-lg font-medium text-slate-700">
+                          {premiumData.growth_metrics?.growth_trend || "➡️ Stable"}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div className="p-3 bg-slate-50 rounded-lg text-center">
+                          <p className="text-lg font-bold text-slate-700">
+                            {premiumData.growth_metrics?.current_month || 0}
+                          </p>
+                          <p className="text-xs text-slate-500">This Month</p>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-lg text-center">
+                          <p className="text-lg font-bold text-slate-700">
+                            {premiumData.growth_metrics?.last_month || 0}
+                          </p>
+                          <p className="text-xs text-slate-500">Last Month</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Granular Trends */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>📊</span> {premiumData.trends?.granularity === "daily" ? "Daily" : "Weekly"} Trends
+                      </CardTitle>
+                      <CardDescription>Submission activity over time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {premiumData.trends?.data?.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {premiumData.trends.data.slice(-10).map((trend, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-xs text-slate-500 w-20">{trend.period}</span>
+                              <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                                <div 
+                                  className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full flex items-center justify-end pr-2"
+                                  style={{ 
+                                    width: `${Math.min(100, (trend.count / Math.max(...premiumData.trends.data.map(t => t.count))) * 100)}%`,
+                                    minWidth: '20px'
+                                  }}
+                                >
+                                  <span className="text-xs text-white font-medium">{trend.count}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No trend data yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Engagement Score + Export */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Engagement Breakdown */}
+                  <Card className="lg:col-span-2">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>🎯</span> Engagement Score
+                      </CardTitle>
+                      <CardDescription>
+                        {premiumData.engagement?.label || "Calculating..."}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-6 mb-4">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                          <span className="text-3xl font-bold text-amber-600">
+                            {Math.round(premiumData.engagement?.score || 0)}
+                          </span>
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          {premiumData.engagement?.factors && Object.entries(premiumData.engagement.factors).map(([key, value]) => (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className="text-xs text-slate-600 w-32 capitalize">
+                                {key.replace(/_/g, " ")}
+                              </span>
+                              <Progress value={value} className="flex-1 h-2" />
+                              <span className="text-xs text-slate-500 w-10">{Math.round(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Export Options */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <span>📥</span> Export Reports
+                      </CardTitle>
+                      <CardDescription>Download your analytics data</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={async () => {
+                          try {
+                            const headers = getAuthHeaders();
+                            const response = await axios.get(
+                              `${API}/creators/me/premium-analytics/export?format=json&date_range=${premiumDateRange}`,
+                              { headers }
+                            );
+                            const blob = new Blob([JSON.stringify(response.data.data, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = response.data.filename;
+                            a.click();
+                          } catch (err) {
+                            console.error("Export failed:", err);
+                          }
+                        }}
+                        data-testid="export-json-btn"
+                      >
+                        📄 Export as JSON
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={async () => {
+                          try {
+                            const headers = getAuthHeaders();
+                            const response = await axios.get(
+                              `${API}/creators/me/premium-analytics/export?format=csv&date_range=${premiumDateRange}`,
+                              { headers }
+                            );
+                            const blob = new Blob([response.data.data], { type: 'text/csv' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = response.data.filename;
+                            a.click();
+                          } catch (err) {
+                            console.error("Export failed:", err);
+                          }
+                        }}
+                        data-testid="export-csv-btn"
+                      >
+                        📊 Export as CSV
+                      </Button>
+                      <p className="text-xs text-slate-500 text-center">
+                        {premiumData.export_formats?.join(", ").toUpperCase()} formats available
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Premium Badge */}
+                <div className="text-center pt-4 border-t">
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                    🚀 Premium Analytics Dashboard
+                  </Badge>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Data range: {premiumDateRange} • Last updated: {new Date(premiumData.period_end).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Error/No Data State */
+              <Card>
+                <CardContent className="py-12 text-center text-slate-500">
+                  <p className="text-4xl mb-4">🚀</p>
+                  <p>Unable to load premium analytics</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => {
+                      setPremiumData(null);
+                      fetchPremiumAnalytics(premiumDateRange);
+                    }}
+                  >
+                    Retry
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
