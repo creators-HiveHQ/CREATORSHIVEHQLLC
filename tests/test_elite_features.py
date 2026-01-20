@@ -648,7 +648,7 @@ class TestEliteFeatureGating:
     def test_elite_user_feature_access(self, elite_token):
         """Test Elite user has all Elite features in feature-access"""
         headers = {"Authorization": f"Bearer {elite_token}"}
-        response = requests.get(f"{BASE_URL}/api/creators/me/feature-access", headers=headers)
+        response = requests.get(f"{BASE_URL}/api/subscriptions/feature-access", headers=headers)
         assert response.status_code == 200, f"Failed: {response.text}"
         
         data = response.json()
@@ -662,7 +662,7 @@ class TestEliteFeatureGating:
     def test_pro_user_no_elite_features(self, pro_token):
         """Test Pro user does not have Elite features"""
         headers = {"Authorization": f"Bearer {pro_token}"}
-        response = requests.get(f"{BASE_URL}/api/creators/me/feature-access", headers=headers)
+        response = requests.get(f"{BASE_URL}/api/subscriptions/feature-access", headers=headers)
         assert response.status_code == 200, f"Failed: {response.text}"
         
         data = response.json()
