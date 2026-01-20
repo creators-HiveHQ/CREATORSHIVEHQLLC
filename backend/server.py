@@ -231,6 +231,9 @@ async def startup_db():
     # Initialize Calculator service
     calculator_service = CalculatorService(db)
     logger.info("Calculator service initialized - Self-Funding Loop & Financial Analytics active")
+    # Initialize Export service
+    export_service = ExportService(db)
+    logger.info("Export service initialized - CSV/JSON analytics exports active")
     logger.info("Feature Gating service initialized")
     logger.info("Stripe service initialized - Self-Funding Loop active")
     logger.info("Database ready - Zero-Human Operational Model active")
