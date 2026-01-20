@@ -444,6 +444,119 @@ export const SubscriptionPlans = () => {
           </Button>
         </div>
       )}
+
+      {/* Elite Contact Us Modal */}
+      <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
+        <DialogContent className="sm:max-w-lg" data-testid="elite-contact-modal">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <span className="text-2xl">🌟</span>
+              Contact Us About Elite
+            </DialogTitle>
+            <DialogDescription>
+              Tell us about your needs and our team will craft a custom Elite package for you.
+            </DialogDescription>
+          </DialogHeader>
+
+          {contactSuccess ? (
+            <div className="py-8 text-center" data-testid="contact-success">
+              <div className="text-5xl mb-4">✅</div>
+              <h3 className="text-lg font-semibold text-green-600 mb-2">
+                Thank You!
+              </h3>
+              <p className="text-slate-600">
+                We've received your inquiry and will be in touch within 24 hours.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleContactSubmit} className="space-y-4">
+              {contactError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" data-testid="contact-error">
+                  {contactError}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="company_name">Company Name (optional)</Label>
+                <Input
+                  id="company_name"
+                  placeholder="Your company or brand name"
+                  value={contactForm.company_name}
+                  onChange={(e) => setContactForm({ ...contactForm, company_name: e.target.value })}
+                  data-testid="contact-company"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="team_size">Team Size (optional)</Label>
+                <Select
+                  value={contactForm.team_size}
+                  onValueChange={(value) => setContactForm({ ...contactForm, team_size: value })}
+                >
+                  <SelectTrigger data-testid="contact-team-size">
+                    <SelectValue placeholder="Select team size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="solo">Solo Creator</SelectItem>
+                    <SelectItem value="2-5">2-5 people</SelectItem>
+                    <SelectItem value="6-20">6-20 people</SelectItem>
+                    <SelectItem value="21-50">21-50 people</SelectItem>
+                    <SelectItem value="50+">50+ people</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="message">
+                  How can we help? <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="message"
+                  placeholder="Tell us about your goals, content type, team needs, and any specific features you're looking for..."
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                  className="min-h-[120px]"
+                  required
+                  data-testid="contact-message"
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-medium text-amber-800 mb-2 flex items-center gap-2">
+                  <span>✨</span> Elite Plan Includes:
+                </h4>
+                <ul className="text-sm text-amber-700 space-y-1">
+                  <li>• Custom ARRIS workflows tailored to you</li>
+                  <li>• Brand partnership integrations</li>
+                  <li>• Priority ARRIS processing (fastest)</li>
+                  <li>• Dedicated account manager</li>
+                  <li>• SLA-guaranteed support</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowContactModal(false)}
+                  disabled={contactSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-amber-500 hover:bg-amber-600"
+                  disabled={contactSubmitting}
+                  data-testid="contact-submit"
+                >
+                  {contactSubmitting ? "Sending..." : "Send Inquiry"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
