@@ -33,11 +33,23 @@ SUBSCRIPTION_PLANS = {
         "monthly_price": 0.0,
         "annual_price": 0.0,
         "features": {
-            "arris_insights": False,
-            "proposal_limit": 3,
+            # Proposals
+            "proposals_per_month": 1,
+            "proposal_limit": 1,  # Per month
+            # ARRIS Insights
+            "arris_insights": "summary_only",  # summary_only, summary_strengths, full
+            "arris_processing_speed": "standard",
+            "custom_arris_workflows": False,
+            # Dashboard
+            "dashboard_level": "basic",  # basic, advanced, custom
+            "advanced_analytics": False,
+            # Review & Support
             "priority_review": False,
-            "advanced_dashboards": False,
-            "support_level": "community"
+            "support_level": "community",
+            # Integrations
+            "api_access": False,
+            "brand_integrations": False,
+            "high_touch_onboarding": False
         },
         "description": "Basic access to get started"
     },
@@ -48,11 +60,18 @@ SUBSCRIPTION_PLANS = {
         "price": 9.99,
         "stripe_price_id": None,
         "features": {
-            "arris_insights": True,
-            "proposal_limit": 10,
+            "proposals_per_month": 3,
+            "proposal_limit": 3,
+            "arris_insights": "summary_strengths",  # Summary + Strengths
+            "arris_processing_speed": "standard",
+            "custom_arris_workflows": False,
+            "dashboard_level": "basic",
+            "advanced_analytics": False,
             "priority_review": False,
-            "advanced_dashboards": False,
-            "support_level": "email"
+            "support_level": "email",
+            "api_access": False,
+            "brand_integrations": False,
+            "high_touch_onboarding": False
         },
         "description": "Perfect for getting started with ARRIS insights"
     },
@@ -60,16 +79,23 @@ SUBSCRIPTION_PLANS = {
         "name": "Starter Annual",
         "tier": SubscriptionTier.STARTER,
         "billing_cycle": BillingCycle.ANNUAL,
-        "price": 99.99,  # ~17% discount
+        "price": 99.99,
         "monthly_equivalent": 8.33,
         "savings": 19.89,
         "stripe_price_id": None,
         "features": {
-            "arris_insights": True,
-            "proposal_limit": 10,
+            "proposals_per_month": 3,
+            "proposal_limit": 3,
+            "arris_insights": "summary_strengths",
+            "arris_processing_speed": "standard",
+            "custom_arris_workflows": False,
+            "dashboard_level": "basic",
+            "advanced_analytics": False,
             "priority_review": False,
-            "advanced_dashboards": False,
-            "support_level": "email"
+            "support_level": "email",
+            "api_access": False,
+            "brand_integrations": False,
+            "high_touch_onboarding": False
         },
         "description": "Save $19.89/year with annual billing"
     },
@@ -80,28 +106,42 @@ SUBSCRIPTION_PLANS = {
         "price": 29.99,
         "stripe_price_id": None,
         "features": {
-            "arris_insights": True,
-            "proposal_limit": 25,
+            "proposals_per_month": -1,  # Unlimited
+            "proposal_limit": -1,
+            "arris_insights": "full",  # Full insights
+            "arris_processing_speed": "standard",
+            "custom_arris_workflows": False,
+            "dashboard_level": "advanced",
+            "advanced_analytics": False,
             "priority_review": True,
-            "advanced_dashboards": True,
-            "support_level": "priority"
+            "support_level": "priority",
+            "api_access": False,
+            "brand_integrations": False,
+            "high_touch_onboarding": False
         },
-        "description": "Full access with priority review and advanced dashboards"
+        "description": "Full ARRIS insights with priority review"
     },
     "pro_annual": {
         "name": "Pro Annual",
         "tier": SubscriptionTier.PRO,
         "billing_cycle": BillingCycle.ANNUAL,
-        "price": 299.99,  # ~17% discount
+        "price": 299.99,
         "monthly_equivalent": 25.00,
         "savings": 59.89,
         "stripe_price_id": None,
         "features": {
-            "arris_insights": True,
-            "proposal_limit": 25,
+            "proposals_per_month": -1,
+            "proposal_limit": -1,
+            "arris_insights": "full",
+            "arris_processing_speed": "standard",
+            "custom_arris_workflows": False,
+            "dashboard_level": "advanced",
+            "advanced_analytics": False,
             "priority_review": True,
-            "advanced_dashboards": True,
-            "support_level": "priority"
+            "support_level": "priority",
+            "api_access": False,
+            "brand_integrations": False,
+            "high_touch_onboarding": False
         },
         "description": "Save $59.89/year with annual billing"
     },
@@ -112,32 +152,42 @@ SUBSCRIPTION_PLANS = {
         "price": 99.99,
         "stripe_price_id": None,
         "features": {
-            "arris_insights": True,
-            "proposal_limit": -1,  # Unlimited
+            "proposals_per_month": -1,
+            "proposal_limit": -1,
+            "arris_insights": "full",
+            "arris_processing_speed": "fast",  # Faster processing
+            "custom_arris_workflows": False,
+            "dashboard_level": "advanced",
+            "advanced_analytics": True,  # Advanced analytics dashboard
             "priority_review": True,
-            "advanced_dashboards": True,
             "support_level": "priority",
             "api_access": True,
-            "custom_integrations": True
+            "brand_integrations": False,
+            "high_touch_onboarding": False
         },
-        "description": "Unlimited access with API and custom integrations"
+        "description": "Everything in Pro plus faster processing & analytics"
     },
     "premium_annual": {
         "name": "Premium Annual",
         "tier": SubscriptionTier.PREMIUM,
         "billing_cycle": BillingCycle.ANNUAL,
-        "price": 999.99,  # ~17% discount
+        "price": 999.99,
         "monthly_equivalent": 83.33,
         "savings": 199.89,
         "stripe_price_id": None,
         "features": {
-            "arris_insights": True,
+            "proposals_per_month": -1,
             "proposal_limit": -1,
+            "arris_insights": "full",
+            "arris_processing_speed": "fast",
+            "custom_arris_workflows": False,
+            "dashboard_level": "advanced",
+            "advanced_analytics": True,
             "priority_review": True,
-            "advanced_dashboards": True,
             "support_level": "priority",
             "api_access": True,
-            "custom_integrations": True
+            "brand_integrations": False,
+            "high_touch_onboarding": False
         },
         "description": "Save $199.89/year with annual billing"
     },
@@ -145,22 +195,45 @@ SUBSCRIPTION_PLANS = {
         "name": "Elite",
         "tier": SubscriptionTier.ELITE,
         "billing_cycle": None,
-        "price": 0,  # Custom pricing
+        "price": 0,
         "is_custom": True,
         "stripe_price_id": None,
         "features": {
-            "arris_insights": True,
+            "proposals_per_month": -1,
             "proposal_limit": -1,
+            "arris_insights": "full",
+            "arris_processing_speed": "fast",
+            "custom_arris_workflows": True,  # Custom workflows
+            "dashboard_level": "custom",  # Custom dashboards
+            "advanced_analytics": True,
             "priority_review": True,
-            "advanced_dashboards": True,
-            "support_level": "dedicated",
+            "support_level": "dedicated",  # Dedicated support
             "api_access": True,
-            "custom_integrations": True,
-            "dedicated_account_manager": True,
-            "custom_training": True,
-            "sla_guarantee": True
+            "brand_integrations": True,  # Brand-level integrations
+            "high_touch_onboarding": True  # High-touch onboarding
         },
         "description": "Custom enterprise solution with dedicated support"
+    }
+}
+
+
+# Feature tier hierarchy for display
+FEATURE_TIERS = {
+    "arris_insights": {
+        "summary_only": "Summary Only",
+        "summary_strengths": "Summary + Strengths", 
+        "full": "Full Insights (Strengths, Risks, Recommendations, Milestones)"
+    },
+    "dashboard_level": {
+        "basic": "Basic Dashboard",
+        "advanced": "Advanced Dashboard",
+        "custom": "Custom Dashboard"
+    },
+    "support_level": {
+        "community": "Community Support",
+        "email": "Email Support",
+        "priority": "Priority Support",
+        "dedicated": "Dedicated Support"
     }
 }
 
