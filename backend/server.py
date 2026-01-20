@@ -2564,6 +2564,92 @@ async def test_webhook(
     
     return {"message": "Test event emitted", "event_id": event.id if event else None}
 
+# ============== EMAIL SERVICE ==============
+
+@api_router.get("/email/status")
+async def get_email_service_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get email service status and configuration (admin only).
+    Returns whether SendGrid is configured and operational.
+    """
+    await get_current_user(credentials, db)
+    
+    return {
+        "service": "sendgrid",
+        "configured": email_service.is_configured(),
+        "sender_email": email_service.sender_email,
+        "sender_name": email_service.sender_name,
+        "features": {
+            "proposal_submitted": True,
+            "proposal_approved": True,
+            "proposal_rejected": True,
+            "proposal_under_review": True,
+            "proposal_completed": True
+        },
+        "status": "active" if email_service.is_configured() else "not_configured",
+        "setup_instructions": None if email_service.is_configured() else {
+            "step_1": "Create a SendGrid account at https://sendgrid.com",
+            "step_2": "Generate an API key at https://app.sendgrid.com/settings/api_keys",
+            "step_3": "Add SENDGRID_API_KEY to your backend/.env file",
+            "step_4": "Optionally set SENDER_EMAIL for a verified sender"
+        }
+    }
+
+@api_router.post("/email/test")
+async def send_test_email(
+    email_data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Send a test email to verify SendGrid configuration (admin only).
+    
+    Request body:
+    - to_email: Recipient email address
+    """
+    await get_current_user(credentials, db)
+    
+    if not email_service.is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "email_not_configured",
+                "message": "SendGrid API key not configured",
+                "setup_url": "https://app.sendgrid.com/settings/api_keys"
+            }
+        )
+    
+    to_email = email_data.get("to_email")
+    if not to_email:
+        raise HTTPException(status_code=400, detail="to_email is required")
+    
+    try:
+        content = f"""
+<h2 style="color: #6366f1;">🐝 Test Email from Creators Hive HQ</h2>
+<p>This is a test email to verify your SendGrid configuration is working correctly.</p>
+<p><strong>Timestamp:</strong> {datetime.now(timezone.utc).isoformat()}</p>
+<p style="color: #22c55e;">✅ Your email notifications are configured and working!</p>
+"""
+        success = await email_service.send_email(
+            to_email=to_email,
+            subject="🐝 Test Email - Creators Hive HQ",
+            html_content=email_service._get_base_template(content)
+        )
+        
+        if success:
+            return {
+                "message": "Test email sent successfully",
+                "to": to_email,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to send test email")
+            
+    except EmailDeliveryError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logger.error(f"Test email error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Email error: {str(e)}")
+
 # ============== SUBSCRIPTION & STRIPE (Self-Funding Loop) ==============
 
 @api_router.get("/subscriptions/plans")
