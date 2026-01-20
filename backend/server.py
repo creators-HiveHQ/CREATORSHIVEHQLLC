@@ -1064,6 +1064,268 @@ async def test_webhook(
     
     return {"message": "Test event emitted", "event_id": event.id if event else None}
 
+# ============== SUBSCRIPTION & STRIPE (Self-Funding Loop) ==============
+
+@api_router.get("/subscriptions/plans")
+async def get_subscription_plans():
+    """Get available subscription plans (public endpoint)"""
+    plans = []
+    
+    for plan_id, plan in SUBSCRIPTION_PLANS.items():
+        if plan_id == "free":
+            plans.append(PlanInfo(
+                plan_id=plan_id,
+                name=plan["name"],
+                tier=plan["tier"].value if isinstance(plan["tier"], SubscriptionTier) else plan["tier"],
+                price=0.0,
+                features=plan["features"],
+                description=plan["description"]
+            ))
+        else:
+            plans.append(PlanInfo(
+                plan_id=plan_id,
+                name=plan["name"],
+                tier=plan["tier"].value if isinstance(plan["tier"], SubscriptionTier) else plan["tier"],
+                billing_cycle=plan.get("billing_cycle", "monthly"),
+                price=plan["price"],
+                monthly_equivalent=plan.get("monthly_equivalent"),
+                savings=plan.get("savings"),
+                features=plan["features"],
+                description=plan["description"],
+                is_popular=plan_id == "pro_monthly"
+            ))
+    
+    return PlansResponse(plans=plans)
+
+@api_router.get("/subscriptions/my-status")
+async def get_my_subscription_status(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get current subscription status for logged-in creator"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Get subscription features
+    features_data = await stripe_service.get_subscription_features(creator_id)
+    
+    # Get proposal usage
+    proposal_limit = await stripe_service.check_proposal_limit(creator_id)
+    
+    subscription = await stripe_service.get_creator_subscription(creator_id)
+    
+    return SubscriptionStatusResponse(
+        has_subscription=features_data.get("has_subscription", False),
+        tier=features_data.get("tier", "free"),
+        plan_id=features_data.get("plan_id"),
+        status=features_data.get("status"),
+        features=features_data.get("features", {}),
+        current_period_end=features_data.get("current_period_end"),
+        can_use_arris=features_data.get("features", {}).get("arris_insights", False),
+        proposal_limit=proposal_limit["limit"],
+        proposals_used=proposal_limit["used"],
+        proposals_remaining=proposal_limit["remaining"]
+    )
+
+@api_router.post("/subscriptions/checkout", response_model=CheckoutResponse)
+async def create_subscription_checkout(
+    request: CheckoutRequest,
+    http_request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create Stripe checkout session for subscription"""
+    creator = await get_current_creator(credentials, db)
+    
+    # Build webhook URL from request
+    host_url = str(http_request.base_url).rstrip('/')
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    
+    try:
+        result = await stripe_service.create_checkout_session(
+            plan_id=request.plan_id,
+            origin_url=request.origin_url,
+            creator_id=creator["id"],
+            creator_email=creator["email"],
+            webhook_url=webhook_url
+        )
+        
+        return CheckoutResponse(**result)
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Checkout creation failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create checkout session")
+
+@api_router.get("/subscriptions/checkout/status/{session_id}")
+async def get_checkout_status(
+    session_id: str,
+    http_request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get status of a checkout session (for polling)"""
+    host_url = str(http_request.base_url).rstrip('/')
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    
+    try:
+        result = await stripe_service.get_checkout_status(session_id, webhook_url)
+        
+        # If payment completed, trigger webhook event
+        if result.get("payment_status") == "paid":
+            metadata = result.get("metadata", {})
+            await webhook_service.emit(
+                event_type=WebhookEventType.SUBSCRIPTION_CREATED,
+                payload={
+                    "plan_id": metadata.get("plan_id"),
+                    "tier": metadata.get("tier"),
+                    "amount": result.get("amount"),
+                    "session_id": session_id
+                },
+                source_entity="subscription",
+                source_id=session_id,
+                user_id=metadata.get("creator_id")
+            )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Checkout status check failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get checkout status")
+
+@api_router.get("/subscriptions/my-transactions")
+async def get_my_transactions(
+    limit: int = Query(default=20, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get payment transactions for logged-in creator"""
+    creator = await get_current_creator(credentials, db)
+    
+    transactions = await db.payment_transactions.find(
+        {"creator_id": creator["id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    return {"transactions": transactions, "total": len(transactions)}
+
+# Stripe Webhook endpoint (public - called by Stripe)
+@app.post("/api/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events"""
+    body = await request.body()
+    signature = request.headers.get("Stripe-Signature", "")
+    
+    host_url = str(request.base_url).rstrip('/')
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    
+    try:
+        result = await stripe_service.handle_webhook(body, signature, webhook_url)
+        
+        # If payment succeeded, trigger revenue webhook
+        if result.get("event_type") == "checkout.session.completed" and result.get("payment_status") == "paid":
+            # Get transaction details
+            transaction = await db.payment_transactions.find_one(
+                {"stripe_session_id": result.get("session_id")},
+                {"_id": 0}
+            )
+            
+            if transaction:
+                # Emit subscription created event
+                await webhook_service.emit(
+                    event_type=WebhookEventType.SUBSCRIPTION_CREATED,
+                    payload={
+                        "plan_id": transaction.get("plan_id"),
+                        "amount": transaction.get("amount"),
+                        "billing_cycle": transaction.get("billing_cycle")
+                    },
+                    source_entity="subscription",
+                    source_id=result.get("session_id"),
+                    user_id=transaction.get("creator_id")
+                )
+                
+                # Emit revenue recorded event
+                await webhook_service.emit(
+                    event_type=WebhookEventType.REVENUE_RECORDED,
+                    payload={
+                        "amount": transaction.get("amount"),
+                        "source": "stripe_subscription",
+                        "plan_id": transaction.get("plan_id")
+                    },
+                    source_entity="payment",
+                    source_id=result.get("session_id"),
+                    user_id=transaction.get("creator_id")
+                )
+        
+        return {"received": True}
+        
+    except Exception as e:
+        logger.error(f"Webhook processing error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Admin endpoints for subscription management
+@api_router.get("/admin/subscriptions")
+async def get_all_subscriptions(
+    status: Optional[str] = None,
+    tier: Optional[str] = None,
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Admin: Get all subscriptions"""
+    await get_current_user(credentials, db)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    if tier:
+        query["tier"] = tier
+    
+    subscriptions = await db.creator_subscriptions.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    return {"subscriptions": subscriptions, "total": len(subscriptions)}
+
+@api_router.get("/admin/subscriptions/revenue")
+async def get_subscription_revenue(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Admin: Get subscription revenue summary"""
+    await get_current_user(credentials, db)
+    
+    # Total revenue from subscriptions
+    revenue_pipeline = [
+        {"$match": {"status": "completed"}},
+        {"$group": {
+            "_id": None,
+            "total_revenue": {"$sum": "$amount"},
+            "total_transactions": {"$sum": 1}
+        }}
+    ]
+    revenue_result = await db.payment_transactions.aggregate(revenue_pipeline).to_list(1)
+    
+    # Revenue by plan
+    plan_pipeline = [
+        {"$match": {"status": "completed"}},
+        {"$group": {
+            "_id": "$plan_id",
+            "revenue": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }}
+    ]
+    plan_revenue = await db.payment_transactions.aggregate(plan_pipeline).to_list(10)
+    
+    # Active subscriptions by tier
+    tier_pipeline = [
+        {"$match": {"status": "active"}},
+        {"$group": {"_id": "$tier", "count": {"$sum": 1}}}
+    ]
+    tier_counts = await db.creator_subscriptions.aggregate(tier_pipeline).to_list(5)
+    
+    return {
+        "total_revenue": revenue_result[0]["total_revenue"] if revenue_result else 0,
+        "total_transactions": revenue_result[0]["total_transactions"] if revenue_result else 0,
+        "by_plan": {item["_id"]: {"revenue": item["revenue"], "count": item["count"]} for item in plan_revenue},
+        "active_by_tier": {item["_id"]: item["count"] for item in tier_counts}
+    }
+
 # ============== SCHEMA INDEX (Sheet 15) ==============
 
 @api_router.get("/schema")
