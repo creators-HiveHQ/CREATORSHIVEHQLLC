@@ -293,7 +293,8 @@ class TestProposalStatusChangeEmailNotifications:
             "goals": "Test status change email notifications"
         })
         
-        if response.status_code != 201:
+        # API returns 200 for proposal creation (not 201)
+        if response.status_code != 200:
             return None
         
         proposal_id = response.json().get("id")
