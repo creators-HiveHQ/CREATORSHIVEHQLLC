@@ -167,9 +167,13 @@ async def get_any_authenticated_user(credentials: HTTPAuthorizationCredentials =
 
 # ============== STARTUP ==============
 
+# Initialize Stripe service
+stripe_service = None
+
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
+    global stripe_service
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
@@ -183,6 +187,9 @@ async def startup_db():
         logger.info("Default admin user created: admin@hivehq.com / admin123")
     # Initialize webhook service
     await webhook_service.initialize(db)
+    # Initialize Stripe service
+    stripe_service = StripeService(db)
+    logger.info("Stripe service initialized - Self-Funding Loop active")
     logger.info("Database ready - Zero-Human Operational Model active")
 
 @app.on_event("shutdown")
