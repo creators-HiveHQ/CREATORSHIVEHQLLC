@@ -122,6 +122,9 @@ from arris_memory_service import ArrisMemoryService, MemoryType, PatternCategory
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
+# Import Calculator service
+from calculator_service import CalculatorService
+
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
