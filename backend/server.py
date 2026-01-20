@@ -238,6 +238,37 @@ async def startup_db():
     # Initialize Export service
     export_service = ExportService(db)
     logger.info("Export service initialized - CSV/JSON analytics exports active")
+    
+    # Initialize ARRIS Activity Feed notification callback
+    async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
+        """Callback to send ARRIS activity notifications via WebSocket"""
+        if event_type == "queue_update":
+            await notification_service.notify_arris_queue_update(
+                creator_id=creator_id,
+                proposal_id=data.get("proposal_id", ""),
+                queue_position=data.get("queue_position", 0),
+                estimated_wait_seconds=data.get("estimated_wait_seconds", 0),
+                priority=data.get("priority", "standard")
+            )
+        elif event_type == "processing_started":
+            await notification_service.notify_arris_processing_started(
+                creator_id=creator_id,
+                proposal_id=data.get("proposal_id", ""),
+                proposal_title=data.get("proposal_title", ""),
+                priority=data.get("priority", "standard")
+            )
+        elif event_type == "processing_completed":
+            await notification_service.notify_arris_processing_complete(
+                creator_id=creator_id,
+                proposal_id=data.get("proposal_id", ""),
+                proposal_title=data.get("proposal_title", ""),
+                processing_time=data.get("processing_time", 0),
+                priority=data.get("priority", "standard")
+            )
+    
+    arris_activity_service.set_notification_callback(arris_activity_notification_callback)
+    logger.info("ARRIS Activity Feed initialized - Real-time queue updates active")
+    
     logger.info("Feature Gating service initialized")
     logger.info("Stripe service initialized - Self-Funding Loop active")
     logger.info("Database ready - Zero-Human Operational Model active")
