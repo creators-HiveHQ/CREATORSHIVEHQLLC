@@ -2769,6 +2769,14 @@ async def submit_elite_inquiry(
         user_id=creator_id
     )
     
+    # WEBSOCKET: Real-time notification to admins
+    await notification_service.notify_elite_inquiry_received(
+        inquiry_id=inquiry_doc["id"],
+        creator_name=creator_name,
+        creator_email=creator_email,
+        company_name=company_name
+    )
+    
     return {
         "message": "Thank you for your interest in Elite! Our team will be in touch within 24 hours.",
         "inquiry_id": inquiry_doc["id"],
