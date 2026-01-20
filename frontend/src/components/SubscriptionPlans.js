@@ -236,38 +236,79 @@ export const SubscriptionPlans = () => {
               
               <CardContent className="pt-2">
                 <ul className="space-y-2 mb-4 text-xs">
-                  <li className="flex items-center gap-2">
-                    <span className={plan.features.arris_insights ? "text-green-500" : "text-slate-300"}>
-                      {plan.features.arris_insights ? "✓" : "✗"}
-                    </span>
-                    ARRIS AI Insights
-                  </li>
+                  {/* Proposals per month */}
                   <li className="flex items-center gap-2">
                     <span className="text-green-500">✓</span>
-                    {plan.features.proposal_limit === -1 ? "Unlimited" : plan.features.proposal_limit} Proposals
+                    {plan.features.proposals_per_month === -1 ? "Unlimited" : plan.features.proposals_per_month} Proposals/mo
                   </li>
+                  
+                  {/* ARRIS Insights Level */}
+                  <li className="flex items-center gap-2">
+                    <span className={plan.features.arris_insights !== "none" ? "text-green-500" : "text-slate-300"}>
+                      {plan.features.arris_insights !== "none" ? "✓" : "✗"}
+                    </span>
+                    {plan.features.arris_insights === "full" ? "Full ARRIS Insights" :
+                     plan.features.arris_insights === "summary_strengths" ? "Summary + Strengths" :
+                     plan.features.arris_insights === "summary_only" ? "Summary Only" : "No ARRIS"}
+                  </li>
+                  
+                  {/* Priority Review */}
                   <li className="flex items-center gap-2">
                     <span className={plan.features.priority_review ? "text-green-500" : "text-slate-300"}>
                       {plan.features.priority_review ? "✓" : "✗"}
                     </span>
                     Priority Review
                   </li>
+                  
+                  {/* Dashboard Level */}
                   <li className="flex items-center gap-2">
-                    <span className={plan.features.advanced_dashboards ? "text-green-500" : "text-slate-300"}>
-                      {plan.features.advanced_dashboards ? "✓" : "✗"}
+                    <span className={plan.features.dashboard_level !== "basic" ? "text-green-500" : "text-slate-300"}>
+                      {plan.features.dashboard_level !== "basic" ? "✓" : "✗"}
                     </span>
-                    Advanced Dashboards
+                    {plan.features.dashboard_level === "custom" ? "Custom Dashboard" :
+                     plan.features.dashboard_level === "advanced" ? "Advanced Dashboard" : "Basic Dashboard"}
                   </li>
+                  
+                  {/* Advanced Analytics (Premium+) */}
+                  {plan.features.advanced_analytics && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      Advanced Analytics
+                    </li>
+                  )}
+                  
+                  {/* Support Level */}
                   <li className="flex items-center gap-2">
                     <span className="text-blue-500">📧</span>
                     {plan.features.support_level === "dedicated" ? "Dedicated Support" :
                      plan.features.support_level === "priority" ? "Priority Support" : 
                      plan.features.support_level === "email" ? "Email Support" : "Community"}
                   </li>
+                  
+                  {/* API Access */}
                   {plan.features.api_access && (
                     <li className="flex items-center gap-2">
                       <span className="text-green-500">✓</span>
                       API Access
+                    </li>
+                  )}
+                  
+                  {/* Brand Integrations (Elite) */}
+                  {plan.features.brand_integrations && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      Brand Integrations
+                    </li>
+                  )}
+                  
+                  {/* High Touch Onboarding (Elite) */}
+                  {plan.features.high_touch_onboarding && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      High-Touch Onboarding
+                    </li>
+                  )}
+                </ul>
                     </li>
                   )}
                   {plan.features.dedicated_account_manager && (
