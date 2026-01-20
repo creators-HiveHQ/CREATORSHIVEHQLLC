@@ -574,6 +574,403 @@ async def get_creator_advanced_dashboard(credentials: HTTPAuthorizationCredentia
         }
     }
 
+@api_router.get("/creators/me/premium-analytics")
+async def get_creator_premium_analytics(
+    date_range: Optional[str] = Query(default="30d", description="Date range: 7d, 30d, 90d, 1y, all"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get Premium-tier analytics with deeper insights.
+    Feature-gated: Requires 'advanced_analytics' feature (Premium/Elite only).
+    
+    Includes:
+    - Comparative analytics (vs platform averages)
+    - Revenue/value tracking
+    - Predictive success insights
+    - Detailed ARRIS analytics with processing times
+    - Weekly/daily granular trends
+    - Platform performance breakdown
+    - Month-over-month growth metrics
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has advanced_analytics feature
+    has_advanced_analytics = await feature_gating.has_advanced_analytics(creator_id)
+    
+    if not has_advanced_analytics:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Premium Analytics requires Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription",
+                "feature_highlights": [
+                    "Comparative analytics vs platform averages",
+                    "Revenue & value tracking",
+                    "AI-powered predictive insights",
+                    "Detailed ARRIS processing analytics",
+                    "Granular daily/weekly trends",
+                    "Export reports to CSV/JSON"
+                ]
+            }
+        )
+    
+    # Parse date range
+    date_ranges = {
+        "7d": timedelta(days=7),
+        "30d": timedelta(days=30),
+        "90d": timedelta(days=90),
+        "1y": timedelta(days=365),
+        "all": timedelta(days=3650)  # ~10 years
+    }
+    time_delta = date_ranges.get(date_range, timedelta(days=30))
+    start_date = datetime.now(timezone.utc) - time_delta
+    
+    # ===== USER'S METRICS =====
+    user_proposals = await db.proposals.find(
+        {"user_id": creator_id, "created_at": {"$gte": start_date.isoformat()}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    user_total = len(user_proposals)
+    user_approved = len([p for p in user_proposals if p.get("status") in ["approved", "in_progress", "completed"]])
+    user_completed = len([p for p in user_proposals if p.get("status") == "completed"])
+    user_approval_rate = round((user_approved / user_total * 100), 1) if user_total > 0 else 0
+    
+    # ===== PLATFORM-WIDE AVERAGES (for comparison) =====
+    total_platform_proposals = await db.proposals.count_documents(
+        {"created_at": {"$gte": start_date.isoformat()}}
+    )
+    total_platform_approved = await db.proposals.count_documents({
+        "created_at": {"$gte": start_date.isoformat()},
+        "status": {"$in": ["approved", "in_progress", "completed"]}
+    })
+    platform_approval_rate = round((total_platform_approved / total_platform_proposals * 100), 1) if total_platform_proposals > 0 else 0
+    
+    # Average proposals per creator (active creators in this period)
+    active_creators_pipeline = [
+        {"$match": {"created_at": {"$gte": start_date.isoformat()}}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "active_creators"}
+    ]
+    active_creators_result = await db.proposals.aggregate(active_creators_pipeline).to_list(1)
+    active_creators = active_creators_result[0]["active_creators"] if active_creators_result else 1
+    avg_proposals_per_creator = round(total_platform_proposals / active_creators, 1)
+    
+    # ===== COMPARATIVE ANALYTICS =====
+    comparative = {
+        "your_approval_rate": user_approval_rate,
+        "platform_approval_rate": platform_approval_rate,
+        "approval_rate_diff": round(user_approval_rate - platform_approval_rate, 1),
+        "your_proposals": user_total,
+        "avg_proposals_per_creator": avg_proposals_per_creator,
+        "proposals_diff": user_total - avg_proposals_per_creator,
+        "percentile_rank": min(99, max(1, int((user_approval_rate / max(1, platform_approval_rate)) * 50 + 25)))  # Simplified percentile
+    }
+    
+    # ===== REVENUE & VALUE TRACKING =====
+    # Estimate value based on proposal complexity and status
+    value_map = {"Low": 500, "Medium": 1500, "High": 3500, "Very High": 7500}
+    total_estimated_value = 0
+    realized_value = 0
+    pipeline_value = 0
+    
+    for p in user_proposals:
+        complexity = p.get("arris_insights", {}).get("estimated_complexity", "Medium")
+        value = value_map.get(complexity, 1500)
+        total_estimated_value += value
+        if p.get("status") == "completed":
+            realized_value += value
+        elif p.get("status") in ["approved", "in_progress"]:
+            pipeline_value += value
+    
+    revenue_tracking = {
+        "total_estimated_value": total_estimated_value,
+        "realized_value": realized_value,
+        "pipeline_value": pipeline_value,
+        "pending_value": total_estimated_value - realized_value - pipeline_value,
+        "realization_rate": round((realized_value / total_estimated_value * 100), 1) if total_estimated_value > 0 else 0,
+        "avg_project_value": round(total_estimated_value / user_total, 2) if user_total > 0 else 0,
+        "currency": "USD"
+    }
+    
+    # ===== PREDICTIVE INSIGHTS =====
+    # Based on historical patterns, predict success
+    success_factors = []
+    risk_factors = []
+    
+    if user_approval_rate > platform_approval_rate:
+        success_factors.append("Above-average approval rate")
+    if user_total > avg_proposals_per_creator:
+        success_factors.append("High proposal volume")
+    if user_completed > 0:
+        success_factors.append("Track record of completed projects")
+    
+    recent_proposals = [p for p in user_proposals if datetime.fromisoformat(p.get("created_at", "2020-01-01").replace("Z", "+00:00")) > datetime.now(timezone.utc) - timedelta(days=7)]
+    if len(recent_proposals) == 0:
+        risk_factors.append("No recent activity in last 7 days")
+    
+    rejected = len([p for p in user_proposals if p.get("status") == "rejected"])
+    if rejected > user_approved:
+        risk_factors.append("More rejections than approvals")
+    
+    # Predicted success score (0-100)
+    base_score = 50
+    base_score += min(25, user_approval_rate - platform_approval_rate)  # Up to +25 for approval rate
+    base_score += min(15, (user_completed * 5))  # Up to +15 for completions
+    base_score -= min(20, (rejected * 3))  # Down to -20 for rejections
+    predicted_success_score = max(10, min(95, int(base_score)))
+    
+    predictive_insights = {
+        "success_score": predicted_success_score,
+        "score_label": "Excellent" if predicted_success_score >= 80 else "Good" if predicted_success_score >= 60 else "Fair" if predicted_success_score >= 40 else "Needs Improvement",
+        "success_factors": success_factors,
+        "risk_factors": risk_factors,
+        "recommendation": "Keep up the great work!" if predicted_success_score >= 70 else "Focus on proposal quality and consistency" if predicted_success_score >= 50 else "Consider reviewing rejected proposals for improvement areas"
+    }
+    
+    # ===== DETAILED ARRIS ANALYTICS =====
+    arris_logs = await db.arris_usage_log.find(
+        {"user_id": creator_id, "timestamp": {"$gte": start_date.isoformat()}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Processing time analysis
+    processing_times = []
+    for p in user_proposals:
+        pt = p.get("arris_insights", {}).get("processing_time_seconds")
+        if pt:
+            processing_times.append(pt)
+    
+    avg_processing_time = round(sum(processing_times) / len(processing_times), 2) if processing_times else 0
+    min_processing_time = round(min(processing_times), 2) if processing_times else 0
+    max_processing_time = round(max(processing_times), 2) if processing_times else 0
+    
+    # Category breakdown
+    category_counts = {}
+    for log in arris_logs:
+        cat = log.get("query_category", "Other")
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+    
+    arris_analytics = {
+        "total_interactions": len(arris_logs),
+        "successful_interactions": len([l for l in arris_logs if l.get("success")]),
+        "success_rate": round((len([l for l in arris_logs if l.get("success")]) / len(arris_logs) * 100), 1) if arris_logs else 0,
+        "processing_times": {
+            "average": avg_processing_time,
+            "min": min_processing_time,
+            "max": max_processing_time,
+            "total_saved": round(len(processing_times) * 2, 1)  # Estimated time saved vs manual
+        },
+        "category_breakdown": [{"category": k, "count": v} for k, v in sorted(category_counts.items(), key=lambda x: -x[1])],
+        "insights_generated": len([p for p in user_proposals if p.get("arris_insights")])
+    }
+    
+    # ===== GRANULAR TRENDS (Daily for 30d, Weekly for 90d+) =====
+    if time_delta <= timedelta(days=30):
+        # Daily trends
+        daily_pipeline = [
+            {"$match": {"user_id": creator_id, "created_at": {"$gte": start_date.isoformat()}}},
+            {"$project": {"day": {"$substr": ["$created_at", 0, 10]}}},  # YYYY-MM-DD
+            {"$group": {"_id": "$day", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}}
+        ]
+        granular_trends = await db.proposals.aggregate(daily_pipeline).to_list(60)
+        trend_granularity = "daily"
+    else:
+        # Weekly trends
+        weekly_pipeline = [
+            {"$match": {"user_id": creator_id, "created_at": {"$gte": start_date.isoformat()}}},
+            {"$project": {
+                "week": {"$dateToString": {"format": "%Y-W%V", "date": {"$dateFromString": {"dateString": "$created_at"}}}}
+            }},
+            {"$group": {"_id": "$week", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}}
+        ]
+        granular_trends = await db.proposals.aggregate(weekly_pipeline).to_list(52)
+        trend_granularity = "weekly"
+    
+    # ===== PLATFORM PERFORMANCE BREAKDOWN =====
+    platform_pipeline = [
+        {"$match": {"user_id": creator_id, "created_at": {"$gte": start_date.isoformat()}}},
+        {"$unwind": {"path": "$platforms", "preserveNullAndEmptyArrays": True}},
+        {"$group": {
+            "_id": "$platforms",
+            "total": {"$sum": 1},
+            "approved": {"$sum": {"$cond": [{"$in": ["$status", ["approved", "in_progress", "completed"]]}, 1, 0]}},
+            "completed": {"$sum": {"$cond": [{"$eq": ["$status", "completed"]}, 1, 0]}}
+        }},
+        {"$project": {
+            "platform": "$_id",
+            "total": 1,
+            "approved": 1,
+            "completed": 1,
+            "approval_rate": {"$round": [{"$multiply": [{"$divide": ["$approved", {"$max": ["$total", 1]}]}, 100]}, 1]}
+        }}
+    ]
+    platform_performance = await db.proposals.aggregate(platform_pipeline).to_list(20)
+    
+    # ===== MONTH-OVER-MONTH GROWTH =====
+    current_month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
+    
+    current_month_proposals = await db.proposals.count_documents({
+        "user_id": creator_id,
+        "created_at": {"$gte": current_month_start.isoformat()}
+    })
+    last_month_proposals = await db.proposals.count_documents({
+        "user_id": creator_id,
+        "created_at": {"$gte": last_month_start.isoformat(), "$lt": current_month_start.isoformat()}
+    })
+    
+    mom_growth = round(((current_month_proposals - last_month_proposals) / max(1, last_month_proposals)) * 100, 1)
+    
+    growth_metrics = {
+        "current_month": current_month_proposals,
+        "last_month": last_month_proposals,
+        "mom_growth_percent": mom_growth,
+        "growth_trend": "📈 Growing" if mom_growth > 10 else "📉 Declining" if mom_growth < -10 else "➡️ Stable"
+    }
+    
+    # ===== ENGAGEMENT SCORE =====
+    # Calculate overall engagement score
+    engagement_factors = {
+        "proposal_activity": min(100, (user_total / max(1, avg_proposals_per_creator)) * 50),
+        "completion_rate": (user_completed / max(1, user_total)) * 100,
+        "arris_usage": min(100, len(arris_logs) * 10),
+        "recent_activity": 100 if recent_proposals else 0
+    }
+    engagement_score = round(sum(engagement_factors.values()) / len(engagement_factors), 1)
+    
+    return {
+        "analytics_tier": "premium",
+        "date_range": date_range,
+        "period_start": start_date.isoformat(),
+        "period_end": datetime.now(timezone.utc).isoformat(),
+        
+        "summary": {
+            "total_proposals": user_total,
+            "approval_rate": user_approval_rate,
+            "completed_projects": user_completed,
+            "engagement_score": engagement_score,
+            "predicted_success": predicted_success_score
+        },
+        
+        "comparative_analytics": comparative,
+        "revenue_tracking": revenue_tracking,
+        "predictive_insights": predictive_insights,
+        "arris_analytics": arris_analytics,
+        
+        "trends": {
+            "granularity": trend_granularity,
+            "data": [{"period": t["_id"], "count": t["count"]} for t in granular_trends]
+        },
+        
+        "platform_performance": [
+            {
+                "platform": p.get("platform") or "Unspecified",
+                "total": p["total"],
+                "approved": p["approved"],
+                "completed": p["completed"],
+                "approval_rate": p.get("approval_rate", 0)
+            }
+            for p in platform_performance
+        ],
+        
+        "growth_metrics": growth_metrics,
+        
+        "engagement": {
+            "score": engagement_score,
+            "factors": engagement_factors,
+            "label": "Highly Engaged" if engagement_score >= 70 else "Moderately Engaged" if engagement_score >= 40 else "Low Engagement"
+        },
+        
+        "export_available": True,
+        "export_formats": ["csv", "json"]
+    }
+
+@api_router.get("/creators/me/premium-analytics/export")
+async def export_premium_analytics(
+    format: str = Query(default="json", description="Export format: json or csv"),
+    date_range: str = Query(default="30d", description="Date range: 7d, 30d, 90d, 1y, all"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export Premium analytics data as JSON or CSV.
+    Feature-gated: Requires Premium/Elite subscription.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_advanced_analytics = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_advanced_analytics:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Export requires Premium plan or higher",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Get all proposals for export
+    date_ranges = {
+        "7d": timedelta(days=7),
+        "30d": timedelta(days=30),
+        "90d": timedelta(days=90),
+        "1y": timedelta(days=365),
+        "all": timedelta(days=3650)
+    }
+    time_delta = date_ranges.get(date_range, timedelta(days=30))
+    start_date = datetime.now(timezone.utc) - time_delta
+    
+    proposals = await db.proposals.find(
+        {"user_id": creator_id, "created_at": {"$gte": start_date.isoformat()}},
+        {"_id": 0, "arris_insights_full": 0}  # Exclude full insights for security
+    ).to_list(1000)
+    
+    if format == "csv":
+        import csv
+        import io
+        
+        output = io.StringIO()
+        if proposals:
+            fieldnames = ["id", "title", "status", "platforms", "timeline", "priority", 
+                         "created_at", "submitted_at", "complexity", "processing_time"]
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            for p in proposals:
+                writer.writerow({
+                    "id": p.get("id"),
+                    "title": p.get("title"),
+                    "status": p.get("status"),
+                    "platforms": ", ".join(p.get("platforms", [])),
+                    "timeline": p.get("timeline"),
+                    "priority": p.get("priority"),
+                    "created_at": p.get("created_at"),
+                    "submitted_at": p.get("submitted_at"),
+                    "complexity": p.get("arris_insights", {}).get("estimated_complexity"),
+                    "processing_time": p.get("arris_insights", {}).get("processing_time_seconds")
+                })
+        
+        return {
+            "format": "csv",
+            "data": output.getvalue(),
+            "filename": f"analytics_export_{date_range}_{datetime.now().strftime('%Y%m%d')}.csv",
+            "record_count": len(proposals)
+        }
+    else:
+        return {
+            "format": "json",
+            "data": proposals,
+            "filename": f"analytics_export_{date_range}_{datetime.now().strftime('%Y%m%d')}.json",
+            "record_count": len(proposals),
+            "exported_at": datetime.now(timezone.utc).isoformat()
+        }
+
 @api_router.get("/creators")
 async def get_creators(
     status: Optional[str] = None,
