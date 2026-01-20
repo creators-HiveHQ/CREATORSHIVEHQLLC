@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NotificationProvider, NotificationBell, NotificationPanel, ConnectionStatus } from "@/components/NotificationSystem";
 import { ArrisActivityFeed } from "@/components/ArrisActivityFeed";
+import { ArrisLearningHistory } from "@/components/ArrisLearningHistory";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
