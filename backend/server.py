@@ -1011,6 +1011,229 @@ async def export_premium_analytics(
             "exported_at": datetime.now(timezone.utc).isoformat()
         }
 
+# ============== EXPORT ENDPOINTS (Pro/Premium) ==============
+
+@api_router.get("/export/proposals")
+async def export_proposals(
+    format: str = Query(default="json", description="Export format: json or csv"),
+    date_range: str = Query(default="30d", description="Date range: 7d, 30d, 90d, 1y, all"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export proposals data.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check Pro tier access
+    tier, _ = await feature_gating.get_creator_tier(creator_id)
+    if tier.lower() not in ["pro", "premium", "elite"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Export requires Pro plan or higher",
+                "feature": "data_export",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Premium tier gets insights included
+    include_insights = tier.lower() in ["premium", "elite"]
+    
+    result = await export_service.export_proposals(
+        creator_id=creator_id,
+        format=format,
+        date_range=date_range,
+        include_insights=include_insights
+    )
+    
+    return result
+
+
+@api_router.get("/export/analytics")
+async def export_analytics(
+    format: str = Query(default="json", description="Export format: json or csv"),
+    date_range: str = Query(default="30d", description="Date range: 7d, 30d, 90d, 1y, all"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export analytics data.
+    Pro tier: Basic analytics
+    Premium/Elite tier: Enhanced with comparative analytics
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check Pro tier access
+    tier, _ = await feature_gating.get_creator_tier(creator_id)
+    if tier.lower() not in ["pro", "premium", "elite"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Export requires Pro plan or higher",
+                "feature": "analytics_export",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Determine tier level for export
+    export_tier = "premium" if tier.lower() in ["premium", "elite"] else "pro"
+    
+    result = await export_service.export_analytics(
+        creator_id=creator_id,
+        format=format,
+        date_range=date_range,
+        tier=export_tier
+    )
+    
+    return result
+
+
+@api_router.get("/export/revenue")
+async def export_revenue(
+    format: str = Query(default="json", description="Export format: json or csv"),
+    date_range: str = Query(default="30d", description="Date range: 7d, 30d, 90d, 1y, all"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export revenue/financial data.
+    Feature-gated: Requires Premium tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check Premium tier access
+    tier, _ = await feature_gating.get_creator_tier(creator_id)
+    if tier.lower() not in ["premium", "elite"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Revenue export requires Premium plan or higher",
+                "feature": "revenue_export",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    result = await export_service.export_revenue_data(
+        creator_id=creator_id,
+        format=format,
+        date_range=date_range
+    )
+    
+    return result
+
+
+@api_router.get("/export/full-report")
+async def export_full_report(
+    format: str = Query(default="json", description="Export format: json or csv"),
+    date_range: str = Query(default="30d", description="Date range: 7d, 30d, 90d, 1y, all"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export comprehensive report with all data.
+    Feature-gated: Requires Premium tier or higher.
+    
+    Includes: Proposals, Analytics, Revenue (combined)
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check Premium tier access
+    tier, _ = await feature_gating.get_creator_tier(creator_id)
+    if tier.lower() not in ["premium", "elite"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Full report export requires Premium plan or higher",
+                "feature": "full_report_export",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Gather all data
+    proposals_data = await export_service.export_proposals(
+        creator_id=creator_id,
+        format="json",
+        date_range=date_range,
+        include_insights=True
+    )
+    
+    analytics_data = await export_service.export_analytics(
+        creator_id=creator_id,
+        format="json",
+        date_range=date_range,
+        tier="premium"
+    )
+    
+    revenue_data = await export_service.export_revenue_data(
+        creator_id=creator_id,
+        format="json",
+        date_range=date_range
+    )
+    
+    if format == "csv":
+        import io
+        output = io.StringIO()
+        
+        output.write("=" * 50 + "\n")
+        output.write("CREATORS HIVE HQ - FULL ANALYTICS REPORT\n")
+        output.write(f"Generated: {datetime.now(timezone.utc).isoformat()}\n")
+        output.write(f"Date Range: {date_range}\n")
+        output.write(f"Creator: {creator.get('name')} ({creator_id})\n")
+        output.write("=" * 50 + "\n\n")
+        
+        # Add proposals section
+        output.write("PROPOSALS DATA\n")
+        output.write("-" * 30 + "\n")
+        output.write(f"Total: {proposals_data['record_count']}\n\n")
+        
+        # Add analytics section
+        output.write("ANALYTICS SUMMARY\n")
+        output.write("-" * 30 + "\n")
+        analytics = analytics_data["data"]
+        output.write(f"Total Proposals: {analytics.get('total_proposals', 0)}\n")
+        output.write(f"Approval Rate: {analytics.get('approval_rate', 0)}%\n")
+        if "comparative" in analytics:
+            output.write(f"Your vs Platform: {analytics['comparative']['approval_rate_vs_platform']}%\n")
+        output.write("\n")
+        
+        # Add revenue section
+        output.write("REVENUE SUMMARY\n")
+        output.write("-" * 30 + "\n")
+        revenue = revenue_data["data"]["summary"]
+        output.write(f"Total Revenue: ${revenue.get('total_revenue', 0)}\n")
+        output.write(f"Total Expenses: ${revenue.get('total_expenses', 0)}\n")
+        output.write(f"Net Profit: ${revenue.get('net_profit', 0)}\n")
+        
+        return {
+            "format": "csv",
+            "data": output.getvalue(),
+            "filename": f"full_report_{date_range}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            "content_type": "text/csv"
+        }
+    
+    return {
+        "format": "json",
+        "data": {
+            "proposals": proposals_data["data"],
+            "analytics": analytics_data["data"],
+            "revenue": revenue_data["data"],
+            "creator": {
+                "id": creator_id,
+                "name": creator.get("name"),
+                "tier": tier
+            }
+        },
+        "filename": f"full_report_{date_range}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "content_type": "application/json"
+    }
+
 # ============== ELITE TIER ENDPOINTS ==============
 
 # ----- Custom ARRIS Workflows -----
