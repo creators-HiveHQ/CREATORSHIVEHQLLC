@@ -236,6 +236,11 @@ async def startup_db():
     # Initialize ARRIS Memory service
     arris_memory_service = ArrisMemoryService(db)
     logger.info("ARRIS Memory service initialized - Memory Palace & Pattern Engine active")
+    
+    # Initialize ARRIS Historical Learning service
+    arris_historical_service = ArrisHistoricalService(db)
+    logger.info("ARRIS Historical service initialized - Learning visualization active")
+    
     # Initialize Calculator service
     calculator_service = CalculatorService(db)
     logger.info("Calculator service initialized - Self-Funding Loop & Financial Analytics active")
