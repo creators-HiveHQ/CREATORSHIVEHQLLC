@@ -70,6 +70,10 @@ class StripeService:
         if plan_id == "free":
             raise ValueError("Free plan doesn't require payment")
         
+        # Elite plan is custom pricing - no checkout
+        if plan_id == "elite" or plan.get("is_custom"):
+            raise ValueError("Elite plan requires custom pricing. Please contact us.")
+        
         # Get price from server-side definition (SECURITY: never from frontend)
         amount = plan["price"]
         
