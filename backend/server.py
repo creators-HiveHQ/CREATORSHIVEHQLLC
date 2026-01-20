@@ -3171,6 +3171,169 @@ async def create_calculator_entry(entry: CalculatorCreate):
     await db.calculator.insert_one(doc)
     return {"id": calc_obj.id, "message": "Calculator entry created", "net_margin": calc_obj.net_margin}
 
+# ============== 06_CALCULATOR - ADVANCED FINANCIAL ANALYTICS ==============
+
+@api_router.get("/calculator/metrics/mrr")
+async def get_mrr(
+    user_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get Monthly Recurring Revenue (MRR) with growth metrics.
+    MRR = Sum of all active subscription revenue per month.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_mrr(user_id)
+
+@api_router.get("/calculator/metrics/arr")
+async def get_arr(
+    user_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get Annual Recurring Revenue (ARR).
+    ARR = MRR × 12
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_arr(user_id)
+
+@api_router.get("/calculator/metrics/churn")
+async def get_churn_rate(
+    user_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Calculate subscription churn rate (last 30 days).
+    Churn Rate = (Lost Subscribers / Total Subscribers at Start) × 100
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_churn_rate(user_id)
+
+@api_router.get("/calculator/metrics/ltv")
+async def get_ltv(
+    user_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Calculate Customer Lifetime Value (LTV).
+    LTV = ARPU × Average Customer Lifetime
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_ltv(user_id)
+
+@api_router.get("/calculator/metrics/all")
+async def get_all_key_metrics(
+    user_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all key financial metrics in one call: MRR, ARR, Churn, LTV.
+    """
+    await get_current_user(credentials, db)
+    
+    mrr = await calculator_service.get_mrr(user_id)
+    arr = await calculator_service.get_arr(user_id)
+    churn = await calculator_service.get_churn_rate(user_id)
+    ltv = await calculator_service.get_ltv(user_id)
+    
+    return {
+        "mrr": mrr,
+        "arr": arr,
+        "churn": churn,
+        "ltv": ltv,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+@api_router.get("/calculator/revenue/breakdown")
+async def get_revenue_breakdown(
+    user_id: Optional[str] = None,
+    months_back: int = Query(default=6, ge=1, le=24),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get detailed revenue breakdown by source/category over time.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_revenue_breakdown(user_id, months_back=months_back)
+
+@api_router.get("/calculator/revenue/trends")
+async def get_revenue_trends(
+    user_id: Optional[str] = None,
+    months_back: int = Query(default=12, ge=3, le=36),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Analyze revenue trends over time with growth rates.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_revenue_trends(user_id, months_back=months_back)
+
+@api_router.get("/calculator/expenses/breakdown")
+async def get_expense_breakdown(
+    user_id: Optional[str] = None,
+    months_back: int = Query(default=6, ge=1, le=24),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get detailed expense breakdown by category over time.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_expense_breakdown(user_id, months_back=months_back)
+
+@api_router.get("/calculator/profit/analysis")
+async def get_profit_analysis(
+    user_id: Optional[str] = None,
+    months_back: int = Query(default=6, ge=1, le=24),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Comprehensive profit analysis including margins and health indicators.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_profit_analysis(user_id, months_back=months_back)
+
+@api_router.get("/calculator/forecast")
+async def get_revenue_forecast(
+    user_id: Optional[str] = None,
+    months_ahead: int = Query(default=3, ge=1, le=12),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Forecast future revenue based on historical patterns.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.forecast_revenue(user_id, months_ahead=months_ahead)
+
+@api_router.get("/calculator/self-funding-loop")
+async def get_self_funding_loop_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get comprehensive status of the Self-Funding Loop.
+    Shows how subscription revenue flows through the Calculator.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_self_funding_loop_status()
+
+@api_router.get("/calculator/creator/{creator_id}/summary")
+async def get_creator_financial_summary(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get comprehensive financial summary for a specific creator.
+    Includes subscription status, revenue, expenses, and profit analysis.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_creator_financial_summary(creator_id)
+
+@api_router.get("/calculator/dashboard")
+async def get_financial_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get comprehensive platform-wide financial dashboard.
+    Includes MRR, ARR, Churn, LTV, Self-Funding Loop status, profit analysis, and forecasts.
+    """
+    await get_current_user(credentials, db)
+    return await calculator_service.get_platform_financial_dashboard()
+
 # ============== 17_SUBSCRIPTIONS (Self-Funding Loop) ==============
 
 @api_router.get("/subscriptions")
