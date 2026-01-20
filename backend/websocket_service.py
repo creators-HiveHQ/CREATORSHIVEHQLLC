@@ -31,6 +31,10 @@ class NotificationType(str, Enum):
     ARRIS_INSIGHTS_READY = "arris_insights_ready"
     ARRIS_MEMORY_UPDATED = "arris_memory_updated"
     ARRIS_PATTERN_DETECTED = "arris_pattern_detected"
+    ARRIS_QUEUE_UPDATE = "arris_queue_update"           # New: Queue position updates
+    ARRIS_PROCESSING_STARTED = "arris_processing_started"  # New: Processing started
+    ARRIS_PROCESSING_COMPLETE = "arris_processing_complete"  # New: Processing complete
+    ARRIS_ACTIVITY_UPDATE = "arris_activity_update"     # New: Activity feed updates
     
     # Subscription notifications
     SUBSCRIPTION_CREATED = "subscription_created"
