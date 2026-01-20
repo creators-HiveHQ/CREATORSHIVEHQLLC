@@ -1580,6 +1580,95 @@ export const CreatorDashboard = () => {
                     </Badge>
                   )}
                 </div>
+
+                {/* Export Section */}
+                <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <span>📥</span> Export Analytics
+                    </CardTitle>
+                    <CardDescription>
+                      Download your analytics data in CSV or JSON format
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-white rounded-lg border">
+                        <h4 className="font-medium mb-2">Proposals Data</h4>
+                        <p className="text-xs text-slate-500 mb-3">Export all proposal history</p>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleExport('proposals', 'csv')}
+                            data-testid="export-proposals-csv"
+                          >
+                            CSV
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleExport('proposals', 'json')}
+                            data-testid="export-proposals-json"
+                          >
+                            JSON
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white rounded-lg border">
+                        <h4 className="font-medium mb-2">Analytics Summary</h4>
+                        <p className="text-xs text-slate-500 mb-3">Performance metrics &amp; trends</p>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleExport('analytics', 'csv')}
+                            data-testid="export-analytics-csv"
+                          >
+                            CSV
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleExport('analytics', 'json')}
+                            data-testid="export-analytics-json"
+                          >
+                            JSON
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white rounded-lg border relative">
+                        {!hasPremiumAnalytics && (
+                          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
+                            <Badge className="bg-amber-500">Premium</Badge>
+                          </div>
+                        )}
+                        <h4 className="font-medium mb-2">Full Report</h4>
+                        <p className="text-xs text-slate-500 mb-3">Complete data with revenue</p>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleExport('full-report', 'csv')}
+                            disabled={!hasPremiumAnalytics}
+                            data-testid="export-full-csv"
+                          >
+                            CSV
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleExport('full-report', 'json')}
+                            disabled={!hasPremiumAnalytics}
+                            data-testid="export-full-json"
+                          >
+                            JSON
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               /* Error/No Data State */
