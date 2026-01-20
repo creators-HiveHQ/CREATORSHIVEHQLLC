@@ -181,11 +181,12 @@ async def get_any_authenticated_user(credentials: HTTPAuthorizationCredentials =
 # Initialize services
 stripe_service = None
 feature_gating = None
+elite_service = None
 
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service, feature_gating
+    global stripe_service, feature_gating, elite_service
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
@@ -203,6 +204,9 @@ async def startup_db():
     stripe_service = StripeService(db)
     # Initialize Feature Gating service
     feature_gating = FeatureGatingService(db)
+    # Initialize Elite service
+    elite_service = EliteService(db)
+    logger.info("Elite service initialized - Custom Workflows & Brand Integrations active")
     logger.info("Feature Gating service initialized")
     logger.info("Stripe service initialized - Self-Funding Loop active")
     logger.info("Database ready - Zero-Human Operational Model active")
