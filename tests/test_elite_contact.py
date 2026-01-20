@@ -311,7 +311,8 @@ class TestEliteContactFlow:
         
         if response.status_code == 200:
             data = response.json()
-            events = data.get("events", [])
+            # Response can be a list directly or dict with events key
+            events = data if isinstance(data, list) else data.get("events", [])
             
             # Look for recent elite inquiry events
             elite_events = [e for e in events if e.get("event_type") == "elite_inquiry_submitted"]
