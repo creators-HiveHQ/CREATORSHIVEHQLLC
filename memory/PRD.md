@@ -169,14 +169,15 @@ Dashboard Updates → Memory Palace Synthesizes
    - Real-time AI analysis with loading state
    - Auto-refresh and navigation to new proposal
 8. **Stripe Subscription Integration (Self-Funding Loop)** - Full payment processing:
-   - 3 Tiers: Free, Pro ($29/mo or $290/yr), Enterprise ($99/mo or $990/yr)
-   - Gated features: ARRIS insights, proposal limits (3/20/unlimited), priority review
-   - Monthly + Annual billing with 17% discount
-   - Stripe Checkout integration via emergentintegrations library
-   - Calculator entry auto-creation on payment success
+   - 5 Tiers: Free ($0), Starter ($9.99/mo), Pro ($29.99/mo), Premium ($99.99/mo), Elite (Custom)
+   - Annual pricing with 17% discount: Starter $99.99/yr, Pro $299.99/yr, Premium $999.99/yr
+   - Gated features: ARRIS insights, proposal limits (3/10/25/∞), priority review, API access
+   - Elite tier: Custom pricing with "Contact Us" flow, dedicated account manager, SLA guarantee
+   - Stripe Checkout integration via emergentintegrations library (test key: sk_test_emergent)
+   - Calculator entry auto-creation on payment success (Self-Funding Loop)
    - Webhook events: subscription.created, revenue.recorded
-   - Subscription management page with plan comparison
-   - Current plan status and proposal usage tracking
+   - Subscription page with 5-column plan comparison, current status banner
+   - "Most Popular" badge on Pro plan
 
 ## Upcoming Tasks
 
