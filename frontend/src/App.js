@@ -191,12 +191,13 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const navItems = [
     { path: "/", label: "Dashboard", icon: "📊" },
+    { path: "/revenue", label: "Revenue", icon: "💰" },
     { path: "/creators", label: "Creators", icon: "✨" },
     { path: "/proposals", label: "Proposals", icon: "📋" },
     { path: "/webhooks", label: "Webhooks", icon: "⚡" },
     { path: "/users", label: "Users", icon: "👥" },
     { path: "/projects", label: "Projects", icon: "📁" },
-    { path: "/calculator", label: "Calculator", icon: "💰" },
+    { path: "/calculator", label: "Calculator", icon: "🧮" },
     { path: "/subscriptions", label: "Subscriptions", icon: "💳" },
     { path: "/arris", label: "ARRIS Engine", icon: "🧠" },
     { path: "/patterns", label: "Patterns", icon: "🔮" },
