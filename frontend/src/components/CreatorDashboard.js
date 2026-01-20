@@ -737,6 +737,12 @@ export const CreatorDashboard = () => {
     navigate("/creator/login");
   };
 
+  // Check if user has advanced dashboard access (Pro+)
+  const hasAdvancedDashboard = featureAccess?.features?.dashboard_level === "advanced" || 
+                               featureAccess?.features?.dashboard_level === "custom";
+  
+  const hasPriorityReview = featureAccess?.features?.priority_review || false;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-purple-50">
