@@ -4013,6 +4013,118 @@ async def get_dashboard():
 # Include the router
 app.include_router(api_router)
 
+# ============== WEBSOCKET ENDPOINTS ==============
+
+@app.websocket("/ws/notifications/{user_type}/{user_id}")
+async def websocket_notifications(
+    websocket: WebSocket,
+    user_type: str,
+    user_id: str,
+    token: Optional[str] = None
+):
+    """
+    WebSocket endpoint for real-time notifications.
+    
+    URL: /ws/notifications/{user_type}/{user_id}
+    - user_type: "admin" or "creator"
+    - user_id: The user's ID
+    - token: Authentication token (optional query param)
+    
+    Messages sent to client:
+    {
+        "type": "notification_type",
+        "data": {...},
+        "timestamp": "ISO timestamp"
+    }
+    """
+    # Validate user type
+    if user_type not in ["admin", "creator"]:
+        await websocket.close(code=4000, reason="Invalid user type")
+        return
+    
+    # Get user name for logging
+    user_name = None
+    if user_type == "admin":
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "name": 1})
+        if user:
+            user_name = user.get("name")
+    else:
+        creator = await db.creators.find_one({"id": user_id}, {"_id": 0, "name": 1})
+        if creator:
+            user_name = creator.get("name")
+    
+    await ws_manager.connect(websocket, user_id, user_type, user_name)
+    
+    try:
+        while True:
+            # Keep connection alive and handle incoming messages
+            data = await websocket.receive_text()
+            
+            # Handle ping/pong for keep-alive
+            if data == "ping":
+                await websocket.send_text("pong")
+            
+            # Handle acknowledgment messages
+            elif data.startswith("ack:"):
+                # Client acknowledging receipt of notification
+                pass
+            
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        ws_manager.disconnect(websocket)
+
+
+@api_router.get("/ws/stats")
+async def get_websocket_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get WebSocket connection statistics (admin only)"""
+    await get_current_user(credentials, db)
+    return ws_manager.get_connection_stats()
+
+
+@api_router.post("/ws/broadcast")
+async def broadcast_notification(
+    notification: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Broadcast a notification to specified targets (admin only).
+    
+    Request body:
+    - type: Notification type (e.g., "system_alert")
+    - message: Notification message
+    - target: "all", "admins", or creator_id for specific creator
+    - severity: "info", "warning", "error" (for system alerts)
+    """
+    await get_current_user(credentials, db)
+    
+    notification_type = notification.get("type", "system_alert")
+    message = notification.get("message", "")
+    target = notification.get("target", "all")
+    data = notification.get("data", {})
+    data["message"] = message
+    
+    try:
+        notif_type = NotificationType(notification_type)
+    except ValueError:
+        notif_type = NotificationType.SYSTEM_ALERT
+    
+    if target == "all":
+        await ws_manager.broadcast_all(notif_type, data)
+    elif target == "admins":
+        await ws_manager.broadcast_to_admins(notif_type, data)
+    else:
+        # Assume target is a creator_id
+        await ws_manager.broadcast_to_creator(target, notif_type, data)
+    
+    return {
+        "message": "Notification broadcasted",
+        "target": target,
+        "type": notification_type,
+        "connections": ws_manager.get_connection_stats()
+    }
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
