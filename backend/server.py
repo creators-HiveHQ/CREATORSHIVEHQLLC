@@ -1081,6 +1081,18 @@ async def get_subscription_plans():
                 features=plan["features"],
                 description=plan["description"]
             ))
+        elif plan_id == "elite":
+            # Elite is custom pricing
+            plans.append(PlanInfo(
+                plan_id=plan_id,
+                name=plan["name"],
+                tier=plan["tier"].value if isinstance(plan["tier"], SubscriptionTier) else plan["tier"],
+                billing_cycle=None,
+                price=0,
+                features=plan["features"],
+                description=plan["description"],
+                is_custom=True
+            ))
         else:
             plans.append(PlanInfo(
                 plan_id=plan_id,
