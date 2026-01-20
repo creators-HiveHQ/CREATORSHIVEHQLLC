@@ -205,13 +205,14 @@ stripe_service = None
 feature_gating = None
 elite_service = None
 arris_memory_service = None
+arris_historical_service = None
 calculator_service = None
 export_service = None
 
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service, feature_gating, elite_service, arris_memory_service, calculator_service, export_service
+    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
