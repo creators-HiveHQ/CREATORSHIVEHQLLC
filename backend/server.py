@@ -126,6 +126,9 @@ from models_elite import (
 # Import ARRIS Memory service
 from arris_memory_service import ArrisMemoryService, MemoryType, PatternCategory
 
+# Import ARRIS Activity Feed service
+from arris_activity_service import arris_activity_service
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
