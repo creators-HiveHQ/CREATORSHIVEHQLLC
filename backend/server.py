@@ -2577,6 +2577,154 @@ async def get_arris_recent_activity(
     }
 
 
+# ============== ARRIS HISTORICAL LEARNING (Premium/Elite) ==============
+
+@api_router.get("/arris/learning-timeline")
+async def get_arris_learning_timeline(
+    date_range: str = Query(default="all", regex="^(7d|30d|90d|1y|all)$"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get ARRIS learning timeline for the creator.
+    Shows memory accumulation, pattern discoveries, and accuracy improvements over time.
+    Feature-gated: Premium/Elite only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "ARRIS Learning Timeline requires Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    timeline = await arris_historical_service.get_learning_timeline(creator_id, date_range)
+    return timeline
+
+
+@api_router.get("/arris/learning-comparison")
+async def get_arris_learning_comparison(
+    period1: str = Query(default="30d", regex="^(7d|30d|90d)$"),
+    period2: str = Query(default="prev_30d", regex="^(prev_7d|prev_30d|prev_90d)$"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Compare ARRIS learning between two time periods.
+    Shows growth and improvement over time.
+    Feature-gated: Premium/Elite only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "ARRIS Learning Comparison requires Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    comparison = await arris_historical_service.get_comparative_analysis(
+        creator_id, period1, period2
+    )
+    return comparison
+
+
+@api_router.get("/arris/learning-snapshot")
+async def get_arris_learning_snapshot(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get a snapshot of current ARRIS learning state.
+    Shows memory summary, active patterns, and learning health.
+    Available to all creators but Premium gets enhanced data.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    
+    snapshot = await arris_historical_service.get_learning_snapshot(creator_id)
+    
+    # Add premium flag
+    snapshot["is_premium"] = has_premium
+    
+    # If not premium, limit some data
+    if not has_premium:
+        snapshot["active_patterns"] = snapshot.get("active_patterns", [])[:3]
+        snapshot["recent_activity"] = snapshot.get("recent_activity", [])[:5]
+        snapshot["upgrade_prompt"] = {
+            "message": "Upgrade to Premium for full learning insights",
+            "features": ["Complete pattern history", "Detailed growth metrics", "Historical comparisons"]
+        }
+    
+    return snapshot
+
+
+@api_router.get("/arris/growth-chart")
+async def get_arris_growth_chart(
+    metric: str = Query(default="memories", regex="^(memories|patterns|accuracy|interactions)$"),
+    granularity: str = Query(default="daily", regex="^(daily|weekly|monthly)$"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get chart data for visualizing ARRIS learning growth.
+    Feature-gated: Premium/Elite only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "ARRIS Growth Charts require Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    chart_data = await arris_historical_service.get_growth_chart_data(
+        creator_id, metric, granularity
+    )
+    return chart_data
+
+
+@api_router.get("/arris/milestones")
+async def get_arris_milestones(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get ARRIS learning milestones for the creator.
+    Shows achievements and learning journey highlights.
+    Available to all creators.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    timeline = await arris_historical_service.get_learning_timeline(creator_id, "all")
+    
+    return {
+        "milestones": timeline.get("milestones", []),
+        "creator_id": creator_id
+    }
+
+
 async def get_proposals(
     user_id: Optional[str] = None,
     status: Optional[str] = None,
