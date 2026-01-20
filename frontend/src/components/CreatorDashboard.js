@@ -729,6 +729,14 @@ export const CreatorDashboard = () => {
             >
               + New Proposal
             </Button>
+            <Button 
+              variant="outline"
+              onClick={() => navigate("/creator/subscription")} 
+              className="border-amber-500 text-amber-600 hover:bg-amber-50"
+              data-testid="upgrade-btn"
+            >
+              {dashboard?.creator?.tier === "free" ? "⚡ Upgrade" : "💳 Manage Plan"}
+            </Button>
             <div className="text-right">
               <p className="font-medium text-slate-900">{creator?.name}</p>
               <p className="text-xs text-slate-500">{creator?.email}</p>
