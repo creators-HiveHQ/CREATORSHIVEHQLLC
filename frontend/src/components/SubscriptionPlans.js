@@ -133,6 +133,49 @@ export const SubscriptionPlans = () => {
   };
 
   const handleContactUs = () => {
+    if (!isAuthenticated) {
+      alert("Please log in to contact us about Elite plan");
+      navigate("/creator/login");
+      return;
+    }
+    setShowContactModal(true);
+    setContactSuccess(false);
+    setContactError("");
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!contactForm.message.trim()) {
+      setContactError("Please enter a message");
+      return;
+    }
+    
+    setContactSubmitting(true);
+    setContactError("");
+    
+    try {
+      const headers = getAuthHeaders();
+      await axios.post(`${API}/elite/contact`, contactForm, { headers });
+      
+      setContactSuccess(true);
+      setContactForm({ message: "", company_name: "", team_size: "" });
+      
+      // Close modal after 3 seconds
+      setTimeout(() => {
+        setShowContactModal(false);
+        setContactSuccess(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error("Contact form error:", error);
+      setContactError(error.response?.data?.detail || "Failed to submit inquiry. Please try again.");
+    } finally {
+      setContactSubmitting(false);
+    }
+  };
+
+  const handleOldContactUs = () => {
     // Open email or contact form
     window.location.href = "mailto:sales@hivehq.com?subject=Elite Plan Inquiry";
   };
