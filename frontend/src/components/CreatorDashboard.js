@@ -646,6 +646,7 @@ export const CreatorDashboard = () => {
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [premiumDateRange, setPremiumDateRange] = useState("30d");
   const [featureAccess, setFeatureAccess] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
 
   const getAuthHeaders = () => {
