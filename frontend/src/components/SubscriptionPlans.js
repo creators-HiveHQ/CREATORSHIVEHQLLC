@@ -309,15 +309,6 @@ export const SubscriptionPlans = () => {
                     </li>
                   )}
                 </ul>
-                    </li>
-                  )}
-                  {plan.features.dedicated_account_manager && (
-                    <li className="flex items-center gap-2">
-                      <span className="text-green-500">✓</span>
-                      Account Manager
-                    </li>
-                  )}
-                </ul>
                 
                 {plan.is_custom ? (
                   <Button
