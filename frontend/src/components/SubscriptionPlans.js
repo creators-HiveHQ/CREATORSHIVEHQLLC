@@ -182,14 +182,15 @@ export const SubscriptionPlans = () => {
       )}
 
       {/* Plans Grid */}
-      <div className="max-w-5xl mx-auto px-4 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto px-4 pb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {getFilteredPlans().map((plan) => (
             <Card
               key={plan.plan_id}
               className={`relative overflow-hidden ${
-                plan.is_popular ? "ring-2 ring-purple-500 scale-105" : ""
-              } ${currentStatus?.plan_id === plan.plan_id ? "ring-2 ring-green-500" : ""}`}
+                plan.is_popular ? "ring-2 ring-purple-500 scale-105 z-10" : ""
+              } ${plan.is_custom ? "ring-2 ring-amber-400" : ""}
+              ${currentStatus?.plan_id === plan.plan_id ? "ring-2 ring-green-500" : ""}`}
               data-testid={`plan-card-${plan.plan_id}`}
             >
               {plan.is_popular && (
@@ -197,9 +198,14 @@ export const SubscriptionPlans = () => {
                   Most Popular
                 </div>
               )}
+              {plan.is_custom && (
+                <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs px-3 py-1 rounded-bl-lg">
+                  Custom
+                </div>
+              )}
               {currentStatus?.plan_id === plan.plan_id && (
                 <div className="absolute top-0 left-0 bg-green-500 text-white text-xs px-3 py-1 rounded-br-lg">
-                  Current Plan
+                  Current
                 </div>
               )}
               
@@ -207,84 +213,107 @@ export const SubscriptionPlans = () => {
                 <Badge className={`${getTierColor(plan.tier)} w-fit mx-auto mb-2`}>
                   {plan.tier.toUpperCase()}
                 </Badge>
-                <CardTitle className="text-2xl">{plan.name.replace(" Monthly", "").replace(" Annual", "")}</CardTitle>
+                <CardTitle className="text-xl">{plan.name.replace(" Monthly", "").replace(" Annual", "")}</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  {plan.price > 0 && (
-                    <span className="text-slate-500">/{billingCycle === "annual" ? "year" : "month"}</span>
+                  {plan.is_custom ? (
+                    <span className="text-2xl font-bold">Custom</span>
+                  ) : (
+                    <>
+                      <span className="text-3xl font-bold">${plan.price.toFixed(2)}</span>
+                      {plan.price > 0 && (
+                        <span className="text-slate-500 text-sm">/{billingCycle === "annual" ? "yr" : "mo"}</span>
+                      )}
+                    </>
                   )}
                 </div>
                 {plan.monthly_equivalent && (
-                  <p className="text-sm text-green-600 mt-1">
-                    ${plan.monthly_equivalent}/mo • Save ${plan.savings}/year
+                  <p className="text-xs text-green-600 mt-1">
+                    ${plan.monthly_equivalent.toFixed(2)}/mo • Save ${plan.savings.toFixed(2)}
                   </p>
                 )}
-                <CardDescription className="mt-2">{plan.description}</CardDescription>
+                <CardDescription className="mt-2 text-xs">{plan.description}</CardDescription>
               </CardHeader>
               
-              <CardContent className="pt-4">
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-center gap-2 text-sm">
+              <CardContent className="pt-2">
+                <ul className="space-y-2 mb-4 text-xs">
+                  <li className="flex items-center gap-2">
                     <span className={plan.features.arris_insights ? "text-green-500" : "text-slate-300"}>
                       {plan.features.arris_insights ? "✓" : "✗"}
                     </span>
                     ARRIS AI Insights
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
+                  <li className="flex items-center gap-2">
                     <span className="text-green-500">✓</span>
                     {plan.features.proposal_limit === -1 ? "Unlimited" : plan.features.proposal_limit} Proposals
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
+                  <li className="flex items-center gap-2">
                     <span className={plan.features.priority_review ? "text-green-500" : "text-slate-300"}>
                       {plan.features.priority_review ? "✓" : "✗"}
                     </span>
                     Priority Review
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
+                  <li className="flex items-center gap-2">
                     <span className={plan.features.advanced_dashboards ? "text-green-500" : "text-slate-300"}>
                       {plan.features.advanced_dashboards ? "✓" : "✗"}
                     </span>
                     Advanced Dashboards
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
+                  <li className="flex items-center gap-2">
                     <span className="text-blue-500">📧</span>
-                    {plan.features.support_level === "priority" ? "Priority Support" : 
-                     plan.features.support_level === "email" ? "Email Support" : "Community Support"}
+                    {plan.features.support_level === "dedicated" ? "Dedicated Support" :
+                     plan.features.support_level === "priority" ? "Priority Support" : 
+                     plan.features.support_level === "email" ? "Email Support" : "Community"}
                   </li>
                   {plan.features.api_access && (
-                    <li className="flex items-center gap-2 text-sm">
+                    <li className="flex items-center gap-2">
                       <span className="text-green-500">✓</span>
                       API Access
                     </li>
                   )}
+                  {plan.features.dedicated_account_manager && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      Account Manager
+                    </li>
+                  )}
                 </ul>
                 
-                <Button
-                  className={`w-full ${
-                    plan.plan_id === "free" 
-                      ? "bg-slate-200 text-slate-700 hover:bg-slate-300" 
-                      : plan.is_popular 
-                        ? "bg-purple-600 hover:bg-purple-700" 
-                        : "bg-slate-800 hover:bg-slate-700"
-                  }`}
-                  disabled={
-                    currentStatus?.plan_id === plan.plan_id || 
-                    plan.plan_id === "free" ||
-                    checkoutLoading === plan.plan_id
-                  }
-                  onClick={() => handleSubscribe(plan.plan_id)}
-                  data-testid={`subscribe-btn-${plan.plan_id}`}
-                >
-                  {checkoutLoading === plan.plan_id ? (
-                    "Processing..."
-                  ) : currentStatus?.plan_id === plan.plan_id ? (
-                    "Current Plan"
-                  ) : plan.plan_id === "free" ? (
-                    "Free Forever"
-                  ) : (
-                    `Subscribe to ${plan.name.replace(" Monthly", "").replace(" Annual", "")}`
-                  )}
-                </Button>
+                {plan.is_custom ? (
+                  <Button
+                    className="w-full bg-amber-500 hover:bg-amber-600"
+                    onClick={handleContactUs}
+                    data-testid={`contact-btn-${plan.plan_id}`}
+                  >
+                    Contact Us
+                  </Button>
+                ) : (
+                  <Button
+                    className={`w-full ${
+                      plan.plan_id === "free" 
+                        ? "bg-slate-200 text-slate-700 hover:bg-slate-300" 
+                        : plan.is_popular 
+                          ? "bg-purple-600 hover:bg-purple-700" 
+                          : "bg-slate-800 hover:bg-slate-700"
+                    }`}
+                    disabled={
+                      currentStatus?.plan_id === plan.plan_id || 
+                      plan.plan_id === "free" ||
+                      checkoutLoading === plan.plan_id
+                    }
+                    onClick={() => handleSubscribe(plan.plan_id)}
+                    data-testid={`subscribe-btn-${plan.plan_id}`}
+                  >
+                    {checkoutLoading === plan.plan_id ? (
+                      "Processing..."
+                    ) : currentStatus?.plan_id === plan.plan_id ? (
+                      "Current"
+                    ) : plan.plan_id === "free" ? (
+                      "Free"
+                    ) : (
+                      `Get ${plan.name.replace(" Monthly", "").replace(" Annual", "")}`
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
