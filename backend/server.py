@@ -2401,7 +2401,139 @@ async def get_my_arris_processing_speed(credentials: HTTPAuthorizationCredential
                   (" - Premium/Elite benefit active! 🚀" if processing_speed == "fast" else " - Upgrade to Premium for faster processing")
     }
 
-@api_router.get("/proposals")
+# ============== ARRIS ACTIVITY FEED (Premium/Elite) ==============
+
+@api_router.get("/arris/activity-feed")
+async def get_arris_activity_feed(
+    limit: int = Query(default=20, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get real-time ARRIS activity feed.
+    Feature-gated: Premium/Elite users see full feed with their queue position.
+    Pro and below see limited feed without personal queue data.
+    """
+    auth_user = await get_any_authenticated_user(credentials)
+    
+    # Check tier for feature access
+    has_premium = False
+    if auth_user["user_type"] == "creator":
+        has_premium = await feature_gating.has_advanced_analytics(auth_user["user_id"])
+    
+    # Get activity feed data
+    live_status = await arris_activity_service.get_live_status()
+    
+    # Get user's queue items if Premium
+    my_queue_items = []
+    if has_premium and auth_user["user_type"] == "creator":
+        my_queue_items = await arris_activity_service.get_creator_queue_items(auth_user["user_id"])
+    
+    return {
+        "has_premium_access": has_premium,
+        "live_status": live_status,
+        "my_queue_items": my_queue_items,
+        "feature_highlights": [
+            "Real-time queue position updates",
+            "Processing time estimates",
+            "Live activity feed"
+        ] if not has_premium else None
+    }
+
+
+@api_router.get("/arris/my-queue-position")
+async def get_my_arris_queue_position(
+    proposal_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get the current creator's position in the ARRIS queue.
+    Feature-gated: Premium/Elite only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Real-time queue position requires Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Get all queue items for this creator
+    queue_items = await arris_activity_service.get_creator_queue_items(creator_id)
+    
+    # If specific proposal requested, get that position
+    if proposal_id:
+        position = await arris_activity_service.get_queue_position(creator_id, proposal_id)
+        return {
+            "proposal_id": proposal_id,
+            "position": position,
+            "all_items": queue_items
+        }
+    
+    # Return all queue items
+    queue_stats = await arris_activity_service.get_queue_stats()
+    
+    return {
+        "queue_items": queue_items,
+        "total_in_queue": len(queue_items),
+        "queue_stats": queue_stats
+    }
+
+
+@api_router.get("/arris/live-stats")
+async def get_arris_live_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get live ARRIS processing statistics.
+    Available to all authenticated users.
+    """
+    await get_any_authenticated_user(credentials)
+    
+    queue_stats = await arris_activity_service.get_queue_stats()
+    
+    return {
+        "fast_queue": queue_stats["fast_queue_length"],
+        "standard_queue": queue_stats["standard_queue_length"],
+        "total_queued": queue_stats["total_queue_length"],
+        "currently_processing": queue_stats["currently_processing"],
+        "total_processed_today": queue_stats["total_processed"],
+        "avg_processing_time": {
+            "fast": queue_stats["avg_fast_time"],
+            "standard": queue_stats["avg_standard_time"]
+        },
+        "estimated_wait": {
+            "fast_queue": queue_stats["estimated_wait_fast"],
+            "standard_queue": queue_stats["estimated_wait_standard"]
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@api_router.get("/arris/recent-activity")
+async def get_arris_recent_activity(
+    limit: int = Query(default=10, le=30),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get recent ARRIS processing activity (anonymized).
+    Available to all authenticated users.
+    """
+    await get_any_authenticated_user(credentials)
+    
+    activity = await arris_activity_service.get_activity_feed(limit=limit, include_anonymous=True)
+    
+    return {
+        "activity": activity,
+        "count": len(activity)
+    }
+
+
 async def get_proposals(
     user_id: Optional[str] = None,
     status: Optional[str] = None,
