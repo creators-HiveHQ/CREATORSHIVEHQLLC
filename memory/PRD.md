@@ -179,8 +179,32 @@ Dashboard Updates → Memory Palace Synthesizes
    - Subscription page with 5-column plan comparison, current status banner
    - "Most Popular" badge on Pro plan
 
+## Completed Features (January 2026 - Feature Gating Update)
+
+9. **Feature Gating System** - Complete subscription-based feature control:
+   - **FeatureGatingService** (`/app/backend/feature_gating.py`):
+     - `can_create_proposal()` - enforces monthly proposal limits by tier
+     - `filter_arris_insights()` - filters AI insights based on tier level
+     - `get_full_feature_access()` - returns complete feature info for dashboard
+     - `get_arris_insight_level()` - returns insight level (summary_only, summary_strengths, full)
+   - **Proposal Limits**: Free (1/mo), Starter (3/mo), Pro+ (unlimited)
+   - **ARRIS Insight Levels**:
+     - Free: Summary + Complexity only (with upgrade prompts for gated features)
+     - Starter: Summary + Strengths
+     - Pro+: Full insights (strengths, risks, recommendations, milestones)
+   - **Dashboard Levels**: Basic (Free/Starter), Advanced (Pro/Premium), Custom (Elite)
+   - **Frontend Integration**:
+     - Gated insights display with lock icons and upgrade prompts
+     - "Unlock Full ARRIS Insights" CTA with "Upgrade Now" button
+     - Proposal limit error handling with upgrade URL
+   - **Testing**: 19 pytest tests covering all feature gating scenarios (100% pass rate)
+
 ## Upcoming Tasks
 
+- **P1**: Advanced Dashboard Features for Pro tier
+- **P1**: Faster ARRIS Processing for Premium users
+- **P2**: Advanced Analytics Dashboard (Premium tier)
+- **P2**: Elite Tier Features (custom ARRIS workflows, dashboards, brand integrations)
 - **P2**: Advanced ARRIS Memory/Learning capabilities
 - **P2**: Email notifications for proposal status changes
 - **P2**: Admin revenue dashboard with subscription analytics
