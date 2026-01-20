@@ -983,6 +983,408 @@ async def export_premium_analytics(
             "exported_at": datetime.now(timezone.utc).isoformat()
         }
 
+# ============== ELITE TIER ENDPOINTS ==============
+
+# ----- Custom ARRIS Workflows -----
+
+@api_router.get("/elite/workflows")
+async def get_elite_workflows(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get all custom ARRIS workflows for the Elite creator.
+    Feature-gated: Elite tier only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_workflows = await feature_gating.has_custom_arris_workflows(creator_id)
+    if not has_workflows:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Custom ARRIS Workflows require Elite plan",
+                "required_tier": "elite",
+                "upgrade_url": "/creator/subscription",
+                "feature": "custom_arris_workflows"
+            }
+        )
+    
+    workflows = await elite_service.get_workflows(creator_id)
+    return {
+        "workflows": workflows,
+        "total": len(workflows),
+        "default_workflow": next((w for w in workflows if w.get("is_default")), None)
+    }
+
+@api_router.post("/elite/workflows")
+async def create_elite_workflow(
+    workflow: WorkflowCreateRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Create a new custom ARRIS workflow.
+    Feature-gated: Elite tier only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_workflows = await feature_gating.has_custom_arris_workflows(creator_id)
+    if not has_workflows:
+        raise HTTPException(status_code=403, detail="Custom ARRIS Workflows require Elite plan")
+    
+    workflow_data = workflow.dict()
+    result = await elite_service.create_workflow(creator_id, workflow_data)
+    return {"message": "Workflow created", "workflow": result}
+
+@api_router.get("/elite/workflows/{workflow_id}")
+async def get_elite_workflow(
+    workflow_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific custom workflow"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_workflows = await feature_gating.has_custom_arris_workflows(creator_id)
+    if not has_workflows:
+        raise HTTPException(status_code=403, detail="Custom ARRIS Workflows require Elite plan")
+    
+    workflow = await elite_service.get_workflow(creator_id, workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    
+    return workflow
+
+@api_router.put("/elite/workflows/{workflow_id}")
+async def update_elite_workflow(
+    workflow_id: str,
+    updates: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update a custom workflow"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_workflows = await feature_gating.has_custom_arris_workflows(creator_id)
+    if not has_workflows:
+        raise HTTPException(status_code=403, detail="Custom ARRIS Workflows require Elite plan")
+    
+    result = await elite_service.update_workflow(creator_id, workflow_id, updates)
+    if not result:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    
+    return {"message": "Workflow updated", "workflow": result}
+
+@api_router.delete("/elite/workflows/{workflow_id}")
+async def delete_elite_workflow(
+    workflow_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a custom workflow"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_workflows = await feature_gating.has_custom_arris_workflows(creator_id)
+    if not has_workflows:
+        raise HTTPException(status_code=403, detail="Custom ARRIS Workflows require Elite plan")
+    
+    deleted = await elite_service.delete_workflow(creator_id, workflow_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    
+    return {"message": "Workflow deleted", "workflow_id": workflow_id}
+
+@api_router.post("/elite/workflows/{workflow_id}/run")
+async def run_elite_workflow(
+    workflow_id: str,
+    request: WorkflowRunRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Run a custom workflow on a specific proposal.
+    Generates enhanced ARRIS insights based on workflow configuration.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_workflows = await feature_gating.has_custom_arris_workflows(creator_id)
+    if not has_workflows:
+        raise HTTPException(status_code=403, detail="Custom ARRIS Workflows require Elite plan")
+    
+    # Get the proposal
+    proposal = await db.proposals.find_one(
+        {"id": request.proposal_id, "user_id": creator_id},
+        {"_id": 0}
+    )
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    # Run the workflow
+    result = await elite_service.run_workflow(creator_id, workflow_id, proposal)
+    
+    return {
+        "message": "Workflow executed successfully",
+        "result": result
+    }
+
+# ----- Brand Integrations -----
+
+@api_router.get("/elite/brands")
+async def get_brand_integrations(
+    status: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all brand integrations/partnerships.
+    Feature-gated: Elite tier only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_brands = await feature_gating.has_brand_integrations(creator_id)
+    if not has_brands:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Brand Integrations require Elite plan",
+                "required_tier": "elite",
+                "upgrade_url": "/creator/subscription",
+                "feature": "brand_integrations"
+            }
+        )
+    
+    integrations = await elite_service.get_brand_integrations(creator_id, status)
+    analytics = await elite_service.get_brand_analytics(creator_id)
+    
+    return {
+        "integrations": integrations,
+        "total": len(integrations),
+        "analytics": analytics
+    }
+
+@api_router.post("/elite/brands")
+async def create_brand_integration(
+    brand: BrandIntegrationCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new brand integration"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_brands = await feature_gating.has_brand_integrations(creator_id)
+    if not has_brands:
+        raise HTTPException(status_code=403, detail="Brand Integrations require Elite plan")
+    
+    brand_data = brand.dict()
+    result = await elite_service.create_brand_integration(creator_id, brand_data)
+    return {"message": "Brand integration created", "brand": result}
+
+@api_router.get("/elite/brands/{brand_id}")
+async def get_brand_integration(
+    brand_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific brand integration"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_brands = await feature_gating.has_brand_integrations(creator_id)
+    if not has_brands:
+        raise HTTPException(status_code=403, detail="Brand Integrations require Elite plan")
+    
+    integration = await elite_service.get_brand_integration(creator_id, brand_id)
+    if not integration:
+        raise HTTPException(status_code=404, detail="Brand integration not found")
+    
+    return integration
+
+@api_router.put("/elite/brands/{brand_id}")
+async def update_brand_integration(
+    brand_id: str,
+    updates: BrandIntegrationUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update a brand integration"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_brands = await feature_gating.has_brand_integrations(creator_id)
+    if not has_brands:
+        raise HTTPException(status_code=403, detail="Brand Integrations require Elite plan")
+    
+    update_data = {k: v for k, v in updates.dict().items() if v is not None}
+    result = await elite_service.update_brand_integration(creator_id, brand_id, update_data)
+    if not result:
+        raise HTTPException(status_code=404, detail="Brand integration not found")
+    
+    return {"message": "Brand integration updated", "brand": result}
+
+@api_router.delete("/elite/brands/{brand_id}")
+async def delete_brand_integration(
+    brand_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a brand integration"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_brands = await feature_gating.has_brand_integrations(creator_id)
+    if not has_brands:
+        raise HTTPException(status_code=403, detail="Brand Integrations require Elite plan")
+    
+    deleted = await elite_service.delete_brand_integration(creator_id, brand_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Brand integration not found")
+    
+    return {"message": "Brand integration deleted", "brand_id": brand_id}
+
+@api_router.get("/elite/brands/analytics/summary")
+async def get_brand_analytics_summary(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get brand partnership analytics summary"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_brands = await feature_gating.has_brand_integrations(creator_id)
+    if not has_brands:
+        raise HTTPException(status_code=403, detail="Brand Integrations require Elite plan")
+    
+    analytics = await elite_service.get_brand_analytics(creator_id)
+    return analytics
+
+# ----- Elite Dashboard -----
+
+@api_router.get("/elite/dashboard")
+async def get_elite_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get Elite dashboard configuration and data.
+    Feature-gated: Elite tier only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_custom_dash = await feature_gating.has_custom_dashboard(creator_id)
+    if not has_custom_dash:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Custom Dashboard requires Elite plan",
+                "required_tier": "elite",
+                "upgrade_url": "/creator/subscription",
+                "feature": "custom_dashboard"
+            }
+        )
+    
+    config = await elite_service.get_dashboard_config(creator_id)
+    data = await elite_service.get_dashboard_data(creator_id)
+    
+    return {
+        "config": config,
+        "data": data
+    }
+
+@api_router.put("/elite/dashboard")
+async def update_elite_dashboard(
+    updates: DashboardConfigUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update Elite dashboard configuration"""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    has_custom_dash = await feature_gating.has_custom_dashboard(creator_id)
+    if not has_custom_dash:
+        raise HTTPException(status_code=403, detail="Custom Dashboard requires Elite plan")
+    
+    update_data = {k: v for k, v in updates.dict().items() if v is not None}
+    result = await elite_service.update_dashboard_config(creator_id, update_data)
+    
+    return {"message": "Dashboard updated", "config": result}
+
+# ----- Adaptive Intelligence -----
+
+@api_router.get("/elite/adaptive-intelligence")
+async def get_adaptive_intelligence(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get adaptive intelligence profile and recommendations.
+    Feature-gated: Elite tier only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    is_elite = await feature_gating.is_elite_tier(creator_id)
+    if not is_elite:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Adaptive Intelligence requires Elite plan",
+                "required_tier": "elite",
+                "upgrade_url": "/creator/subscription",
+                "feature": "adaptive_intelligence"
+            }
+        )
+    
+    profile = await elite_service.get_adaptive_profile(creator_id)
+    recommendations = await elite_service.get_personalized_recommendations(creator_id)
+    
+    return {
+        "profile": profile,
+        "recommendations": recommendations,
+        "feature": "adaptive_intelligence"
+    }
+
+@api_router.post("/elite/adaptive-intelligence/refresh")
+async def refresh_adaptive_intelligence(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Refresh/rebuild adaptive intelligence profile from creator's history.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    is_elite = await feature_gating.is_elite_tier(creator_id)
+    if not is_elite:
+        raise HTTPException(status_code=403, detail="Adaptive Intelligence requires Elite plan")
+    
+    profile = await elite_service.update_adaptive_profile(creator_id)
+    recommendations = await elite_service.get_personalized_recommendations(creator_id)
+    
+    return {
+        "message": "Adaptive Intelligence profile refreshed",
+        "profile": profile,
+        "recommendations": recommendations
+    }
+
+# ----- Elite Feature Status -----
+
+@api_router.get("/elite/status")
+async def get_elite_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get Elite tier feature status for the current creator.
+    Returns which Elite features are available.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    tier, features = await feature_gating.get_creator_tier(creator_id)
+    is_elite = await feature_gating.is_elite_tier(creator_id)
+    
+    return {
+        "is_elite": is_elite,
+        "tier": tier.value if hasattr(tier, 'value') else tier,
+        "elite_features": {
+            "custom_arris_workflows": features.get("custom_arris_workflows", False),
+            "brand_integrations": features.get("brand_integrations", False),
+            "custom_dashboard": features.get("dashboard_level") == "custom",
+            "adaptive_intelligence": is_elite,
+            "high_touch_onboarding": features.get("high_touch_onboarding", False),
+            "dedicated_support": features.get("support_level") == "dedicated"
+        },
+        "upgrade_url": "/creator/subscription" if not is_elite else None,
+        "contact_sales": "sales@hivehq.com" if not is_elite else None
+    }
+
 @api_router.get("/creators")
 async def get_creators(
     status: Optional[str] = None,
