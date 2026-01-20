@@ -1089,10 +1089,14 @@ export const CreatorDashboard = () => {
                                 ))}
                               </ul>
                             </div>
+                          ) : selectedProposal.arris_insights._gated?.recommendations && (
+                            <div className="mb-3 p-2 bg-amber-50 rounded border border-amber-200">
+                              <p className="text-xs text-amber-700">🔒 {selectedProposal.arris_insights._gated.recommendations}</p>
+                            </div>
                           )}
 
                           {/* Milestones */}
-                          {selectedProposal.arris_insights.suggested_milestones?.length > 0 && (
+                          {selectedProposal.arris_insights.suggested_milestones?.length > 0 ? (
                             <div>
                               <p className="text-xs text-indigo-700 font-medium mb-1">🎯 Suggested Milestones</p>
                               <ol className="text-sm text-slate-700 space-y-1 list-decimal list-inside">
@@ -1100,6 +1104,25 @@ export const CreatorDashboard = () => {
                                   <li key={i}>{m}</li>
                                 ))}
                               </ol>
+                            </div>
+                          ) : selectedProposal.arris_insights._gated?.milestones && (
+                            <div className="p-2 bg-amber-50 rounded border border-amber-200">
+                              <p className="text-xs text-amber-700">🔒 {selectedProposal.arris_insights._gated.milestones}</p>
+                            </div>
+                          )}
+                          
+                          {/* Upgrade CTA for gated features */}
+                          {selectedProposal.arris_insights._gated && Object.keys(selectedProposal.arris_insights._gated).length > 0 && (
+                            <div className="mt-4 p-3 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg border border-purple-300">
+                              <p className="text-sm text-purple-800 font-medium mb-2">Unlock Full ARRIS Insights</p>
+                              <p className="text-xs text-purple-600 mb-3">Upgrade to Pro for complete analysis including risks, recommendations, and milestones.</p>
+                              <Button 
+                                size="sm" 
+                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                onClick={() => navigate("/creator/subscription")}
+                              >
+                                ⚡ Upgrade Now
+                              </Button>
                             </div>
                           )}
                         </div>
