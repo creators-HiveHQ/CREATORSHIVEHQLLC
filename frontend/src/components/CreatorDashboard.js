@@ -1215,6 +1215,315 @@ export const CreatorDashboard = () => {
               </div>
             </div>
           </TabsContent>
+
+          {/* Analytics Tab (Pro+) */}
+          <TabsContent value="analytics" data-testid="analytics-tab-content">
+            {!hasAdvancedDashboard ? (
+              /* Upgrade Prompt for Free/Starter users */
+              <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+                <CardContent className="py-12 text-center">
+                  <div className="mx-auto w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+                    <span className="text-4xl">📈</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-purple-800 mb-3">Advanced Analytics</h2>
+                  <p className="text-purple-600 max-w-md mx-auto mb-6">
+                    Unlock powerful insights with Pro tier: performance metrics, approval rates, 
+                    submission trends, ARRIS activity timeline, and priority review status.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">📊</span>
+                      <p className="text-xs text-slate-600 mt-2">Approval Rate</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">⏱️</span>
+                      <p className="text-xs text-slate-600 mt-2">Review Time</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">📈</span>
+                      <p className="text-xs text-slate-600 mt-2">Trends</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <span className="text-2xl">🧠</span>
+                      <p className="text-xs text-slate-600 mt-2">ARRIS Activity</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => navigate("/creator/subscription")}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    data-testid="upgrade-to-pro-btn"
+                  >
+                    ⚡ Upgrade to Pro
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : advancedLoading ? (
+              /* Loading State */
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+              </div>
+            ) : advancedData ? (
+              /* Advanced Dashboard Content */
+              <div className="space-y-6">
+                {/* Priority Review Banner (if applicable) */}
+                {advancedData.has_priority_review && (
+                  <Card className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                    <CardContent className="py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">⚡</span>
+                        <div>
+                          <p className="font-bold">Priority Review Active</p>
+                          <p className="text-amber-100 text-sm">Your proposals are reviewed faster</p>
+                        </div>
+                      </div>
+                      {advancedData.performance.priority_queue_position && (
+                        <div className="text-right">
+                          <p className="text-xs text-amber-100">Queue Position</p>
+                          <p className="text-2xl font-bold">#{advancedData.performance.priority_queue_position}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Performance Metrics Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                    <CardContent className="pt-6 text-center">
+                      <div className="text-3xl font-bold text-green-600">
+                        {advancedData.performance.approval_rate}%
+                      </div>
+                      <p className="text-sm text-green-700 mt-1">Approval Rate</p>
+                      <Progress 
+                        value={advancedData.performance.approval_rate} 
+                        className="mt-3 h-2"
+                      />
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                    <CardContent className="pt-6 text-center">
+                      <div className="text-3xl font-bold text-blue-600">
+                        {advancedData.performance.avg_review_time_hours 
+                          ? `${advancedData.performance.avg_review_time_hours}h`
+                          : "—"}
+                      </div>
+                      <p className="text-sm text-blue-700 mt-1">Avg Review Time</p>
+                      <p className="text-xs text-blue-500 mt-2">
+                        {advancedData.has_priority_review ? "⚡ Priority" : "Standard"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+                    <CardContent className="pt-6 text-center">
+                      <div className="text-3xl font-bold text-purple-600">
+                        {advancedData.performance.completed}
+                      </div>
+                      <p className="text-sm text-purple-700 mt-1">Completed</p>
+                      <p className="text-xs text-purple-500 mt-2">
+                        {advancedData.performance.in_progress} in progress
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                    <CardContent className="pt-6 text-center">
+                      <div className="text-3xl font-bold text-amber-600">
+                        {advancedData.arris.total_interactions}
+                      </div>
+                      <p className="text-sm text-amber-700 mt-1">ARRIS Interactions</p>
+                      <p className="text-xs text-amber-500 mt-2">
+                        {advancedData.arris.successful} successful
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Monthly Trends */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <span>📈</span> Submission Trends
+                      </CardTitle>
+                      <CardDescription>Your proposal activity over time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {advancedData.trends.monthly_submissions?.length > 0 ? (
+                        <div className="space-y-3">
+                          {advancedData.trends.monthly_submissions.map((month) => (
+                            <div key={month.month} className="flex items-center gap-3">
+                              <span className="text-xs text-slate-500 w-16">{month.month}</span>
+                              <div className="flex-1 bg-slate-100 rounded-full h-6 overflow-hidden">
+                                <div 
+                                  className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full flex items-center justify-end pr-2"
+                                  style={{ 
+                                    width: `${Math.min(100, (month.count / Math.max(...advancedData.trends.monthly_submissions.map(m => m.count))) * 100)}%`,
+                                    minWidth: '30px'
+                                  }}
+                                >
+                                  <span className="text-xs text-white font-medium">{month.count}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No submission data yet</p>
+                      )}
+                      {advancedData.insights.top_performing_month && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-slate-500">
+                            🏆 Most active: <span className="font-medium text-purple-600">{advancedData.insights.top_performing_month}</span>
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Status Breakdown */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <span>📊</span> Status Breakdown
+                      </CardTitle>
+                      <CardDescription>Current proposal statuses</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {advancedData.status_breakdown?.length > 0 ? (
+                        <div className="space-y-3">
+                          {advancedData.status_breakdown.map((status) => (
+                            <div key={status.status} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span>{getStatusIcon(status.status)}</span>
+                                <span className="text-sm font-medium capitalize">
+                                  {status.status?.replace(/_/g, " ")}
+                                </span>
+                              </div>
+                              <Badge className={getStatusBadge(status.status)}>
+                                {status.count}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No proposals yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Complexity Distribution & ARRIS Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Complexity Distribution */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <span>🎯</span> Project Complexity
+                      </CardTitle>
+                      <CardDescription>ARRIS-analyzed complexity levels</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {advancedData.complexity_distribution?.length > 0 ? (
+                        <div className="space-y-3">
+                          {advancedData.complexity_distribution.map((item) => {
+                            const colors = {
+                              "Low": "bg-green-500",
+                              "Medium": "bg-amber-500",
+                              "High": "bg-orange-500",
+                              "Very High": "bg-red-500"
+                            };
+                            return (
+                              <div key={item.complexity} className="flex items-center gap-3">
+                                <span className={`w-3 h-3 rounded-full ${colors[item.complexity] || "bg-slate-400"}`}></span>
+                                <span className="text-sm flex-1">{item.complexity}</span>
+                                <span className="text-sm font-medium text-slate-600">{item.count}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">Submit proposals to see complexity analysis</p>
+                      )}
+                      {advancedData.insights.most_common_complexity && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-slate-500">
+                            Most common: <span className="font-medium text-purple-600">{advancedData.insights.most_common_complexity}</span>
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* ARRIS Activity Timeline */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <span>🧠</span> ARRIS Activity
+                      </CardTitle>
+                      <CardDescription>Recent AI analysis interactions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {advancedData.arris.recent_activity?.length > 0 ? (
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {advancedData.arris.recent_activity.map((activity, idx) => (
+                            <div 
+                              key={idx} 
+                              className="flex items-center gap-3 p-2 bg-purple-50 rounded-lg text-sm"
+                            >
+                              <span className={`w-2 h-2 rounded-full ${activity.success ? "bg-green-500" : "bg-red-500"}`}></span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-purple-700 truncate">
+                                  {activity.response_type || activity.query_category || "Analysis"}
+                                </p>
+                                <p className="text-xs text-purple-500">
+                                  {new Date(activity.timestamp).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No ARRIS activity yet</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Dashboard Level Badge */}
+                <div className="text-center pt-4 border-t">
+                  <Badge className="bg-purple-100 text-purple-700">
+                    {advancedData.dashboard_level === "custom" ? "🏆 Custom Dashboard (Elite)" : "⚡ Advanced Dashboard (Pro)"}
+                  </Badge>
+                  {advancedData.has_advanced_analytics && (
+                    <Badge className="ml-2 bg-amber-100 text-amber-700">
+                      📊 Advanced Analytics Enabled
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Error/No Data State */
+              <Card>
+                <CardContent className="py-12 text-center text-slate-500">
+                  <p className="text-4xl mb-4">📊</p>
+                  <p>Unable to load analytics data</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => {
+                      setAdvancedData(null);
+                      fetchAdvancedDashboard();
+                    }}
+                  >
+                    Retry
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
