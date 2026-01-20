@@ -277,6 +277,14 @@ export const SubscriptionPlans = () => {
                     </li>
                   )}
                   
+                  {/* ARRIS Processing Speed */}
+                  {plan.features.arris_processing_speed === "fast" && (
+                    <li className="flex items-center gap-2">
+                      <span className="text-amber-500">⚡</span>
+                      <span className="font-medium text-amber-700">Fast ARRIS Processing</span>
+                    </li>
+                  )}
+                  
                   {/* Support Level */}
                   <li className="flex items-center gap-2">
                     <span className="text-blue-500">📧</span>
