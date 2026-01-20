@@ -2304,6 +2304,14 @@ async def update_proposal(
             except Exception as e:
                 logger.error(f"Failed to send approval email: {str(e)}")
         
+        # WEBSOCKET: Real-time notification
+        await notification_service.notify_proposal_approved(
+            proposal_id=proposal_id,
+            proposal_title=proposal_title,
+            project_id=update_data["assigned_project_id"],
+            creator_id=updated_proposal.get("user_id")
+        )
+        
         return {
             "message": "Proposal approved and project created",
             "project_id": update_data["assigned_project_id"],
