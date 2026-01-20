@@ -965,6 +965,57 @@ async def regenerate_insights(
     
     return {"message": "Insights regenerated", "arris_insights": arris_insights}
 
+@api_router.get("/arris/queue-stats")
+async def get_arris_queue_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get ARRIS processing queue statistics.
+    Shows queue lengths, processing stats, and average times.
+    """
+    await get_current_user(credentials, db)
+    
+    queue_stats = arris_service.get_queue_stats()
+    
+    return {
+        "queue": {
+            "fast_queue": queue_stats["fast_queue_length"],
+            "standard_queue": queue_stats["standard_queue_length"],
+            "currently_processing": queue_stats["currently_processing"]
+        },
+        "processing_stats": queue_stats["processing_stats"],
+        "message": "Premium/Elite users are processed in the fast queue with priority"
+    }
+
+@api_router.get("/arris/my-processing-speed")
+async def get_my_arris_processing_speed(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get the current creator's ARRIS processing speed tier.
+    Returns 'fast' for Premium/Elite, 'standard' for others.
+    """
+    auth_user = await get_any_authenticated_user(credentials)
+    
+    if auth_user["user_type"] != "creator":
+        return {
+            "processing_speed": "standard",
+            "tier": "admin",
+            "message": "Admin users use standard processing"
+        }
+    
+    processing_speed = await feature_gating.get_arris_processing_speed(auth_user["user_id"])
+    tier_info = await feature_gating.get_creator_tier(auth_user["user_id"])
+    tier = tier_info[0].value if hasattr(tier_info[0], 'value') else tier_info[0]
+    
+    return {
+        "processing_speed": processing_speed,
+        "tier": tier,
+        "is_fast": processing_speed == "fast",
+        "benefits": {
+            "fast": ["Priority queue processing", "Reduced wait time", "Dedicated processing slots"],
+            "standard": ["Standard queue processing", "Fair queue ordering"]
+        }.get(processing_speed, []),
+        "message": f"Your ARRIS processing speed: {processing_speed.upper()}" + 
+                  (" - Premium/Elite benefit active! 🚀" if processing_speed == "fast" else " - Upgrade to Premium for faster processing")
+    }
+
 @api_router.get("/proposals")
 async def get_proposals(
     user_id: Optional[str] = None,
