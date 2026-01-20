@@ -591,6 +591,21 @@ async def create_proposal(
     if auth_user["user_type"] == "creator" and not proposal.user_id:
         proposal.user_id = auth_user["user_id"]
     
+    # Check monthly proposal limit for creators
+    if auth_user["user_type"] == "creator":
+        limit_check = await feature_gating.can_create_proposal(auth_user["user_id"])
+        if not limit_check["can_create"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "proposal_limit_reached",
+                    "message": limit_check.get("message", "Monthly proposal limit reached"),
+                    "limit": limit_check["limit"],
+                    "used": limit_check["used"],
+                    "upgrade_url": "/creator/subscription"
+                }
+            )
+    
     # Get user/creator info for display
     user_info = await db.users.find_one({"id": proposal.user_id}, {"_id": 0})
     creator_info = await db.creators.find_one({"id": proposal.user_id}, {"_id": 0})
