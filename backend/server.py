@@ -96,6 +96,15 @@ from models_webhook import (
     AutomationRule, DEFAULT_AUTOMATION_RULES, FOLLOW_UP_ACTIONS
 )
 
+# Import Stripe/subscription service
+from stripe_service import StripeService
+from models_subscription import (
+    SUBSCRIPTION_PLANS, SubscriptionTier, BillingCycle,
+    CreatorSubscription, PaymentTransaction,
+    CheckoutRequest, CheckoutResponse, SubscriptionStatusResponse,
+    PlanInfo, PlansResponse
+)
+
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
