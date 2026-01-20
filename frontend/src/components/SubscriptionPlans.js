@@ -698,7 +698,7 @@ export const SubscriptionSuccess = () => {
               </div>
               <h2 className="text-xl font-bold text-red-600 mb-2">Something Went Wrong</h2>
               <p className="text-slate-500 mb-4">
-                We couldn't verify your payment. Please contact support if you were charged.
+                We couldn&apos;t verify your payment. Please contact support if you were charged.
               </p>
               <Button
                 variant="outline"
