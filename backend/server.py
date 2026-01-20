@@ -170,13 +170,14 @@ async def get_any_authenticated_user(credentials: HTTPAuthorizationCredentials =
 
 # ============== STARTUP ==============
 
-# Initialize Stripe service
+# Initialize services
 stripe_service = None
+feature_gating = None
 
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service
+    global stripe_service, feature_gating
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
@@ -192,6 +193,9 @@ async def startup_db():
     await webhook_service.initialize(db)
     # Initialize Stripe service
     stripe_service = StripeService(db)
+    # Initialize Feature Gating service
+    feature_gating = FeatureGatingService(db)
+    logger.info("Feature Gating service initialized")
     logger.info("Stripe service initialized - Self-Funding Loop active")
     logger.info("Database ready - Zero-Human Operational Model active")
 
