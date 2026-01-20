@@ -424,19 +424,23 @@ class ArrisActivityFeedService:
     async def get_queue_stats(self) -> Dict[str, Any]:
         """Get current queue statistics"""
         async with self.lock:
-            avg_time = max(self.avg_fast_time, self.avg_standard_time, 5.0)
-            
-            return {
-                "fast_queue_length": len(self.fast_queue),
-                "standard_queue_length": len(self.standard_queue),
-                "total_queue_length": len(self.fast_queue) + len(self.standard_queue),
-                "currently_processing": len(self.processing),
-                "total_processed": self.total_processed,
-                "avg_fast_time": round(self.avg_fast_time, 2),
-                "avg_standard_time": round(self.avg_standard_time, 2),
-                "estimated_wait_fast": int(len(self.fast_queue) * avg_time),
-                "estimated_wait_standard": int((len(self.fast_queue) + len(self.standard_queue)) * avg_time)
-            }
+            return self._get_queue_stats_internal()
+    
+    def _get_queue_stats_internal(self) -> Dict[str, Any]:
+        """Internal method to get queue stats (call with lock held)"""
+        avg_time = max(self.avg_fast_time, self.avg_standard_time, 5.0)
+        
+        return {
+            "fast_queue_length": len(self.fast_queue),
+            "standard_queue_length": len(self.standard_queue),
+            "total_queue_length": len(self.fast_queue) + len(self.standard_queue),
+            "currently_processing": len(self.processing),
+            "total_processed": self.total_processed,
+            "avg_fast_time": round(self.avg_fast_time, 2),
+            "avg_standard_time": round(self.avg_standard_time, 2),
+            "estimated_wait_fast": int(len(self.fast_queue) * avg_time),
+            "estimated_wait_standard": int((len(self.fast_queue) + len(self.standard_queue)) * avg_time)
+        }
     
     async def get_live_status(self) -> Dict[str, Any]:
         """Get live status for activity feed display"""
@@ -451,11 +455,23 @@ class ArrisActivityFeedService:
                 item_dict["creator_id"] = "***"
                 next_in_queue.append(item_dict)
             
+            # Get queue stats without re-acquiring lock
+            queue_stats = self._get_queue_stats_internal()
+            
+            # Get activity feed without re-acquiring lock
+            activities = []
+            for activity in list(self.activity_history)[:10]:
+                activity_dict = activity.to_dict()
+                # Anonymize creator info for privacy
+                activity_dict["creator_name"] = activity_dict["creator_name"][:2] + "***"
+                activity_dict["creator_id"] = "***"
+                activities.append(activity_dict)
+            
             return {
                 "currently_processing": processing_items,
                 "next_in_queue": next_in_queue,
-                "queue_stats": await self.get_queue_stats(),
-                "recent_activity": await self.get_activity_feed(limit=10, include_anonymous=True),
+                "queue_stats": queue_stats,
+                "recent_activity": activities,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
