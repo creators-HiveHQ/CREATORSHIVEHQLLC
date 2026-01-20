@@ -58,6 +58,26 @@ const NOTIFICATION_CONFIG = {
     title: "Pattern Detected",
     type: "info",
   },
+  arris_queue_update: {
+    icon: "⏳",
+    title: "Queue Update",
+    type: "info",
+  },
+  arris_processing_started: {
+    icon: "🔄",
+    title: "Processing Started",
+    type: "info",
+  },
+  arris_processing_complete: {
+    icon: "✅",
+    title: "Processing Complete",
+    type: "success",
+  },
+  arris_activity_update: {
+    icon: "📊",
+    title: "Activity Update",
+    type: "info",
+  },
   
   // Subscription notifications
   subscription_created: {
