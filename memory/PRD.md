@@ -294,12 +294,38 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Feature Gating**: All Elite endpoints return 403 for non-Elite users with upgrade_url
     - **Testing**: 29 pytest tests covering all Elite features (100% pass rate)
 
+14. **ARRIS Memory & Learning System** - Advanced AI memory and pattern recognition:
+    - **Memory Palace** (`/api/arris/memory/*`):
+      - Store memories: interaction, proposal, outcome, pattern, preference, feedback, milestone
+      - Recall with filters: memory_type, min_importance, limit
+      - Memory health score (0-100) based on diversity and importance
+      - Auto-incrementing recall_count tracks memory usage
+    - **Pattern Engine** (`/api/arris/patterns/*`):
+      - Analyzes creator's proposal history
+      - Identifies patterns: success, risk, timing, complexity, platform
+      - Each pattern includes confidence score, title, recommendation
+      - Actionable insights like "Double down on YouTube content"
+    - **Learning System** (`/api/arris/learning/*`):
+      - Records proposal outcomes to improve predictions
+      - Tracks prediction accuracy (accurate_predictions / total_predictions)
+      - Learning stages: initializing (<5), learning (<15), developing (<30), proficient (60%+), expert (80%+)
+    - **Context Builder** (`/api/arris/context`):
+      - Builds rich context from memories, patterns, historical performance
+      - Finds similar proposals from history
+      - Includes learning metrics for AI interactions
+    - **Personalization** (`/api/arris/personalization`):
+      - Generates personalized prompt additions based on learnings
+      - Shows memory health and learning stage
+      - Used to enhance ARRIS AI responses
+    - **Available to ALL authenticated creators** (not feature-gated)
+    - **Testing**: 39 pytest tests covering all memory & learning features (100% pass rate)
+
 ## Upcoming Tasks
 
-- **P2**: Advanced ARRIS Memory/Learning capabilities
 - **P2**: Email notifications for proposal status changes
 - **P2**: Admin revenue dashboard with subscription analytics
 - **P2**: Real-time notifications via WebSocket
+- **P3**: ARRIS voice interaction capabilities
 
 ---
 
