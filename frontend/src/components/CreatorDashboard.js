@@ -779,6 +779,67 @@ export const CreatorDashboard = () => {
     fetchPremiumAnalytics(range);
   };
 
+  // Handle export for Pro/Premium analytics
+  const handleExport = async (exportType, format) => {
+    setExportLoading(true);
+    setExportError(null);
+    
+    try {
+      const headers = getAuthHeaders();
+      let endpoint = "";
+      
+      // Determine the correct endpoint based on export type
+      switch (exportType) {
+        case "proposals":
+          endpoint = `/export/proposals?format=${format}&date_range=30d`;
+          break;
+        case "analytics":
+          endpoint = `/export/analytics?format=${format}&date_range=30d`;
+          break;
+        case "full-report":
+          endpoint = `/export/full-report?format=${format}&date_range=30d`;
+          break;
+        default:
+          throw new Error("Invalid export type");
+      }
+      
+      const response = await axios.get(`${API}${endpoint}`, { headers });
+      
+      // Handle the download
+      const { data, filename, content_type } = response.data;
+      
+      // Create blob based on format
+      let blob;
+      if (format === "json") {
+        // For JSON, data might be an array/object, stringify it
+        const jsonData = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+        blob = new Blob([jsonData], { type: content_type || "application/json" });
+      } else {
+        // For CSV, data is already a string
+        blob = new Blob([data], { type: content_type || "text/csv" });
+      }
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `export_${exportType}_${Date.now()}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error("Export failed:", error);
+      const errorMessage = error.response?.data?.detail?.message || 
+                          error.response?.data?.detail || 
+                          "Export failed. Please try again.";
+      setExportError(errorMessage);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-purple-50">
