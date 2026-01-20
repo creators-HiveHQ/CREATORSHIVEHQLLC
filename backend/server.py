@@ -2729,6 +2729,269 @@ async def get_arris_milestones(
     }
 
 
+# ============== ARRIS VOICE INTERACTION ENDPOINTS ==============
+
+@api_router.get("/arris/voice/status")
+async def get_voice_status(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get ARRIS voice interaction service status and available voices.
+    Feature-gated: Premium/Elite only.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        return {
+            "enabled": False,
+            "message": "Voice interaction requires Premium plan or higher",
+            "upgrade_url": "/creator/subscription"
+        }
+    
+    voices = arris_voice_service.get_available_voices()
+    return {
+        "enabled": True,
+        "voices": voices["voices"],
+        "default_voice": voices["default"],
+        "models": voices["models"],
+        "supported_formats": ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"],
+        "max_audio_size_mb": 25
+    }
+
+
+@api_router.post("/arris/voice/transcribe")
+async def transcribe_audio(
+    audio: UploadFile = File(...),
+    language: Optional[str] = Query(default="en", description="Language code (ISO-639-1)"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Transcribe audio to text using ARRIS voice service.
+    Feature-gated: Premium/Elite only.
+    
+    Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm
+    Max file size: 25 MB
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Voice interaction requires Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Validate file type
+    allowed_types = ["audio/mpeg", "audio/mp3", "audio/mp4", "audio/wav", 
+                     "audio/webm", "audio/m4a", "audio/x-m4a", "video/webm"]
+    if audio.content_type and audio.content_type not in allowed_types:
+        # Also check by extension
+        ext = audio.filename.split('.')[-1].lower() if audio.filename else ""
+        allowed_exts = ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"]
+        if ext not in allowed_exts:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported audio format. Allowed: {', '.join(allowed_exts)}"
+            )
+    
+    # Read audio data
+    audio_data = await audio.read()
+    
+    # Check file size (25 MB limit)
+    if len(audio_data) > 25 * 1024 * 1024:
+        raise HTTPException(
+            status_code=400,
+            detail="Audio file too large. Maximum size is 25 MB."
+        )
+    
+    # Transcribe
+    result = await arris_voice_service.transcribe_audio(
+        audio_data=audio_data,
+        filename=audio.filename or "audio.webm",
+        language=language
+    )
+    
+    # Log usage
+    await db.arris_usage_log.insert_one({
+        "id": f"ARRIS-VOICE-{creator_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        "user_id": creator_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user_query_snippet": f"Voice transcription: {result.get('text', '')[:100]}..." if result.get('text') else "Voice transcription failed",
+        "response_type": "voice_transcription",
+        "query_category": "Voice",
+        "success": result.get("success", False),
+        "processing_time_s": result.get("processing_time_seconds", 0)
+    })
+    
+    return result
+
+
+@api_router.post("/arris/voice/speak")
+async def generate_speech(
+    text: str = Query(..., description="Text to convert to speech", max_length=4096),
+    voice: Optional[str] = Query(default="nova", description="Voice to use"),
+    speed: float = Query(default=1.0, ge=0.25, le=4.0, description="Speech speed"),
+    format: str = Query(default="mp3", description="Output format"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Convert text to speech using ARRIS voice service.
+    Feature-gated: Premium/Elite only.
+    
+    Available voices: alloy, ash, coral, echo, fable, nova (default), onyx, sage, shimmer
+    Speed: 0.25 to 4.0 (default: 1.0)
+    Formats: mp3, opus, aac, flac, wav, pcm
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Voice interaction requires Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Validate voice
+    valid_voices = ["alloy", "ash", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"]
+    if voice not in valid_voices:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid voice. Choose from: {', '.join(valid_voices)}"
+        )
+    
+    # Validate format
+    valid_formats = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
+    if format not in valid_formats:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid format. Choose from: {', '.join(valid_formats)}"
+        )
+    
+    # Generate speech
+    result = await arris_voice_service.generate_speech(
+        text=text,
+        voice=voice,
+        speed=speed,
+        output_format=format
+    )
+    
+    return result
+
+
+@api_router.post("/arris/voice/query")
+async def voice_query(
+    audio: UploadFile = File(...),
+    respond_with_voice: bool = Query(default=True, description="Generate audio response"),
+    voice: Optional[str] = Query(default="nova", description="Voice for response"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Complete voice interaction: transcribe query → ARRIS processes → voice response.
+    Feature-gated: Premium/Elite only.
+    
+    This endpoint handles the full voice conversation flow:
+    1. Transcribes your audio question using Whisper
+    2. Sends the question to ARRIS AI for processing
+    3. Returns both text and audio response
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Voice interaction requires Premium plan or higher",
+                "required_tier": "premium",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Read audio data
+    audio_data = await audio.read()
+    
+    # Check file size
+    if len(audio_data) > 25 * 1024 * 1024:
+        raise HTTPException(
+            status_code=400,
+            detail="Audio file too large. Maximum size is 25 MB."
+        )
+    
+    # Build creator context
+    creator_context = {
+        "name": creator.get("name", "Creator"),
+        "platforms": creator.get("platforms", []),
+        "niche": creator.get("niche", "Content Creation")
+    }
+    
+    # Process voice query
+    result = await arris_voice_service.voice_query(
+        audio_data=audio_data,
+        filename=audio.filename or "audio.webm",
+        creator_context=creator_context,
+        respond_with_voice=respond_with_voice,
+        voice=voice
+    )
+    
+    # Log usage
+    transcription_text = result.get("transcription", {}).get("text", "")
+    arris_response_text = result.get("arris_response", {}).get("text", "")
+    
+    await db.arris_usage_log.insert_one({
+        "id": f"ARRIS-VOICE-QUERY-{creator_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        "user_id": creator_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user_query_snippet": f"Voice query: {transcription_text[:100]}..." if transcription_text else "Voice query",
+        "response_type": "voice_conversation",
+        "response_snippet": arris_response_text[:200] if arris_response_text else "",
+        "query_category": "Voice",
+        "success": result.get("arris_response", {}).get("success", False),
+        "processing_time_s": result.get("total_processing_time", 0)
+    })
+    
+    # Notify via WebSocket
+    await notification_service.notify_arris_insights_ready(
+        creator_id=creator_id,
+        proposal_id="voice-query",
+        proposal_title="Voice Conversation",
+        insight_type="voice"
+    )
+    
+    return result
+
+
+@api_router.get("/arris/voice/voices")
+async def get_available_voices(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get list of available TTS voices.
+    Available to all authenticated users (for preview).
+    """
+    await get_current_creator(credentials, db)
+    return arris_voice_service.get_available_voices()
+
+
 async def get_proposals(
     user_id: Optional[str] = None,
     status: Optional[str] = None,
