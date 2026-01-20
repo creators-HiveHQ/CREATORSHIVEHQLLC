@@ -656,7 +656,7 @@ export const CreatorDashboard = () => {
       const [dashboardRes, proposalsRes, featuresRes] = await Promise.all([
         axios.get(`${API}/creators/me/dashboard`, { headers }),
         axios.get(`${API}/creators/me/proposals`, { headers }),
-        axios.get(`${API}/subscriptions/my-features`, { headers }).catch(() => ({ data: null }))
+        axios.get(`${API}/subscriptions/feature-access`, { headers }).catch(() => ({ data: null }))
       ]);
       
       setDashboard(dashboardRes.data);
