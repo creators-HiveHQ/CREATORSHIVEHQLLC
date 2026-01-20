@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { NotificationProvider, NotificationBell, NotificationPanel, ConnectionStatus } from "@/components/NotificationSystem";
 import { ArrisActivityFeed } from "@/components/ArrisActivityFeed";
 import { ArrisLearningHistory } from "@/components/ArrisLearningHistory";
+import { ArrisVoiceInteraction } from "@/components/ArrisVoiceInteraction";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
