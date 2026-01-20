@@ -200,6 +200,7 @@ feature_gating = None
 elite_service = None
 arris_memory_service = None
 calculator_service = None
+export_service = None
 
 @app.on_event("startup")
 async def startup_db():
