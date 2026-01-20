@@ -4173,55 +4173,6 @@ async def websocket_notifications(
         ws_manager.disconnect(websocket)
 
 
-@api_router.get("/ws/stats")
-async def get_websocket_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get WebSocket connection statistics (admin only)"""
-    await get_current_user(credentials, db)
-    return ws_manager.get_connection_stats()
-
-
-@api_router.post("/ws/broadcast")
-async def broadcast_notification(
-    notification: Dict[str, Any],
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """
-    Broadcast a notification to specified targets (admin only).
-    
-    Request body:
-    - type: Notification type (e.g., "system_alert")
-    - message: Notification message
-    - target: "all", "admins", or creator_id for specific creator
-    - severity: "info", "warning", "error" (for system alerts)
-    """
-    await get_current_user(credentials, db)
-    
-    notification_type = notification.get("type", "system_alert")
-    message = notification.get("message", "")
-    target = notification.get("target", "all")
-    data = notification.get("data", {})
-    data["message"] = message
-    
-    try:
-        notif_type = NotificationType(notification_type)
-    except ValueError:
-        notif_type = NotificationType.SYSTEM_ALERT
-    
-    if target == "all":
-        await ws_manager.broadcast_all(notif_type, data)
-    elif target == "admins":
-        await ws_manager.broadcast_to_admins(notif_type, data)
-    else:
-        # Assume target is a creator_id
-        await ws_manager.broadcast_to_creator(target, notif_type, data)
-    
-    return {
-        "message": "Notification broadcasted",
-        "target": target,
-        "type": notification_type,
-        "connections": ws_manager.get_connection_stats()
-    }
-
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
