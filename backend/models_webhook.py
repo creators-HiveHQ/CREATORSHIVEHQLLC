@@ -45,6 +45,10 @@ class WebhookEventType(str, Enum):
     ARRIS_INSIGHTS_GENERATED = "arris.insights_generated"
     ARRIS_PATTERN_DETECTED = "arris.pattern_detected"
     
+    # Elite Events
+    ELITE_INQUIRY_SUBMITTED = "elite.inquiry_submitted"
+    ELITE_INQUIRY_CONVERTED = "elite.inquiry_converted"
+    
     # System Events
     SYSTEM_ALERT = "system.alert"
     AUDIT_LOG = "audit.log"
