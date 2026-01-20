@@ -1149,26 +1149,50 @@ async def get_my_subscription_status(
     creator = await get_current_creator(credentials, db)
     creator_id = creator["id"]
     
-    # Get subscription features
-    features_data = await stripe_service.get_subscription_features(creator_id)
+    # Get full feature access using feature gating service
+    feature_access = await feature_gating.get_full_feature_access(creator_id)
     
-    # Get proposal usage
-    proposal_limit = await stripe_service.check_proposal_limit(creator_id)
+    features = feature_access.get("features", {})
     
-    subscription = await stripe_service.get_creator_subscription(creator_id)
-    
-    return SubscriptionStatusResponse(
-        has_subscription=features_data.get("has_subscription", False),
-        tier=features_data.get("tier", "free"),
-        plan_id=features_data.get("plan_id"),
-        status=features_data.get("status"),
-        features=features_data.get("features", {}),
-        current_period_end=features_data.get("current_period_end"),
-        can_use_arris=features_data.get("features", {}).get("arris_insights", False),
-        proposal_limit=proposal_limit["limit"],
-        proposals_used=proposal_limit["used"],
-        proposals_remaining=proposal_limit["remaining"]
-    )
+    return {
+        "has_subscription": feature_access.get("subscription_active", False),
+        "tier": feature_access.get("tier", "free"),
+        "plan_id": feature_access.get("plan_id", "free"),
+        "current_period_end": feature_access.get("current_period_end"),
+        "features": features,
+        # Proposal limits
+        "proposals_per_month": features.get("proposals_per_month", 1),
+        "proposals_used": features.get("proposals_used", 0),
+        "proposals_remaining": features.get("proposals_remaining", 1),
+        "can_create_proposal": features.get("can_create_proposal", True),
+        # ARRIS access
+        "arris_insight_level": features.get("arris_insight_level", "summary_only"),
+        "can_use_arris": features.get("arris_insight_level") != "none",
+        # Dashboard
+        "dashboard_level": features.get("dashboard_level", "basic"),
+        "advanced_analytics": features.get("advanced_analytics", False),
+        # Review & Support
+        "priority_review": features.get("priority_review", False),
+        "support_level": features.get("support_level", "community"),
+        # API
+        "api_access": features.get("api_access", False)
+    }
+
+@api_router.get("/subscriptions/feature-access")
+async def get_feature_access(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get detailed feature access for the logged-in creator"""
+    creator = await get_current_creator(credentials, db)
+    return await feature_gating.get_full_feature_access(creator["id"])
+
+@api_router.get("/subscriptions/can-create-proposal")
+async def check_can_create_proposal(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Check if creator can create a new proposal this month"""
+    creator = await get_current_creator(credentials, db)
+    return await feature_gating.can_create_proposal(creator["id"])
 
 @api_router.post("/subscriptions/checkout", response_model=CheckoutResponse)
 async def create_subscription_checkout(
