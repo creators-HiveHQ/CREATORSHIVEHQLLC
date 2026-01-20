@@ -1,39 +1,181 @@
 """
 Creators Hive HQ - ARRIS AI Service
 Pattern Engine & AI Insight Generation for Project Proposals
+With Priority Queue Processing for Premium Users
 """
 
 import os
 import logging
+import asyncio
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
+from enum import Enum
 import json
+import time
+from collections import deque
 from dotenv import load_dotenv
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+
+# ============== PROCESSING PRIORITY ==============
+
+class ProcessingPriority(str, Enum):
+    """Processing priority levels for ARRIS queue"""
+    STANDARD = "standard"  # Free, Starter, Pro
+    FAST = "fast"         # Premium, Elite
+    
+
+class ProcessingStats:
+    """Track processing statistics for monitoring"""
+    
+    def __init__(self):
+        self.total_requests = 0
+        self.standard_requests = 0
+        self.fast_requests = 0
+        self.total_processing_time = 0.0
+        self.standard_processing_time = 0.0
+        self.fast_processing_time = 0.0
+        
+    def record(self, priority: str, processing_time: float):
+        """Record processing statistics"""
+        self.total_requests += 1
+        self.total_processing_time += processing_time
+        
+        if priority == ProcessingPriority.FAST:
+            self.fast_requests += 1
+            self.fast_processing_time += processing_time
+        else:
+            self.standard_requests += 1
+            self.standard_processing_time += processing_time
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get processing statistics"""
+        return {
+            "total_requests": self.total_requests,
+            "standard_requests": self.standard_requests,
+            "fast_requests": self.fast_requests,
+            "avg_processing_time": self.total_processing_time / max(1, self.total_requests),
+            "avg_standard_time": self.standard_processing_time / max(1, self.standard_requests),
+            "avg_fast_time": self.fast_processing_time / max(1, self.fast_requests),
+        }
+
+
+# ============== ARRIS PRIORITY QUEUE ==============
+
+class ArrisPriorityQueue:
+    """
+    Priority queue for ARRIS processing requests.
+    Premium/Elite users (FAST priority) get processed before Standard users.
+    """
+    
+    def __init__(self, max_concurrent: int = 3):
+        self.fast_queue = deque()      # High priority queue
+        self.standard_queue = deque()  # Standard priority queue
+        self.processing = set()         # Currently processing request IDs
+        self.max_concurrent = max_concurrent
+        self.lock = asyncio.Lock()
+        self.stats = ProcessingStats()
+        
+    async def enqueue(self, request_id: str, priority: str = ProcessingPriority.STANDARD):
+        """Add request to appropriate queue based on priority"""
+        async with self.lock:
+            if priority == ProcessingPriority.FAST:
+                self.fast_queue.append(request_id)
+                logger.info(f"ARRIS Queue: Added {request_id} to FAST queue (position: {len(self.fast_queue)})")
+            else:
+                self.standard_queue.append(request_id)
+                logger.info(f"ARRIS Queue: Added {request_id} to STANDARD queue (position: {len(self.standard_queue)})")
+    
+    async def get_queue_position(self, request_id: str, priority: str) -> int:
+        """Get position in queue (0 = processing next)"""
+        async with self.lock:
+            if priority == ProcessingPriority.FAST:
+                try:
+                    return list(self.fast_queue).index(request_id)
+                except ValueError:
+                    return 0
+            else:
+                # Standard queue position includes fast queue length
+                fast_count = len(self.fast_queue)
+                try:
+                    std_pos = list(self.standard_queue).index(request_id)
+                    return fast_count + std_pos
+                except ValueError:
+                    return 0
+    
+    async def dequeue(self) -> Optional[str]:
+        """Get next request to process (FAST queue has priority)"""
+        async with self.lock:
+            # Always process FAST queue first
+            if self.fast_queue:
+                return self.fast_queue.popleft()
+            elif self.standard_queue:
+                return self.standard_queue.popleft()
+            return None
+    
+    async def mark_processing(self, request_id: str):
+        """Mark request as currently processing"""
+        async with self.lock:
+            self.processing.add(request_id)
+    
+    async def mark_complete(self, request_id: str, priority: str, processing_time: float):
+        """Mark request as complete and record stats"""
+        async with self.lock:
+            self.processing.discard(request_id)
+            self.stats.record(priority, processing_time)
+    
+    def get_queue_stats(self) -> Dict[str, Any]:
+        """Get current queue statistics"""
+        return {
+            "fast_queue_length": len(self.fast_queue),
+            "standard_queue_length": len(self.standard_queue),
+            "currently_processing": len(self.processing),
+            "processing_stats": self.stats.get_stats()
+        }
+
+
 # ============== ARRIS AI SERVICE ==============
 
 class ArrisService:
-    """ARRIS AI Service for generating insights"""
+    """ARRIS AI Service for generating insights with priority processing"""
     
     def __init__(self):
         self.api_key = os.environ.get("EMERGENT_LLM_KEY")
         self.model = "gpt-4o"
         self.provider = "openai"
+        self.queue = ArrisPriorityQueue()
         
     async def generate_project_insights(
         self,
         proposal: Dict[str, Any],
-        memory_palace_data: Optional[Dict[str, Any]] = None
+        memory_palace_data: Optional[Dict[str, Any]] = None,
+        processing_speed: str = "standard"
     ) -> Dict[str, Any]:
         """
         Generate AI-powered insights for a project proposal
         Uses Pattern Engine data from Memory Palace for context
+        
+        Args:
+            proposal: The proposal to analyze
+            memory_palace_data: Historical data for context
+            processing_speed: 'standard' or 'fast' (Premium/Elite users)
         """
+        request_id = f"ARRIS-{proposal.get('id', 'unknown')}-{int(time.time())}"
+        priority = ProcessingPriority.FAST if processing_speed == "fast" else ProcessingPriority.STANDARD
+        
+        # Add to priority queue
+        await self.queue.enqueue(request_id, priority)
+        
+        # Record start time
+        start_time = time.time()
+        
         try:
+            # Mark as processing
+            await self.queue.mark_processing(request_id)
+            
             from emergentintegrations.llm.chat import LlmChat, UserMessage
             
             # Build context from proposal
@@ -81,16 +223,29 @@ Respond in JSON format with these exact keys:
             # Get response
             response = await chat.send_message(user_message)
             
+            # Calculate processing time
+            processing_time = time.time() - start_time
+            
+            # Mark as complete
+            await self.queue.mark_complete(request_id, priority, processing_time)
+            
             # Parse JSON response
             insights = self._parse_insights_response(response)
             insights["generated_at"] = datetime.now(timezone.utc).isoformat()
             insights["model_used"] = self.model
+            insights["processing_speed"] = processing_speed
+            insights["processing_time_seconds"] = round(processing_time, 2)
+            insights["priority_processed"] = priority == ProcessingPriority.FAST
+            
+            logger.info(f"ARRIS: Generated insights for {request_id} in {processing_time:.2f}s (priority: {priority})")
             
             return insights
             
         except Exception as e:
+            processing_time = time.time() - start_time
+            await self.queue.mark_complete(request_id, priority, processing_time)
             logger.error(f"Error generating ARRIS insights: {str(e)}")
-            return self._get_fallback_insights(proposal)
+            return self._get_fallback_insights(proposal, processing_speed)
     
     def _build_proposal_context(
         self,
@@ -201,7 +356,7 @@ Respond in JSON format with these exact keys:
                 "raw_response": response
             }
     
-    def _get_fallback_insights(self, proposal: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_fallback_insights(self, proposal: Dict[str, Any], processing_speed: str = "standard") -> Dict[str, Any]:
         """Generate fallback insights if AI fails"""
         platforms = proposal.get('platforms', [])
         timeline = proposal.get('timeline', '')
@@ -233,7 +388,15 @@ Respond in JSON format with these exact keys:
             "related_patterns": [],
             "fallback": True,
             "generated_at": datetime.now(timezone.utc).isoformat(),
+            "processing_speed": processing_speed,
+            "processing_time_seconds": 0,
+            "priority_processed": processing_speed == "fast",
         }
+    
+    def get_queue_stats(self) -> Dict[str, Any]:
+        """Get ARRIS queue statistics for monitoring"""
+        return self.queue.get_queue_stats()
+
 
 # Global instance
 arris_service = ArrisService()
