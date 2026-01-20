@@ -1370,6 +1370,23 @@ function App() {
               </CreatorProtectedRoute>
             } />
             
+            {/* Subscription Routes */}
+            <Route path="/creator/subscription" element={
+              <CreatorAuthProvider>
+                <SubscriptionPlans />
+              </CreatorAuthProvider>
+            } />
+            <Route path="/creator/subscription/success" element={
+              <CreatorProtectedRoute>
+                <SubscriptionSuccess />
+              </CreatorProtectedRoute>
+            } />
+            <Route path="/creator/subscription/cancel" element={
+              <CreatorProtectedRoute>
+                <SubscriptionCancel />
+              </CreatorProtectedRoute>
+            } />
+            
             {/* Catch-all redirect to login */}
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
