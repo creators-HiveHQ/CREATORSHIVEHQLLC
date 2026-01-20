@@ -2310,6 +2310,12 @@ export const CreatorDashboard = () => {
                   hasPremiumAccess={hasPremiumAnalytics}
                 />
 
+                {/* ARRIS Learning History - Historical Comparison Visualization */}
+                <ArrisLearningHistory 
+                  creatorId={creator?.id}
+                  hasPremiumAccess={hasPremiumAnalytics}
+                />
+
                 {/* Premium Badge */}
                 <div className="text-center pt-4 border-t">
                   <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
