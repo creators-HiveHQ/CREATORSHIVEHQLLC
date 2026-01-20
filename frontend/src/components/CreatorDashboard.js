@@ -816,9 +816,19 @@ export const CreatorDashboard = () => {
             >
               {(featureAccess?.tier || dashboard?.creator?.tier) === "free" ? "⚡ Upgrade" : "💳 Manage Plan"}
             </Button>
+            
+            {/* Notifications */}
+            <div className="relative">
+              <NotificationBell onClick={() => setShowNotifications(!showNotifications)} />
+              <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
+            </div>
+            
             <div className="text-right">
               <p className="font-medium text-slate-900">{creator?.name}</p>
-              <p className="text-xs text-slate-500">{creator?.email}</p>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>{creator?.email}</span>
+                <ConnectionStatus />
+              </div>
             </div>
             <Badge className={`${
               featureAccess?.tier === "pro" ? "bg-purple-500 text-white" :
