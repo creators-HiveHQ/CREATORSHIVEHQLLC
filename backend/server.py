@@ -690,14 +690,24 @@ async def submit_proposal(
             }
         }
     
-    # Generate ARRIS insights
-    arris_insights = await arris_service.generate_project_insights(proposal, memory_palace_data)
+    # Generate ARRIS insights (full insights are generated, then filtered based on tier)
+    arris_insights_full = await arris_service.generate_project_insights(proposal, memory_palace_data)
     
-    # Update proposal
+    # Filter insights based on creator's subscription tier
+    creator_id = proposal.get("user_id")
+    if creator_id and auth_user["user_type"] == "creator":
+        arris_insights = await feature_gating.filter_arris_insights(creator_id, arris_insights_full)
+    else:
+        # Admins get full insights
+        arris_insights = arris_insights_full
+    
+    # Store full insights in database (for when user upgrades)
+    # But only return filtered insights
     update_data = {
         "status": "submitted",
         "submitted_at": datetime.now(timezone.utc).isoformat(),
-        "arris_insights": arris_insights,
+        "arris_insights_full": arris_insights_full,  # Store full for future upgrade access
+        "arris_insights": arris_insights,  # Filtered based on tier
         "arris_insights_generated_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
