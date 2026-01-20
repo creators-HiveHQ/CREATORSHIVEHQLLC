@@ -1,0 +1,495 @@
+/**
+ * Creator Subscription Page
+ * Self-Funding Loop - Subscription plans and checkout flow
+ */
+
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useCreatorAuth } from "@/components/CreatorDashboard";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+// ============== PRICING PAGE ==============
+
+export const SubscriptionPlans = () => {
+  const { creator, isAuthenticated } = useCreatorAuth();
+  const [plans, setPlans] = useState([]);
+  const [currentStatus, setCurrentStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(null);
+  const [billingCycle, setBillingCycle] = useState("monthly");
+  const navigate = useNavigate();
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("creator_token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch plans (public)
+      const plansRes = await axios.get(`${API}/subscriptions/plans`);
+      setPlans(plansRes.data.plans);
+      
+      // Fetch current status if authenticated
+      if (isAuthenticated) {
+        const headers = getAuthHeaders();
+        const statusRes = await axios.get(`${API}/subscriptions/my-status`, { headers });
+        setCurrentStatus(statusRes.data);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleSubscribe = async (planId) => {
+    if (!isAuthenticated) {
+      navigate("/creator/login");
+      return;
+    }
+
+    setCheckoutLoading(planId);
+    
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.post(
+        `${API}/subscriptions/checkout`,
+        {
+          plan_id: planId,
+          origin_url: window.location.origin
+        },
+        { headers }
+      );
+      
+      // Redirect to Stripe Checkout
+      window.location.href = response.data.checkout_url;
+      
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert(error.response?.data?.detail || "Failed to start checkout");
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  const getFilteredPlans = () => {
+    return plans.filter(plan => {
+      if (plan.plan_id === "free") return true;
+      return plan.billing_cycle === billingCycle;
+    });
+  };
+
+  const getTierColor = (tier) => {
+    switch (tier) {
+      case "pro": return "bg-purple-500";
+      case "enterprise": return "bg-amber-500";
+      default: return "bg-slate-400";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-purple-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" data-testid="subscription-page">
+      {/* Header */}
+      <div className="text-center pt-16 pb-8 px-4">
+        <Badge className="bg-purple-500 mb-4">Self-Funding Loop</Badge>
+        <h1 className="text-4xl font-bold text-white mb-4">Choose Your Plan</h1>
+        <p className="text-purple-200 max-w-2xl mx-auto">
+          Unlock ARRIS AI insights, priority review, and advanced features to supercharge your creator journey.
+        </p>
+        
+        {/* Billing Toggle */}
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            onClick={() => setBillingCycle("monthly")}
+            className={`px-4 py-2 rounded-lg transition-all ${
+              billingCycle === "monthly"
+                ? "bg-white text-purple-900 font-medium"
+                : "text-purple-200 hover:text-white"
+            }`}
+            data-testid="toggle-monthly"
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setBillingCycle("annual")}
+            className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+              billingCycle === "annual"
+                ? "bg-white text-purple-900 font-medium"
+                : "text-purple-200 hover:text-white"
+            }`}
+            data-testid="toggle-annual"
+          >
+            Annual
+            <Badge className="bg-green-500 text-xs">Save ~17%</Badge>
+          </button>
+        </div>
+      </div>
+
+      {/* Current Status Banner */}
+      {currentStatus && (
+        <div className="max-w-4xl mx-auto px-4 mb-8">
+          <Card className="bg-white/10 border-white/20 text-white">
+            <CardContent className="py-4 flex items-center justify-between">
+              <div>
+                <p className="text-purple-200 text-sm">Current Plan</p>
+                <p className="font-medium capitalize">{currentStatus.tier} {currentStatus.has_subscription && `• ${currentStatus.status}`}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-purple-200 text-sm">Proposals Used</p>
+                <p className="font-medium">
+                  {currentStatus.proposals_used} / {currentStatus.proposal_limit === -1 ? "∞" : currentStatus.proposal_limit}
+                </p>
+              </div>
+              {currentStatus.current_period_end && (
+                <div className="text-right">
+                  <p className="text-purple-200 text-sm">Renews</p>
+                  <p className="font-medium">{new Date(currentStatus.current_period_end).toLocaleDateString()}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Plans Grid */}
+      <div className="max-w-5xl mx-auto px-4 pb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {getFilteredPlans().map((plan) => (
+            <Card
+              key={plan.plan_id}
+              className={`relative overflow-hidden ${
+                plan.is_popular ? "ring-2 ring-purple-500 scale-105" : ""
+              } ${currentStatus?.plan_id === plan.plan_id ? "ring-2 ring-green-500" : ""}`}
+              data-testid={`plan-card-${plan.plan_id}`}
+            >
+              {plan.is_popular && (
+                <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs px-3 py-1 rounded-bl-lg">
+                  Most Popular
+                </div>
+              )}
+              {currentStatus?.plan_id === plan.plan_id && (
+                <div className="absolute top-0 left-0 bg-green-500 text-white text-xs px-3 py-1 rounded-br-lg">
+                  Current Plan
+                </div>
+              )}
+              
+              <CardHeader className="text-center pb-2">
+                <Badge className={`${getTierColor(plan.tier)} w-fit mx-auto mb-2`}>
+                  {plan.tier.toUpperCase()}
+                </Badge>
+                <CardTitle className="text-2xl">{plan.name.replace(" Monthly", "").replace(" Annual", "")}</CardTitle>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">${plan.price}</span>
+                  {plan.price > 0 && (
+                    <span className="text-slate-500">/{billingCycle === "annual" ? "year" : "month"}</span>
+                  )}
+                </div>
+                {plan.monthly_equivalent && (
+                  <p className="text-sm text-green-600 mt-1">
+                    ${plan.monthly_equivalent}/mo • Save ${plan.savings}/year
+                  </p>
+                )}
+                <CardDescription className="mt-2">{plan.description}</CardDescription>
+              </CardHeader>
+              
+              <CardContent className="pt-4">
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-2 text-sm">
+                    <span className={plan.features.arris_insights ? "text-green-500" : "text-slate-300"}>
+                      {plan.features.arris_insights ? "✓" : "✗"}
+                    </span>
+                    ARRIS AI Insights
+                  </li>
+                  <li className="flex items-center gap-2 text-sm">
+                    <span className="text-green-500">✓</span>
+                    {plan.features.proposal_limit === -1 ? "Unlimited" : plan.features.proposal_limit} Proposals
+                  </li>
+                  <li className="flex items-center gap-2 text-sm">
+                    <span className={plan.features.priority_review ? "text-green-500" : "text-slate-300"}>
+                      {plan.features.priority_review ? "✓" : "✗"}
+                    </span>
+                    Priority Review
+                  </li>
+                  <li className="flex items-center gap-2 text-sm">
+                    <span className={plan.features.advanced_dashboards ? "text-green-500" : "text-slate-300"}>
+                      {plan.features.advanced_dashboards ? "✓" : "✗"}
+                    </span>
+                    Advanced Dashboards
+                  </li>
+                  <li className="flex items-center gap-2 text-sm">
+                    <span className="text-blue-500">📧</span>
+                    {plan.features.support_level === "priority" ? "Priority Support" : 
+                     plan.features.support_level === "email" ? "Email Support" : "Community Support"}
+                  </li>
+                  {plan.features.api_access && (
+                    <li className="flex items-center gap-2 text-sm">
+                      <span className="text-green-500">✓</span>
+                      API Access
+                    </li>
+                  )}
+                </ul>
+                
+                <Button
+                  className={`w-full ${
+                    plan.plan_id === "free" 
+                      ? "bg-slate-200 text-slate-700 hover:bg-slate-300" 
+                      : plan.is_popular 
+                        ? "bg-purple-600 hover:bg-purple-700" 
+                        : "bg-slate-800 hover:bg-slate-700"
+                  }`}
+                  disabled={
+                    currentStatus?.plan_id === plan.plan_id || 
+                    plan.plan_id === "free" ||
+                    checkoutLoading === plan.plan_id
+                  }
+                  onClick={() => handleSubscribe(plan.plan_id)}
+                  data-testid={`subscribe-btn-${plan.plan_id}`}
+                >
+                  {checkoutLoading === plan.plan_id ? (
+                    "Processing..."
+                  ) : currentStatus?.plan_id === plan.plan_id ? (
+                    "Current Plan"
+                  ) : plan.plan_id === "free" ? (
+                    "Free Forever"
+                  ) : (
+                    `Subscribe to ${plan.name.replace(" Monthly", "").replace(" Annual", "")}`
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Back to Dashboard */}
+      {isAuthenticated && (
+        <div className="text-center pb-16">
+          <Button
+            variant="outline"
+            className="border-white/30 text-white hover:bg-white/10"
+            onClick={() => navigate("/creator/dashboard")}
+            data-testid="back-to-dashboard"
+          >
+            ← Back to Dashboard
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============== CHECKOUT SUCCESS PAGE ==============
+
+export const SubscriptionSuccess = () => {
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get("session_id");
+  const [status, setStatus] = useState("checking");
+  const [checkoutData, setCheckoutData] = useState(null);
+  const [pollCount, setPollCount] = useState(0);
+  const navigate = useNavigate();
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("creator_token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  useEffect(() => {
+    if (!sessionId) {
+      setStatus("error");
+      return;
+    }
+
+    const checkStatus = async () => {
+      try {
+        const headers = getAuthHeaders();
+        const response = await axios.get(
+          `${API}/subscriptions/checkout/status/${sessionId}`,
+          { headers }
+        );
+        
+        setCheckoutData(response.data);
+        
+        if (response.data.payment_status === "paid") {
+          setStatus("success");
+        } else if (response.data.status === "expired") {
+          setStatus("expired");
+        } else {
+          // Continue polling
+          if (pollCount < 5) {
+            setPollCount(prev => prev + 1);
+            setTimeout(checkStatus, 2000);
+          } else {
+            setStatus("pending");
+          }
+        }
+      } catch (error) {
+        console.error("Status check error:", error);
+        setStatus("error");
+      }
+    };
+
+    checkStatus();
+  }, [sessionId, pollCount]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4" data-testid="subscription-success">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-8 text-center">
+          {status === "checking" && (
+            <>
+              <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center animate-pulse mb-4">
+                <span className="text-3xl">💳</span>
+              </div>
+              <h2 className="text-xl font-bold mb-2">Processing Payment...</h2>
+              <p className="text-slate-500 mb-4">Please wait while we confirm your subscription.</p>
+              <Progress value={(pollCount / 5) * 100} className="w-48 mx-auto" />
+            </>
+          )}
+          
+          {status === "success" && (
+            <>
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-3xl">✅</span>
+              </div>
+              <h2 className="text-xl font-bold text-green-600 mb-2">Subscription Activated!</h2>
+              <p className="text-slate-500 mb-4">
+                Thank you! Your subscription is now active and you have access to all premium features.
+              </p>
+              {checkoutData && (
+                <div className="bg-slate-50 p-4 rounded-lg mb-6 text-left">
+                  <p className="text-sm text-slate-500">Amount Paid</p>
+                  <p className="font-bold text-lg">${checkoutData.amount} {checkoutData.currency?.toUpperCase()}</p>
+                </div>
+              )}
+              <Button
+                className="w-full bg-purple-600 hover:bg-purple-700"
+                onClick={() => navigate("/creator/dashboard")}
+                data-testid="go-to-dashboard"
+              >
+                Go to Dashboard
+              </Button>
+            </>
+          )}
+          
+          {status === "expired" && (
+            <>
+              <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-3xl">⏰</span>
+              </div>
+              <h2 className="text-xl font-bold text-amber-600 mb-2">Session Expired</h2>
+              <p className="text-slate-500 mb-4">
+                Your checkout session has expired. Please try again.
+              </p>
+              <Button
+                className="w-full"
+                onClick={() => navigate("/creator/subscription")}
+              >
+                Try Again
+              </Button>
+            </>
+          )}
+          
+          {status === "pending" && (
+            <>
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-3xl">⏳</span>
+              </div>
+              <h2 className="text-xl font-bold text-blue-600 mb-2">Payment Processing</h2>
+              <p className="text-slate-500 mb-4">
+                Your payment is being processed. This may take a few moments.
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Status
+              </Button>
+            </>
+          )}
+          
+          {status === "error" && (
+            <>
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-3xl">❌</span>
+              </div>
+              <h2 className="text-xl font-bold text-red-600 mb-2">Something Went Wrong</h2>
+              <p className="text-slate-500 mb-4">
+                We couldn't verify your payment. Please contact support if you were charged.
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate("/creator/subscription")}
+              >
+                Back to Plans
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ============== CHECKOUT CANCEL PAGE ==============
+
+export const SubscriptionCancel = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4" data-testid="subscription-cancel">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-8 text-center">
+          <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+            <span className="text-3xl">↩️</span>
+          </div>
+          <h2 className="text-xl font-bold mb-2">Checkout Cancelled</h2>
+          <p className="text-slate-500 mb-6">
+            No worries! You can subscribe anytime when you're ready.
+          </p>
+          <div className="space-y-3">
+            <Button
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              onClick={() => navigate("/creator/subscription")}
+              data-testid="back-to-plans"
+            >
+              View Plans
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate("/creator/dashboard")}
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default SubscriptionPlans;
