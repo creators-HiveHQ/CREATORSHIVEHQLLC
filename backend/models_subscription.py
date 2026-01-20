@@ -272,6 +272,7 @@ class PlanInfo(BaseModel):
     features: Dict[str, Any]
     description: str
     is_popular: bool = False
+    is_custom: bool = False  # For Elite tier
 
 
 class PlansResponse(BaseModel):
