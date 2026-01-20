@@ -763,6 +763,16 @@ export const CreatorDashboard = () => {
                                featureAccess?.features?.dashboard_level === "custom";
   
   const hasPriorityReview = featureAccess?.features?.priority_review || false;
+  
+  // Check if user has Premium analytics access
+  const hasPremiumAnalytics = featureAccess?.features?.advanced_analytics || false;
+
+  // Handle date range change for premium analytics
+  const handleDateRangeChange = (range) => {
+    setPremiumDateRange(range);
+    setPremiumData(null); // Clear old data
+    fetchPremiumAnalytics(range);
+  };
 
   if (loading) {
     return (
