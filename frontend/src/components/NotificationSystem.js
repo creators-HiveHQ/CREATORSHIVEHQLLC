@@ -242,47 +242,6 @@ export const NotificationProvider = ({ children, userType, userId, userName }) =
       console.error("Failed to create WebSocket:", error);
     }
   }, [userId, userType, handleNotification]);
-    const { type, data, timestamp } = notification;
-    const config = NOTIFICATION_CONFIG[type] || {
-      icon: "📢",
-      title: "Notification",
-      type: "info",
-    };
-
-    const newNotification = {
-      id: `${type}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
-      type,
-      ...config,
-      message: data.message || "",
-      data,
-      timestamp,
-      read: false,
-    };
-
-    // Add to notifications list
-    setNotifications((prev) => [newNotification, ...prev].slice(0, 50));
-    setUnreadCount((prev) => prev + 1);
-
-    // Show toast notification
-    const toastMessage = `${config.icon} ${data.message || config.title}`;
-    
-    switch (config.type) {
-      case "success":
-        toast.success(toastMessage, {
-          description: type === "proposal_approved" ? `Project ID: ${data.project_id}` : undefined,
-          duration: 5000,
-        });
-        break;
-      case "warning":
-        toast.warning(toastMessage, { duration: 7000 });
-        break;
-      case "error":
-        toast.error(toastMessage, { duration: 10000 });
-        break;
-      default:
-        toast.info(toastMessage, { duration: 4000 });
-    }
-  }, []);
 
   // Disconnect WebSocket
   const disconnect = useCallback(() => {
