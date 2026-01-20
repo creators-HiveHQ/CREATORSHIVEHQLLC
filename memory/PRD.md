@@ -267,12 +267,39 @@ Dashboard Updates → Memory Palace Synthesizes
       - Export buttons (JSON/CSV download)
     - **Testing**: 33 pytest tests covering all premium analytics features (100% pass rate)
 
+13. **Elite Tier Features** - Exclusive features for Elite subscribers:
+    - **Custom ARRIS Workflows** (`/api/elite/workflows`):
+      - Create, read, update, delete custom analysis templates
+      - Focus areas: growth_strategy, monetization, brand_partnerships, audience_engagement, etc.
+      - Run workflows on proposals with `POST /api/elite/workflows/{id}/run`
+      - Configuration: analysis_depth, include_benchmarks, custom_metrics
+      - Default workflow support
+    - **Brand Integrations** (`/api/elite/brands`):
+      - Full CRUD for brand partnerships
+      - Track deal value, status (prospecting→negotiating→active→completed), deliverables
+      - ARRIS recommendation score auto-calculated on creation
+      - Analytics: pipeline value, status breakdown, deal types, avg deal value
+      - Endpoint: `GET /api/elite/brands/analytics/summary`
+    - **Elite Dashboard** (`/api/elite/dashboard`):
+      - 8 default widgets: metric_card, chart_line, brand_pipeline, arris_insights, activity_feed, etc.
+      - Customizable: theme, brand_colors (primary, secondary, accent), logo_url
+      - Widget positions configurable
+      - Dashboard data includes metrics, brand analytics, adaptive intelligence, recent activity
+    - **Adaptive Intelligence** (`/api/elite/adaptive-intelligence`):
+      - Learns from creator's proposal history
+      - Profile: preferred_platforms, complexity_comfort_level, success_patterns
+      - Personalized recommendations based on history
+      - Learning score tracks engagement
+      - Refresh endpoint rebuilds profile
+    - **Feature Gating**: All Elite endpoints return 403 for non-Elite users with upgrade_url
+    - **Testing**: 29 pytest tests covering all Elite features (100% pass rate)
+
 ## Upcoming Tasks
 
-- **P2**: Elite Tier Features (custom ARRIS workflows, dashboards, brand integrations)
 - **P2**: Advanced ARRIS Memory/Learning capabilities
 - **P2**: Email notifications for proposal status changes
 - **P2**: Admin revenue dashboard with subscription analytics
+- **P2**: Real-time notifications via WebSocket
 
 ---
 
