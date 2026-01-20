@@ -229,9 +229,8 @@ Dashboard Updates → Memory Palace Synthesizes
 
 ## Upcoming Tasks
 
-- **P1**: Advanced Dashboard Features for Pro tier
 - **P1**: Faster ARRIS Processing for Premium users
-- **P2**: Advanced Analytics Dashboard (Premium tier)
+- **P2**: Advanced Analytics Dashboard (Premium tier - deeper analytics beyond Pro)
 - **P2**: Elite Tier Features (custom ARRIS workflows, dashboards, brand integrations)
 - **P2**: Advanced ARRIS Memory/Learning capabilities
 - **P2**: Email notifications for proposal status changes
