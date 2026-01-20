@@ -2364,7 +2364,7 @@ export const CreatorDashboard = () => {
           {/* Voice Tab (Premium) */}
           <TabsContent value="voice" data-testid="voice-tab-content">
             <ArrisVoiceInteraction 
-              token={token}
+              token={creatorToken}
               creatorTier={creator?.tier || subscription?.tier || "free"}
               onUpgrade={() => navigate("/creator/subscription")}
             />
