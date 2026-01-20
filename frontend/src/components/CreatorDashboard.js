@@ -781,13 +781,21 @@ export const CreatorDashboard = () => {
               className="border-amber-500 text-amber-600 hover:bg-amber-50"
               data-testid="upgrade-btn"
             >
-              {dashboard?.creator?.tier === "free" ? "⚡ Upgrade" : "💳 Manage Plan"}
+              {(featureAccess?.tier || dashboard?.creator?.tier) === "free" ? "⚡ Upgrade" : "💳 Manage Plan"}
             </Button>
             <div className="text-right">
               <p className="font-medium text-slate-900">{creator?.name}</p>
               <p className="text-xs text-slate-500">{creator?.email}</p>
             </div>
-            <Badge className="bg-purple-100 text-purple-700">{dashboard?.creator?.tier || "Free"}</Badge>
+            <Badge className={`${
+              featureAccess?.tier === "pro" ? "bg-purple-500 text-white" :
+              featureAccess?.tier === "premium" ? "bg-amber-500 text-white" :
+              featureAccess?.tier === "elite" ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white" :
+              featureAccess?.tier === "starter" ? "bg-blue-500 text-white" :
+              "bg-purple-100 text-purple-700"
+            }`}>
+              {(featureAccess?.tier || dashboard?.creator?.tier || "Free").toUpperCase()}
+            </Badge>
             <Button variant="outline" size="sm" onClick={handleLogout} data-testid="logout-btn">
               Sign Out
             </Button>
