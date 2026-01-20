@@ -346,6 +346,109 @@ class EmailService:
             subject=f"🏆 Project Completed: {proposal_title}",
             html_content=self._get_base_template(content)
         )
+    
+    # ============== ELITE CONTACT US EMAIL TEMPLATES ==============
+    
+    async def send_elite_inquiry_to_sales(
+        self,
+        creator_name: str,
+        creator_email: str,
+        company_name: Optional[str],
+        team_size: Optional[str],
+        message: str,
+        creator_id: str
+    ) -> bool:
+        """Send Elite tier inquiry to sales team"""
+        sales_email = os.environ.get('SALES_EMAIL', 'sales@hivehq.com')
+        
+        company_section = f"""
+<div style="background-color: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; font-weight: 600;">Company Details</p>
+    <p style="margin: 0; color: #111827; font-size: 14px;"><strong>Company:</strong> {company_name or 'Not provided'}</p>
+    <p style="margin: 4px 0 0 0; color: #111827; font-size: 14px;"><strong>Team Size:</strong> {team_size or 'Not provided'}</p>
+</div>
+""" if company_name or team_size else ""
+        
+        content = f"""
+<h2 style="margin: 0 0 16px 0; color: #f59e0b; font-size: 20px;">🌟 New Elite Plan Inquiry</h2>
+<p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+    A creator has expressed interest in the Elite plan. Here are the details:
+</p>
+
+<div style="background-color: #fef3c7; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #fcd34d;">
+    <p style="margin: 0 0 12px 0; color: #92400e; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Contact Information</p>
+    <p style="margin: 0; color: #78350f; font-size: 18px; font-weight: 600;">{creator_name}</p>
+    <p style="margin: 8px 0 0 0; color: #92400e; font-size: 14px;">Email: <a href="mailto:{creator_email}" style="color: #b45309; text-decoration: underline;">{creator_email}</a></p>
+    <p style="margin: 4px 0 0 0; color: #92400e; font-size: 14px;">Creator ID: {creator_id}</p>
+</div>
+
+{company_section}
+
+<div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 24px; border-left: 4px solid #f59e0b;">
+    <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; font-weight: 600;">Message from Creator</p>
+    <p style="margin: 0; color: #111827; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{message}</p>
+</div>
+
+<div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px;">
+    <p style="margin: 0; color: #1e40af; font-size: 14px;">
+        <strong>🎯 Action Required:</strong> Please respond to this inquiry within 24 hours to maintain our high-touch Elite service standards.
+    </p>
+</div>
+"""
+        return await self.send_email(
+            to_email=sales_email,
+            subject=f"🌟 Elite Plan Inquiry from {creator_name}",
+            html_content=self._get_base_template(content)
+        )
+    
+    async def send_elite_inquiry_confirmation(
+        self,
+        creator_email: str,
+        creator_name: str
+    ) -> bool:
+        """Send confirmation email to creator who submitted Elite inquiry"""
+        content = f"""
+<h2 style="margin: 0 0 16px 0; color: #f59e0b; font-size: 20px;">🌟 Thank You for Your Interest in Elite!</h2>
+<p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+    Hi {creator_name},
+</p>
+<p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+    Thank you for your interest in our Elite plan! We've received your inquiry and our team is excited to connect with you.
+</p>
+
+<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin: 0 0 16px 0; color: #92400e; font-size: 16px;">What happens next?</h3>
+    <ol style="margin: 0; padding-left: 20px; color: #78350f; font-size: 15px; line-height: 2;">
+        <li>Our Elite team will review your inquiry</li>
+        <li>You'll receive a personalized response within 24 hours</li>
+        <li>We'll schedule a call to discuss your specific needs</li>
+        <li>Get a custom Elite package tailored to your goals</li>
+    </ol>
+</div>
+
+<div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+    <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 16px;">Elite Plan Includes:</h3>
+    <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 1.8;">
+        <li>✨ Custom ARRIS workflows tailored to your needs</li>
+        <li>🤝 Brand partnership integrations & tracking</li>
+        <li>⚡ Priority ARRIS processing (fastest)</li>
+        <li>📊 Fully customizable dashboard</li>
+        <li>🎯 Dedicated account manager</li>
+        <li>💬 SLA-guaranteed support</li>
+    </ul>
+</div>
+
+<div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px;">
+    <p style="margin: 0; color: #1e40af; font-size: 14px;">
+        <strong>Questions?</strong> Feel free to reply to this email or reach out to us directly at <a href="mailto:sales@hivehq.com" style="color: #2563eb;">sales@hivehq.com</a>
+    </p>
+</div>
+"""
+        return await self.send_email(
+            to_email=creator_email,
+            subject="🌟 We've Received Your Elite Plan Inquiry!",
+            html_content=self._get_base_template(content)
+        )
 
 
 # Singleton instance
