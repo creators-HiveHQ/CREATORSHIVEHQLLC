@@ -129,6 +129,9 @@ from arris_memory_service import ArrisMemoryService, MemoryType, PatternCategory
 # Import ARRIS Activity Feed service
 from arris_activity_service import arris_activity_service
 
+# Import ARRIS Historical Learning service
+from arris_historical_service import ArrisHistoricalService
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
