@@ -2176,6 +2176,7 @@ export const CreatorDashboard = () => {
         <p>Powered by ARRIS Pattern Engine • Creators Hive HQ</p>
       </footer>
     </div>
+    </NotificationProvider>
   );
 };
 
