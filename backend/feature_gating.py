@@ -165,6 +165,14 @@ class FeatureGatingService:
         tier, features = await self.get_creator_tier(creator_id)
         return features.get("api_access", False)
     
+    async def get_arris_processing_speed(self, creator_id: str) -> str:
+        """
+        Get ARRIS processing speed for creator.
+        Returns: 'standard' or 'fast' (Premium/Elite users get fast processing)
+        """
+        tier, features = await self.get_creator_tier(creator_id)
+        return features.get("arris_processing_speed", "standard")
+    
     async def get_full_feature_access(self, creator_id: str) -> Dict[str, Any]:
         """Get complete feature access info for a creator"""
         tier, features = await self.get_creator_tier(creator_id)
