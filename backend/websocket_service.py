@@ -412,6 +412,82 @@ class NotificationService:
             }
         )
     
+    async def notify_arris_queue_update(
+        self,
+        creator_id: str,
+        proposal_id: str,
+        queue_position: int,
+        estimated_wait_seconds: int,
+        priority: str
+    ):
+        """Notify creator about their queue position update"""
+        await self.manager.broadcast_to_creator(
+            creator_id,
+            NotificationType.ARRIS_QUEUE_UPDATE,
+            {
+                "proposal_id": proposal_id,
+                "queue_position": queue_position,
+                "estimated_wait_seconds": estimated_wait_seconds,
+                "priority": priority,
+                "message": f"⏳ Queue position: #{queue_position}" if queue_position > 0 else "🚀 Processing now!"
+            }
+        )
+    
+    async def notify_arris_processing_started(
+        self,
+        creator_id: str,
+        proposal_id: str,
+        proposal_title: str,
+        priority: str
+    ):
+        """Notify when ARRIS starts processing a proposal"""
+        await self.manager.broadcast_to_creator(
+            creator_id,
+            NotificationType.ARRIS_PROCESSING_STARTED,
+            {
+                "proposal_id": proposal_id,
+                "title": proposal_title,
+                "priority": priority,
+                "message": f"🧠 ARRIS is analyzing '{proposal_title}'..."
+            }
+        )
+    
+    async def notify_arris_processing_complete(
+        self,
+        creator_id: str,
+        proposal_id: str,
+        proposal_title: str,
+        processing_time: float,
+        priority: str
+    ):
+        """Notify when ARRIS completes processing"""
+        await self.manager.broadcast_to_creator(
+            creator_id,
+            NotificationType.ARRIS_PROCESSING_COMPLETE,
+            {
+                "proposal_id": proposal_id,
+                "title": proposal_title,
+                "processing_time": processing_time,
+                "priority": priority,
+                "message": f"✅ ARRIS completed analysis of '{proposal_title}' in {processing_time:.1f}s"
+            }
+        )
+    
+    async def broadcast_arris_activity_update(
+        self,
+        activity_type: str,
+        data: Dict[str, Any]
+    ):
+        """Broadcast ARRIS activity update to all Premium/Elite users"""
+        # This will be filtered on the client side based on tier
+        await self.manager.broadcast_all(
+            NotificationType.ARRIS_ACTIVITY_UPDATE,
+            {
+                "activity_type": activity_type,
+                **data
+            }
+        )
+    
     # ============== SUBSCRIPTION NOTIFICATIONS ==============
     
     async def notify_subscription_created(
