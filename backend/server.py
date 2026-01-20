@@ -1392,6 +1392,274 @@ async def get_elite_status(credentials: HTTPAuthorizationCredentials = Depends(s
         "contact_sales": "sales@hivehq.com" if not is_elite else None
     }
 
+# ============== ARRIS MEMORY & LEARNING ENDPOINTS ==============
+
+@api_router.get("/arris/memory/summary")
+async def get_arris_memory_summary(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get a summary of ARRIS memories for the current creator.
+    Available to all authenticated creators.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    summary = await arris_memory_service.get_memory_summary(creator_id)
+    
+    return {
+        "creator_id": creator_id,
+        "memory_summary": summary
+    }
+
+@api_router.get("/arris/memory/recall")
+async def recall_arris_memories(
+    memory_type: Optional[str] = Query(default=None, description="Filter by memory type"),
+    min_importance: float = Query(default=0.0, ge=0.0, le=1.0),
+    limit: int = Query(default=20, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Recall memories from the Memory Palace.
+    
+    Memory types: interaction, proposal, outcome, pattern, preference, feedback, milestone
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    memories = await arris_memory_service.recall_memories(
+        creator_id=creator_id,
+        memory_type=memory_type,
+        min_importance=min_importance,
+        limit=limit
+    )
+    
+    return {
+        "memories": memories,
+        "count": len(memories),
+        "filters_applied": {
+            "memory_type": memory_type,
+            "min_importance": min_importance,
+            "limit": limit
+        }
+    }
+
+@api_router.post("/arris/memory/store")
+async def store_arris_memory(
+    memory_data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Store a new memory in the Memory Palace.
+    
+    Required fields:
+    - memory_type: interaction, proposal, outcome, pattern, preference, feedback, milestone
+    - content: Dict with memory content
+    
+    Optional:
+    - importance: 0.0 to 1.0 (default 0.5)
+    - tags: List of tags
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    memory_type = memory_data.get("memory_type")
+    content = memory_data.get("content")
+    
+    if not memory_type or not content:
+        raise HTTPException(status_code=400, detail="memory_type and content are required")
+    
+    memory = await arris_memory_service.store_memory(
+        creator_id=creator_id,
+        memory_type=memory_type,
+        content=content,
+        importance=memory_data.get("importance", 0.5),
+        tags=memory_data.get("tags", [])
+    )
+    
+    return {"message": "Memory stored", "memory": memory}
+
+@api_router.get("/arris/patterns")
+async def get_arris_patterns(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Analyze and retrieve patterns from creator's history.
+    Identifies success patterns, risk factors, timing preferences, and more.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    patterns = await arris_memory_service.analyze_patterns(creator_id)
+    
+    return patterns
+
+@api_router.post("/arris/patterns/analyze")
+async def analyze_arris_patterns(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Force a new pattern analysis on creator's history.
+    Useful after significant activity changes.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    patterns = await arris_memory_service.analyze_patterns(creator_id)
+    
+    return {
+        "message": "Pattern analysis complete",
+        "result": patterns
+    }
+
+@api_router.post("/arris/learning/record-outcome")
+async def record_arris_outcome(
+    outcome_data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Record the outcome of a proposal to improve ARRIS predictions.
+    
+    Required:
+    - proposal_id: The proposal ID
+    - outcome: approved, rejected, completed, etc.
+    
+    Optional:
+    - feedback: Additional feedback about the outcome
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    proposal_id = outcome_data.get("proposal_id")
+    outcome = outcome_data.get("outcome")
+    
+    if not proposal_id or not outcome:
+        raise HTTPException(status_code=400, detail="proposal_id and outcome are required")
+    
+    result = await arris_memory_service.record_outcome(
+        creator_id=creator_id,
+        proposal_id=proposal_id,
+        outcome=outcome,
+        feedback=outcome_data.get("feedback")
+    )
+    
+    if result.get("error"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    
+    return result
+
+@api_router.get("/arris/learning/metrics")
+async def get_arris_learning_metrics(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get ARRIS learning metrics for the current creator.
+    Shows prediction accuracy and learning stage.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    metrics = await arris_memory_service.get_learning_metrics(creator_id)
+    
+    return {
+        "creator_id": creator_id,
+        "metrics": metrics
+    }
+
+@api_router.get("/arris/context")
+async def get_arris_context(
+    proposal_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get the rich context ARRIS uses for AI interactions.
+    Shows memories, patterns, and historical data being considered.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # If proposal_id provided, get that proposal
+    proposal = {}
+    if proposal_id:
+        proposal = await db.proposals.find_one(
+            {"id": proposal_id, "user_id": creator_id},
+            {"_id": 0}
+        )
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    context = await arris_memory_service.build_rich_context(creator_id, proposal)
+    
+    return {
+        "context": context,
+        "proposal_id": proposal_id
+    }
+
+@api_router.get("/arris/personalization")
+async def get_arris_personalization(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get personalized prompt additions ARRIS uses based on learnings.
+    Shows how ARRIS tailors responses to this creator.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    prompt_additions = await arris_memory_service.get_personalized_prompt_additions(creator_id)
+    memory_summary = await arris_memory_service.get_memory_summary(creator_id)
+    learning_metrics = await arris_memory_service.get_learning_metrics(creator_id)
+    
+    return {
+        "creator_id": creator_id,
+        "personalization": {
+            "prompt_additions": prompt_additions,
+            "is_personalized": len(prompt_additions) > 0
+        },
+        "memory_health": memory_summary.get("memory_health"),
+        "learning_stage": learning_metrics.get("learning_stage"),
+        "accuracy_rate": learning_metrics.get("accuracy_rate")
+    }
+
+@api_router.get("/arris/memory-palace/status")
+async def get_memory_palace_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get comprehensive Memory Palace status.
+    Shows overall health, memory counts, pattern summary, and learning progress.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Get all relevant data
+    memory_summary = await arris_memory_service.get_memory_summary(creator_id)
+    learning_metrics = await arris_memory_service.get_learning_metrics(creator_id)
+    
+    # Get pattern count
+    patterns = await arris_memory_service.recall_memories(
+        creator_id=creator_id,
+        memory_type=MemoryType.PATTERN,
+        limit=100
+    )
+    
+    return {
+        "memory_palace": {
+            "status": "active",
+            "health": memory_summary.get("memory_health"),
+            "total_memories": memory_summary.get("total_memories", 0),
+            "by_type": memory_summary.get("by_type", {})
+        },
+        "pattern_engine": {
+            "patterns_identified": len(patterns),
+            "pattern_categories": list(set(
+                p.get("content", {}).get("category") 
+                for p in patterns 
+                if p.get("content", {}).get("category")
+            ))
+        },
+        "learning_system": {
+            "stage": learning_metrics.get("learning_stage"),
+            "accuracy_rate": learning_metrics.get("accuracy_rate"),
+            "total_predictions": learning_metrics.get("total_predictions", 0)
+        },
+        "features": {
+            "memory_storage": True,
+            "pattern_recognition": True,
+            "outcome_learning": True,
+            "personalization": True,
+            "context_building": True
+        }
+    }
+
 @api_router.get("/creators")
 async def get_creators(
     status: Optional[str] = None,
