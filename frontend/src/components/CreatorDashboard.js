@@ -861,9 +861,6 @@ export const CreatorDashboard = () => {
               )}
             </TabsTrigger>
           </TabsList>
-              )}
-            </TabsTrigger>
-          </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
