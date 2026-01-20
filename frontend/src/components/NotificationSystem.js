@@ -128,6 +128,50 @@ export const NotificationProvider = ({ children, userType, userId, userName }) =
   const maxReconnectAttempts = 5;
   const pingIntervalRef = useRef(null);
 
+  // Handle incoming notification
+  const handleNotification = useCallback((notification) => {
+    const { type, data, timestamp } = notification;
+    const config = NOTIFICATION_CONFIG[type] || {
+      icon: "📢",
+      title: "Notification",
+      type: "info",
+    };
+
+    const newNotification = {
+      id: `${type}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      ...config,
+      message: data.message || "",
+      data,
+      timestamp,
+      read: false,
+    };
+
+    // Add to notifications list
+    setNotifications((prev) => [newNotification, ...prev].slice(0, 50));
+    setUnreadCount((prev) => prev + 1);
+
+    // Show toast notification
+    const toastMessage = `${config.icon} ${data.message || config.title}`;
+    
+    switch (config.type) {
+      case "success":
+        toast.success(toastMessage, {
+          description: type === "proposal_approved" ? `Project ID: ${data.project_id}` : undefined,
+          duration: 5000,
+        });
+        break;
+      case "warning":
+        toast.warning(toastMessage, { duration: 7000 });
+        break;
+      case "error":
+        toast.error(toastMessage, { duration: 10000 });
+        break;
+      default:
+        toast.info(toastMessage, { duration: 4000 });
+    }
+  }, []);
+
   // Connect to WebSocket
   const connect = useCallback(() => {
     if (!userId || !userType) {
@@ -177,13 +221,16 @@ export const NotificationProvider = ({ children, userType, userId, userName }) =
           clearInterval(pingIntervalRef.current);
         }
         
-        // Attempt reconnect
+        // Attempt reconnect (non-recursive, uses setTimeout)
         if (reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
           console.log(`Reconnecting in ${delay}ms...`);
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++;
-            connect();
+            // Reconnect by re-calling connect (safe since this is in a timeout)
+            if (wsRef.current?.readyState !== WebSocket.OPEN) {
+              wsRef.current = new WebSocket(wsUrl);
+            }
           }, delay);
         }
       };
@@ -194,10 +241,7 @@ export const NotificationProvider = ({ children, userType, userId, userName }) =
     } catch (error) {
       console.error("Failed to create WebSocket:", error);
     }
-  }, [userId, userType]);
-
-  // Handle incoming notification
-  const handleNotification = useCallback((notification) => {
+  }, [userId, userType, handleNotification]);
     const { type, data, timestamp } = notification;
     const config = NOTIFICATION_CONFIG[type] || {
       icon: "📢",
