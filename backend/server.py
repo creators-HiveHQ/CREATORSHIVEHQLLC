@@ -853,11 +853,20 @@ async def submit_proposal(
             }
         }
     
-    # Generate ARRIS insights (full insights are generated, then filtered based on tier)
-    arris_insights_full = await arris_service.generate_project_insights(proposal, memory_palace_data)
+    # Get processing speed for the creator (Premium/Elite get fast processing)
+    creator_id = proposal.get("user_id")
+    processing_speed = "standard"
+    if creator_id and auth_user["user_type"] == "creator":
+        processing_speed = await feature_gating.get_arris_processing_speed(creator_id)
+    
+    # Generate ARRIS insights with priority processing for Premium/Elite users
+    arris_insights_full = await arris_service.generate_project_insights(
+        proposal, 
+        memory_palace_data,
+        processing_speed=processing_speed
+    )
     
     # Filter insights based on creator's subscription tier
-    creator_id = proposal.get("user_id")
     if creator_id and auth_user["user_type"] == "creator":
         arris_insights = await feature_gating.filter_arris_insights(creator_id, arris_insights_full)
     else:
@@ -872,6 +881,7 @@ async def submit_proposal(
         "arris_insights_full": arris_insights_full,  # Store full for future upgrade access
         "arris_insights": arris_insights,  # Filtered based on tier
         "arris_insights_generated_at": datetime.now(timezone.utc).isoformat(),
+        "arris_processing_speed": processing_speed,  # Track processing speed used
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
