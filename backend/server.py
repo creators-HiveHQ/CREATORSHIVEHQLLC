@@ -2056,6 +2056,21 @@ async def submit_proposal(
         except Exception as e:
             logger.error(f"Failed to send submission email: {str(e)}")
     
+    # WEBSOCKET: Real-time notifications
+    await notification_service.notify_proposal_submitted(
+        proposal_id=proposal_id,
+        proposal_title=proposal.get("title", "Untitled Proposal"),
+        creator_id=proposal.get("user_id"),
+        creator_name=creator_name
+    )
+    
+    # WEBSOCKET: Notify ARRIS insights are ready
+    await notification_service.notify_arris_insights_ready(
+        proposal_id=proposal_id,
+        creator_id=proposal.get("user_id"),
+        insights_summary=arris_insights.get("summary", "")[:200]
+    )
+    
     return {
         "id": proposal_id,
         "status": "submitted",
