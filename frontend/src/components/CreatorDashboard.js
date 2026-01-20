@@ -638,6 +638,9 @@ export const CreatorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [showNewProposal, setShowNewProposal] = useState(false);
+  const [advancedData, setAdvancedData] = useState(null);
+  const [advancedLoading, setAdvancedLoading] = useState(false);
+  const [featureAccess, setFeatureAccess] = useState(null);
   const navigate = useNavigate();
 
   const getAuthHeaders = () => {
@@ -650,13 +653,15 @@ export const CreatorDashboard = () => {
       setLoading(true);
       const headers = getAuthHeaders();
       
-      const [dashboardRes, proposalsRes] = await Promise.all([
+      const [dashboardRes, proposalsRes, featuresRes] = await Promise.all([
         axios.get(`${API}/creators/me/dashboard`, { headers }),
-        axios.get(`${API}/creators/me/proposals`, { headers })
+        axios.get(`${API}/creators/me/proposals`, { headers }),
+        axios.get(`${API}/subscriptions/my-features`, { headers }).catch(() => ({ data: null }))
       ]);
       
       setDashboard(dashboardRes.data);
       setProposals(proposalsRes.data);
+      setFeatureAccess(featuresRes.data);
     } catch (error) {
       console.error("Error fetching dashboard:", error);
     } finally {
@@ -664,9 +669,32 @@ export const CreatorDashboard = () => {
     }
   }, []);
 
+  const fetchAdvancedDashboard = useCallback(async () => {
+    if (advancedData) return; // Already loaded
+    
+    try {
+      setAdvancedLoading(true);
+      const headers = getAuthHeaders();
+      const response = await axios.get(`${API}/creators/me/advanced-dashboard`, { headers });
+      setAdvancedData(response.data);
+    } catch (error) {
+      console.error("Error fetching advanced dashboard:", error);
+      // Feature might be gated - that's okay
+    } finally {
+      setAdvancedLoading(false);
+    }
+  }, [advancedData]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    // Fetch advanced data when switching to analytics tab
+    if (activeTab === "analytics" && !advancedData && !advancedLoading) {
+      fetchAdvancedDashboard();
+    }
+  }, [activeTab, advancedData, advancedLoading, fetchAdvancedDashboard]);
 
   const handleNewProposalSuccess = (proposal) => {
     // Refresh data and switch to proposals tab
