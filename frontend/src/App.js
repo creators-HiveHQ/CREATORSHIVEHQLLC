@@ -19,6 +19,7 @@ import { CreatorRegistrationForm, AdminCreatorsPage } from "@/components/Creator
 import { AdminProposalsPage } from "@/components/ProjectProposal";
 import WebhooksAdmin from "@/components/WebhooksAdmin";
 import { CreatorAuthProvider, CreatorLoginPage, CreatorProtectedRoute, CreatorDashboard } from "@/components/CreatorDashboard";
+import { SubscriptionPlans, SubscriptionSuccess, SubscriptionCancel } from "@/components/SubscriptionPlans";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
