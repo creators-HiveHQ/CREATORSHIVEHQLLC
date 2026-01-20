@@ -112,6 +112,9 @@ from feature_gating import FeatureGatingService
 from fastapi import WebSocket, WebSocketDisconnect
 from websocket_service import ws_manager, notification_service, NotificationType
 
+# Import Export service
+from export_service import ExportService
+
 # Import Elite service
 from elite_service import EliteService
 from models_elite import (
