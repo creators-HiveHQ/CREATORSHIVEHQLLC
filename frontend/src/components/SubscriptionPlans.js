@@ -729,7 +729,7 @@ export const SubscriptionCancel = () => {
           </div>
           <h2 className="text-xl font-bold mb-2">Checkout Cancelled</h2>
           <p className="text-slate-500 mb-6">
-            No worries! You can subscribe anytime when you're ready.
+            No worries! You can subscribe anytime when you&apos;re ready.
           </p>
           <div className="space-y-3">
             <Button
