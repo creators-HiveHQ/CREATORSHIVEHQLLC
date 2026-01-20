@@ -402,9 +402,35 @@ Dashboard Updates → Memory Palace Synthesizes
       - Refresh button for real-time data reload
     - **Testing**: Playwright frontend tests - all 13 features verified (100% pass rate)
 
+19. **Real-Time Notifications via WebSocket** - Live notification system:
+    - **WebSocket Service** (`/app/backend/websocket_service.py`):
+      - Connection manager for multiple clients (admins/creators)
+      - User-specific and broadcast messaging
+      - Auto-reconnection with exponential backoff
+      - Ping/pong keep-alive mechanism
+    - **Notification Types**:
+      - Proposal: submitted, approved, rejected, under_review
+      - ARRIS: insights_ready, memory_updated, pattern_detected
+      - Subscription: created, upgraded, cancelled
+      - Elite: inquiry_received, inquiry_updated
+      - System: alerts, welcome, revenue_milestone
+    - **Backend Endpoints**:
+      - `WebSocket /ws/notifications/{user_type}/{user_id}` - Live connection
+      - `GET /api/ws/stats` - Connection statistics (admin)
+      - `POST /api/ws/broadcast` - Send notifications to targets
+    - **Frontend Components** (`/app/frontend/src/components/NotificationSystem.js`):
+      - `NotificationProvider` - Context for WebSocket state
+      - `NotificationBell` - Header icon with unread badge
+      - `NotificationPanel` - Dropdown list of notifications
+      - `ConnectionStatus` - Live/Offline indicator
+    - **Integration Points**:
+      - Proposal status changes trigger real-time notifications
+      - Elite inquiries notify admins instantly
+      - ARRIS insights completion notifies creators
+    - **Toast Integration**: Uses `sonner` for non-intrusive toast notifications
+
 ## Upcoming Tasks
 
-- **P2**: Real-time notifications via WebSocket
 - **P3**: CSV/JSON export for Pro/Premium analytics reports
 - **P3**: Real-time ARRIS activity feed for Premium users
 - **P3**: ARRIS voice interaction capabilities
