@@ -104,7 +104,11 @@ class FeatureGatingService:
         filtered = {
             "insight_level": insight_level,
             "generated_at": full_insights.get("generated_at"),
-            "model_used": full_insights.get("model_used")
+            "model_used": full_insights.get("model_used"),
+            # Always include processing metadata (not gated content)
+            "processing_time_seconds": full_insights.get("processing_time_seconds"),
+            "priority_processed": full_insights.get("priority_processed"),
+            "processing_speed": full_insights.get("processing_speed")
         }
         
         # Always include summary
