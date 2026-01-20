@@ -116,6 +116,9 @@ from models_elite import (
     DashboardConfigUpdate, DashboardWidgetType
 )
 
+# Import ARRIS Memory service
+from arris_memory_service import ArrisMemoryService, MemoryType, PatternCategory
+
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
