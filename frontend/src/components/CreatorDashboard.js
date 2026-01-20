@@ -1077,13 +1077,26 @@ export const CreatorDashboard = () => {
                               <span className="text-2xl">🧠</span>
                               <h4 className="font-semibold text-purple-800">ARRIS AI Insights</h4>
                             </div>
-                            {selectedProposal.arris_insights.insight_level && (
-                              <Badge className="bg-purple-200 text-purple-700 text-xs">
-                                {selectedProposal.arris_insights.insight_level === "full" ? "Full Access" :
-                                 selectedProposal.arris_insights.insight_level === "summary_strengths" ? "Starter" :
-                                 "Free Tier"}
-                              </Badge>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {/* Processing Speed Badge */}
+                              {selectedProposal.arris_insights.priority_processed && (
+                                <Badge className="bg-amber-100 text-amber-700 text-xs">
+                                  ⚡ Fast Processing
+                                </Badge>
+                              )}
+                              {selectedProposal.arris_insights.processing_time_seconds && (
+                                <Badge className="bg-slate-100 text-slate-600 text-xs">
+                                  {selectedProposal.arris_insights.processing_time_seconds}s
+                                </Badge>
+                              )}
+                              {selectedProposal.arris_insights.insight_level && (
+                                <Badge className="bg-purple-200 text-purple-700 text-xs">
+                                  {selectedProposal.arris_insights.insight_level === "full" ? "Full Access" :
+                                   selectedProposal.arris_insights.insight_level === "summary_strengths" ? "Starter" :
+                                   "Free Tier"}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           
                           {/* Summary */}
