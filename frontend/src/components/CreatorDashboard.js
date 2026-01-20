@@ -278,7 +278,13 @@ const NewProposalModal = ({ isOpen, onClose, onSuccess }) => {
       setCreatedProposal(response.data);
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to save draft");
+      // Handle error - detail can be string or object (for proposal limit errors)
+      const detail = err.response?.data?.detail;
+      if (typeof detail === 'object' && detail !== null) {
+        setError(detail.message || "Failed to save draft");
+      } else {
+        setError(detail || "Failed to save draft");
+      }
     } finally {
       setLoading(false);
     }
@@ -307,7 +313,13 @@ const NewProposalModal = ({ isOpen, onClose, onSuccess }) => {
       setStep(4);
       
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to submit proposal");
+      // Handle error - detail can be string or object (for proposal limit errors)
+      const detail = err.response?.data?.detail;
+      if (typeof detail === 'object' && detail !== null) {
+        setError(detail.message || "Failed to submit proposal");
+      } else {
+        setError(detail || "Failed to submit proposal");
+      }
       setStep(2);
     } finally {
       setLoading(false);
