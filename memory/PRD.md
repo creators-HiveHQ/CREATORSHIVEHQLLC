@@ -221,11 +221,28 @@ Dashboard Updates → Memory Palace Synthesizes
       - Dynamic tier badge in header (FREE/STARTER/PRO/PREMIUM/ELITE)
       - "Upgrade" vs "Manage Plan" button based on subscription
     - **Testing**: 17 pytest tests covering all advanced dashboard features (100% pass rate)
-   - **Frontend Integration**:
-     - Gated insights display with lock icons and upgrade prompts
-     - "Unlock Full ARRIS Insights" CTA with "Upgrade Now" button
-     - Proposal limit error handling with upgrade URL
-   - **Testing**: 19 pytest tests covering all feature gating scenarios (100% pass rate)
+
+11. **Faster ARRIS Processing for Premium/Elite Users** - Priority queue processing:
+    - **Backend Implementation**:
+      - `ArrisPriorityQueue` class with fast_queue (Premium/Elite) and standard_queue (others)
+      - `ProcessingStats` class to track processing metrics per priority level
+      - `get_arris_processing_speed()` method in feature_gating service
+    - **New API Endpoints**:
+      - `GET /api/arris/queue-stats` - Returns queue lengths and processing statistics
+      - `GET /api/arris/my-processing-speed` - Returns user's processing speed tier
+    - **Processing Speed by Tier**:
+      - Free/Starter/Pro: `standard` processing (standard_queue)
+      - Premium/Elite: `fast` processing (fast_queue - processed first)
+    - **ARRIS Insights Enhancements**:
+      - `processing_time_seconds` - Actual time taken for AI analysis
+      - `priority_processed` - Boolean indicating fast processing was used
+      - `processing_speed` - 'standard' or 'fast'
+    - **Frontend Features**:
+      - "⚡ Fast ARRIS Processing" shown in Premium/Elite plan cards
+      - "⚡ Fast Processing" badge in ARRIS insights for Premium users
+      - Processing time displayed in insights (e.g., "7.54s")
+    - **Testing**: 15 pytest tests covering all processing speed features (100% pass rate)
+    - **Bug Fixed**: `filter_arris_insights` now preserves processing metadata fields
 
 ## Upcoming Tasks
 
