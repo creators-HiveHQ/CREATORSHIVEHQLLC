@@ -986,7 +986,7 @@ async def get_arris_queue_stats(credentials: HTTPAuthorizationCredentials = Depe
     Get ARRIS processing queue statistics.
     Shows queue lengths, processing stats, and average times.
     """
-    await get_current_user(credentials, db)
+    await get_any_authenticated_user(credentials)
     
     queue_stats = arris_service.get_queue_stats()
     
