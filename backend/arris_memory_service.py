@@ -375,7 +375,7 @@ class ArrisMemoryService:
                     day_activity[day_name]["total"] += 1
                     if p.get("status") in ["approved", "completed", "in_progress"]:
                         day_activity[day_name]["successful"] += 1
-                except:
+                except Exception:
                     pass
         
         if day_activity:
