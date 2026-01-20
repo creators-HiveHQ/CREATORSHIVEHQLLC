@@ -340,11 +340,36 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Configuration**: Set `SENDGRID_API_KEY` in `backend/.env` to enable
     - **Testing**: 13 pytest tests covering all email notification scenarios (100% pass rate)
 
+16. **Full Calculator Integration** - Central Revenue Hub with advanced financial analytics:
+    - **Calculator Service** (`/app/backend/calculator_service.py`):
+      - Comprehensive financial analytics based on Sheet 15 schema
+      - Self-Funding Loop connecting 17_Subscriptions → 06_Calculator
+    - **Key Metrics Endpoints**:
+      - `GET /api/calculator/metrics/mrr` - Monthly Recurring Revenue with growth
+      - `GET /api/calculator/metrics/arr` - Annual Recurring Revenue
+      - `GET /api/calculator/metrics/churn` - Subscription churn rate with health indicator
+      - `GET /api/calculator/metrics/ltv` - Customer Lifetime Value
+      - `GET /api/calculator/metrics/all` - All key metrics in one call
+    - **Revenue Analysis**:
+      - `GET /api/calculator/revenue/breakdown` - Revenue by source over time
+      - `GET /api/calculator/revenue/trends` - Trend analysis with growth rates
+    - **Expense & Profit Analysis**:
+      - `GET /api/calculator/expenses/breakdown` - Expenses by category
+      - `GET /api/calculator/profit/analysis` - Net profit, margins, health indicator
+    - **Forecasting**:
+      - `GET /api/calculator/forecast` - Revenue forecasting with confidence levels
+    - **Self-Funding Loop**:
+      - `GET /api/calculator/self-funding-loop` - Subscription revenue tracking
+      - Shows loop health (optimal/healthy/diversified)
+    - **Dashboard**:
+      - `GET /api/calculator/dashboard` - Full platform financial dashboard
+      - `GET /api/calculator/creator/{id}/summary` - Creator-specific financials
+    - **Testing**: 34 pytest tests covering all Calculator functionality (100% pass rate)
+
 ## Upcoming Tasks
 
-- **P2**: Full Calculator Integration (expand financial analysis logic)
 - **P2**: "Contact Us" email flow for Elite tier button
-- **P2**: Admin revenue dashboard with subscription analytics
+- **P2**: Admin revenue dashboard UI with subscription analytics
 - **P2**: Real-time notifications via WebSocket
 - **P3**: ARRIS voice interaction capabilities
 
