@@ -20,7 +20,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://pattern-master-4.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://creatorbase-5.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_CREATOR_EMAIL = "testcreator@example.com"
