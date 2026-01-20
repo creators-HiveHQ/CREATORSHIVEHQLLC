@@ -102,8 +102,11 @@ from models_subscription import (
     SUBSCRIPTION_PLANS, SubscriptionTier, BillingCycle,
     CreatorSubscription, PaymentTransaction,
     CheckoutRequest, CheckoutResponse, SubscriptionStatusResponse,
-    PlanInfo, PlansResponse
+    PlanInfo, PlansResponse, FEATURE_TIERS
 )
+
+# Import feature gating service
+from feature_gating import FeatureGatingService
 
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
