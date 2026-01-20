@@ -1649,12 +1649,20 @@ export const CreatorDashboard = () => {
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <span>📥</span> Export Analytics
+                      {exportLoading && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                      )}
                     </CardTitle>
                     <CardDescription>
                       Download your analytics data in CSV or JSON format
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    {exportError && (
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" data-testid="export-error">
+                        {exportError}
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="p-4 bg-white rounded-lg border">
                         <h4 className="font-medium mb-2">Proposals Data</h4>
@@ -1664,17 +1672,19 @@ export const CreatorDashboard = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => handleExport('proposals', 'csv')}
+                            disabled={exportLoading}
                             data-testid="export-proposals-csv"
                           >
-                            CSV
+                            {exportLoading ? "..." : "CSV"}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => handleExport('proposals', 'json')}
+                            disabled={exportLoading}
                             data-testid="export-proposals-json"
                           >
-                            JSON
+                            {exportLoading ? "..." : "JSON"}
                           </Button>
                         </div>
                       </div>
@@ -1686,17 +1696,19 @@ export const CreatorDashboard = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => handleExport('analytics', 'csv')}
+                            disabled={exportLoading}
                             data-testid="export-analytics-csv"
                           >
-                            CSV
+                            {exportLoading ? "..." : "CSV"}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => handleExport('analytics', 'json')}
+                            disabled={exportLoading}
                             data-testid="export-analytics-json"
                           >
-                            JSON
+                            {exportLoading ? "..." : "JSON"}
                           </Button>
                         </div>
                       </div>
@@ -1713,19 +1725,19 @@ export const CreatorDashboard = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => handleExport('full-report', 'csv')}
-                            disabled={!hasPremiumAnalytics}
+                            disabled={!hasPremiumAnalytics || exportLoading}
                             data-testid="export-full-csv"
                           >
-                            CSV
+                            {exportLoading ? "..." : "CSV"}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => handleExport('full-report', 'json')}
-                            disabled={!hasPremiumAnalytics}
+                            disabled={!hasPremiumAnalytics || exportLoading}
                             data-testid="export-full-json"
                           >
-                            JSON
+                            {exportLoading ? "..." : "JSON"}
                           </Button>
                         </div>
                       </div>
