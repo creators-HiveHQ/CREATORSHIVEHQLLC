@@ -168,12 +168,21 @@ Dashboard Updates → Memory Palace Synthesizes
    - ARRIS intake question for AI context
    - Real-time AI analysis with loading state
    - Auto-refresh and navigation to new proposal
+8. **Stripe Subscription Integration (Self-Funding Loop)** - Full payment processing:
+   - 3 Tiers: Free, Pro ($29/mo or $290/yr), Enterprise ($99/mo or $990/yr)
+   - Gated features: ARRIS insights, proposal limits (3/20/unlimited), priority review
+   - Monthly + Annual billing with 17% discount
+   - Stripe Checkout integration via emergentintegrations library
+   - Calculator entry auto-creation on payment success
+   - Webhook events: subscription.created, revenue.recorded
+   - Subscription management page with plan comparison
+   - Current plan status and proposal usage tracking
 
 ## Upcoming Tasks
 
-- **P1**: Stripe integration for Self-Funding Loop (subscriptions & payments)
 - **P2**: Advanced ARRIS Memory/Learning capabilities
 - **P2**: Email notifications for proposal status changes
+- **P2**: Admin revenue dashboard with subscription analytics
 
 ---
 
