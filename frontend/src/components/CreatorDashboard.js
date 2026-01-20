@@ -850,6 +850,19 @@ export const CreatorDashboard = () => {
                 <Badge className="ml-2 bg-amber-500 text-white text-xs px-1.5 py-0">PRO</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger 
+              value="premium-analytics" 
+              data-testid="tab-premium-analytics"
+              className={!hasPremiumAnalytics ? "relative" : ""}
+            >
+              🚀 Premium Insights
+              {!hasPremiumAnalytics && (
+                <Badge className="ml-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-1.5 py-0">PREMIUM</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
