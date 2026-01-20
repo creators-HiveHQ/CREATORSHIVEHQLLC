@@ -476,7 +476,6 @@ class CalculatorService:
         revenues = [m["revenue"] for m in monthly_data]
         
         # Calculate trend
-        n = len(revenues)
         avg_growth = trends.get("avg_monthly_growth_percent", 0) / 100
         
         # Last 3 month average as base
@@ -494,9 +493,6 @@ class CalculatorService:
                 "predicted_revenue": round(max(0, predicted), 2),
                 "confidence": "high" if i <= 1 else "medium" if i <= 2 else "low"
             })
-        
-        # Confidence intervals
-        std_dev = (max(revenues) - min(revenues)) / 4 if revenues else 0
         
         return {
             "forecasts": forecasts,
