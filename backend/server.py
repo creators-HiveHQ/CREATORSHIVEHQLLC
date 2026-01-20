@@ -108,6 +108,10 @@ from models_subscription import (
 # Import feature gating service
 from feature_gating import FeatureGatingService
 
+# Import WebSocket service
+from fastapi import WebSocket, WebSocketDisconnect
+from websocket_service import ws_manager, notification_service, NotificationType
+
 # Import Elite service
 from elite_service import EliteService
 from models_elite import (
