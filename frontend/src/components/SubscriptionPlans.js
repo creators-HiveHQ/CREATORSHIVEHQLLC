@@ -11,6 +11,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useCreatorAuth } from "@/components/CreatorDashboard";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -25,6 +42,17 @@ export const SubscriptionPlans = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(null);
   const [billingCycle, setBillingCycle] = useState("monthly");
   const navigate = useNavigate();
+  
+  // Elite Contact Form State
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    message: "",
+    company_name: "",
+    team_size: ""
+  });
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [contactError, setContactError] = useState("");
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("creator_token");
