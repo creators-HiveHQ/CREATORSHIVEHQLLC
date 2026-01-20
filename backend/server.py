@@ -2206,8 +2206,23 @@ async def update_proposal(
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Proposal not found")
     
-    # Get updated proposal for webhook data
-    updated_proposal = await db.proposals.find_one({"id": proposal_id})
+    # Get updated proposal for webhook data and email notifications
+    updated_proposal = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
+    
+    # Get creator info for email notifications
+    creator_email = updated_proposal.get("creator_email")
+    creator_name = updated_proposal.get("creator_name", "Creator")
+    proposal_title = updated_proposal.get("title", "Untitled Proposal")
+    
+    # If creator email not in proposal, try to fetch from creators collection
+    if not creator_email:
+        creator = await db.creators.find_one(
+            {"id": updated_proposal.get("user_id")},
+            {"_id": 0, "email": 1, "name": 1}
+        )
+        if creator:
+            creator_email = creator.get("email")
+            creator_name = creator.get("name", creator_name)
     
     if update.status == "approved" and update_data.get("assigned_project_id"):
         # WEBHOOK: Emit proposal approved event
@@ -2238,9 +2253,25 @@ async def update_proposal(
             user_id=updated_proposal.get("user_id")
         )
         
+        # EMAIL: Send approval notification
+        if creator_email and email_service.is_configured():
+            try:
+                await email_service.send_proposal_approved_notification(
+                    creator_email=creator_email,
+                    creator_name=creator_name,
+                    proposal_title=proposal_title,
+                    proposal_id=proposal_id,
+                    project_id=update_data["assigned_project_id"],
+                    review_notes=update.review_notes
+                )
+                logger.info(f"Approval email sent to {creator_email} for proposal {proposal_id}")
+            except Exception as e:
+                logger.error(f"Failed to send approval email: {str(e)}")
+        
         return {
             "message": "Proposal approved and project created",
-            "project_id": update_data["assigned_project_id"]
+            "project_id": update_data["assigned_project_id"],
+            "email_sent": creator_email and email_service.is_configured()
         }
     
     if update.status == "rejected":
@@ -2255,9 +2286,93 @@ async def update_proposal(
             source_id=proposal_id,
             user_id=updated_proposal.get("user_id")
         )
+        
+        # EMAIL: Send rejection notification
+        if creator_email and email_service.is_configured():
+            try:
+                await email_service.send_proposal_rejected_notification(
+                    creator_email=creator_email,
+                    creator_name=creator_name,
+                    proposal_title=proposal_title,
+                    proposal_id=proposal_id,
+                    rejection_reason=update.review_notes
+                )
+                logger.info(f"Rejection email sent to {creator_email} for proposal {proposal_id}")
+            except Exception as e:
+                logger.error(f"Failed to send rejection email: {str(e)}")
+        
+        return {
+            "message": "Proposal rejected",
+            "email_sent": creator_email and email_service.is_configured()
+        }
     
-    if update.status and update.status not in ["approved", "rejected"]:
+    if update.status == "under_review":
         # WEBHOOK: Emit status changed event
+        await webhook_service.emit(
+            event_type=WebhookEventType.PROPOSAL_STATUS_CHANGED,
+            payload={
+                "title": updated_proposal.get("title"),
+                "new_status": update.status,
+                "previous_status": updated_proposal.get("status")
+            },
+            source_entity="proposal",
+            source_id=proposal_id,
+            user_id=updated_proposal.get("user_id")
+        )
+        
+        # EMAIL: Send under review notification
+        if creator_email and email_service.is_configured():
+            try:
+                await email_service.send_proposal_under_review_notification(
+                    creator_email=creator_email,
+                    creator_name=creator_name,
+                    proposal_title=proposal_title,
+                    proposal_id=proposal_id
+                )
+                logger.info(f"Under review email sent to {creator_email} for proposal {proposal_id}")
+            except Exception as e:
+                logger.error(f"Failed to send under review email: {str(e)}")
+        
+        return {
+            "message": "Proposal moved to under review",
+            "email_sent": creator_email and email_service.is_configured()
+        }
+    
+    if update.status == "completed":
+        # WEBHOOK: Emit status changed event
+        await webhook_service.emit(
+            event_type=WebhookEventType.PROPOSAL_STATUS_CHANGED,
+            payload={
+                "title": updated_proposal.get("title"),
+                "new_status": update.status,
+                "previous_status": updated_proposal.get("status")
+            },
+            source_entity="proposal",
+            source_id=proposal_id,
+            user_id=updated_proposal.get("user_id")
+        )
+        
+        # EMAIL: Send completion notification
+        if creator_email and email_service.is_configured():
+            try:
+                await email_service.send_proposal_completed_notification(
+                    creator_email=creator_email,
+                    creator_name=creator_name,
+                    proposal_title=proposal_title,
+                    proposal_id=proposal_id,
+                    project_id=updated_proposal.get("assigned_project_id", "N/A")
+                )
+                logger.info(f"Completion email sent to {creator_email} for proposal {proposal_id}")
+            except Exception as e:
+                logger.error(f"Failed to send completion email: {str(e)}")
+        
+        return {
+            "message": "Proposal marked as completed",
+            "email_sent": creator_email and email_service.is_configured()
+        }
+    
+    if update.status and update.status not in ["approved", "rejected", "under_review", "completed"]:
+        # WEBHOOK: Emit status changed event for other statuses
         await webhook_service.emit(
             event_type=WebhookEventType.PROPOSAL_STATUS_CHANGED,
             payload={
