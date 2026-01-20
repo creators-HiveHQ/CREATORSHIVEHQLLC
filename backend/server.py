@@ -2021,11 +2021,36 @@ async def submit_proposal(
         user_id=proposal.get("user_id")
     )
     
+    # EMAIL: Send submission confirmation
+    creator_email = proposal.get("creator_email")
+    creator_name = proposal.get("creator_name", "Creator")
+    if not creator_email:
+        creator = await db.creators.find_one(
+            {"id": proposal.get("user_id")},
+            {"_id": 0, "email": 1, "name": 1}
+        )
+        if creator:
+            creator_email = creator.get("email")
+            creator_name = creator.get("name", creator_name)
+    
+    if creator_email and email_service.is_configured():
+        try:
+            await email_service.send_proposal_submitted_notification(
+                creator_email=creator_email,
+                creator_name=creator_name,
+                proposal_title=proposal.get("title", "Untitled Proposal"),
+                proposal_id=proposal_id
+            )
+            logger.info(f"Submission email sent to {creator_email} for proposal {proposal_id}")
+        except Exception as e:
+            logger.error(f"Failed to send submission email: {str(e)}")
+    
     return {
         "id": proposal_id,
         "status": "submitted",
         "message": "Proposal submitted for review. ARRIS has generated insights.",
-        "arris_insights": arris_insights
+        "arris_insights": arris_insights,
+        "email_sent": creator_email and email_service.is_configured()
     }
 
 @api_router.post("/proposals/{proposal_id}/regenerate-insights")
