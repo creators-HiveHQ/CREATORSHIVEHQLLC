@@ -14,18 +14,20 @@ TEST_CREATOR_EMAIL = "testcreator@example.com"
 TEST_CREATOR_PASSWORD = "creator123"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def api_client():
-    """Shared requests session"""
+    """Fresh requests session for each test"""
     session = requests.Session()
     session.headers.update({"Content-Type": "application/json"})
     return session
 
 
 @pytest.fixture(scope="module")
-def creator_token(api_client):
+def creator_token():
     """Get creator authentication token"""
-    response = api_client.post(
+    session = requests.Session()
+    session.headers.update({"Content-Type": "application/json"})
+    response = session.post(
         f"{BASE_URL}/api/creators/login",
         json={"email": TEST_CREATOR_EMAIL, "password": TEST_CREATOR_PASSWORD}
     )
@@ -34,11 +36,15 @@ def creator_token(api_client):
     pytest.skip("Creator authentication failed - skipping authenticated tests")
 
 
-@pytest.fixture(scope="module")
-def authenticated_client(api_client, creator_token):
+@pytest.fixture(scope="function")
+def authenticated_client(creator_token):
     """Session with auth header"""
-    api_client.headers.update({"Authorization": f"Bearer {creator_token}"})
-    return api_client
+    session = requests.Session()
+    session.headers.update({
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {creator_token}"
+    })
+    return session
 
 
 class TestSubscriptionPlans:
@@ -156,8 +162,6 @@ class TestSubscriptionStatus:
     
     def test_status_requires_auth(self, api_client):
         """Status endpoint should require authentication"""
-        # Remove auth header temporarily
-        api_client.headers.pop("Authorization", None)
         response = api_client.get(f"{BASE_URL}/api/subscriptions/my-status")
         assert response.status_code in [401, 403]
         print("✓ Status endpoint requires authentication")
@@ -204,8 +208,6 @@ class TestCheckoutEndpoint:
     
     def test_checkout_requires_auth(self, api_client):
         """Checkout endpoint should require authentication"""
-        # Remove auth header temporarily
-        api_client.headers.pop("Authorization", None)
         response = api_client.post(
             f"{BASE_URL}/api/subscriptions/checkout",
             json={"plan_id": "pro_monthly", "origin_url": "https://example.com"}
@@ -280,7 +282,6 @@ class TestTransactionsEndpoint:
     
     def test_transactions_requires_auth(self, api_client):
         """Transactions endpoint should require authentication"""
-        api_client.headers.pop("Authorization", None)
         response = api_client.get(f"{BASE_URL}/api/subscriptions/my-transactions")
         assert response.status_code in [401, 403]
         print("✓ Transactions endpoint requires authentication")
