@@ -654,6 +654,9 @@ export const CreatorDashboard = () => {
   const [exportError, setExportError] = useState(null);
   const navigate = useNavigate();
 
+  // Get token for child components
+  const creatorToken = localStorage.getItem("creator_token");
+
   const getAuthHeaders = () => {
     const token = localStorage.getItem("creator_token");
     return { Authorization: `Bearer ${token}` };
