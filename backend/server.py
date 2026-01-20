@@ -2345,6 +2345,14 @@ async def update_proposal(
             except Exception as e:
                 logger.error(f"Failed to send rejection email: {str(e)}")
         
+        # WEBSOCKET: Real-time notification
+        await notification_service.notify_proposal_rejected(
+            proposal_id=proposal_id,
+            proposal_title=proposal_title,
+            creator_id=updated_proposal.get("user_id"),
+            reason=update.review_notes
+        )
+        
         return {
             "message": "Proposal rejected",
             "email_sent": creator_email and email_service.is_configured()
@@ -2376,6 +2384,13 @@ async def update_proposal(
                 logger.info(f"Under review email sent to {creator_email} for proposal {proposal_id}")
             except Exception as e:
                 logger.error(f"Failed to send under review email: {str(e)}")
+        
+        # WEBSOCKET: Real-time notification
+        await notification_service.notify_proposal_under_review(
+            proposal_id=proposal_id,
+            proposal_title=proposal_title,
+            creator_id=updated_proposal.get("user_id")
+        )
         
         return {
             "message": "Proposal moved to under review",
