@@ -786,13 +786,15 @@ export const CreatorDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50" data-testid="creator-dashboard">
-      {/* New Proposal Modal */}
-      <NewProposalModal
-        isOpen={showNewProposal}
-        onClose={() => setShowNewProposal(false)}
-        onSuccess={handleNewProposalSuccess}
-      />
+    <NotificationProvider userType="creator" userId={creator?.id} userName={creator?.name}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50" data-testid="creator-dashboard">
+        <Toaster position="top-right" richColors />
+        {/* New Proposal Modal */}
+        <NewProposalModal
+          isOpen={showNewProposal}
+          onClose={() => setShowNewProposal(false)}
+          onSuccess={handleNewProposalSuccess}
+        />
 
       {/* Header */}
       <header className="bg-white border-b shadow-sm">
