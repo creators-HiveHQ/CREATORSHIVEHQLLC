@@ -213,7 +213,8 @@ class TestProposalSubmitEmailNotification:
             "goals": "Test email notification system"
         })
         
-        if response.status_code == 201:
+        # API returns 200 for proposal creation (not 201)
+        if response.status_code == 200:
             return response.json().get("id")
         return None
     
