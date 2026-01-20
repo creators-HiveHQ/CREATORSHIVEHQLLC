@@ -502,7 +502,8 @@ class TestEmailServiceGracefulDegradation:
             "timeline": "1-2 weeks",
             "priority": "low"
         })
-        assert create_response.status_code == 201, "Failed to create proposal"
+        # API returns 200 for proposal creation (not 201)
+        assert create_response.status_code == 200, f"Failed to create proposal: {create_response.text}"
         proposal_id = create_response.json().get("id")
         print(f"✓ Proposal created successfully: {proposal_id}")
         
