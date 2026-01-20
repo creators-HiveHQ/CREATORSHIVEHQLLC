@@ -199,6 +199,34 @@ Dashboard Updates → Memory Palace Synthesizes
      - Proposal limit error handling with upgrade URL
    - **Testing**: 19 pytest tests covering all feature gating scenarios (100% pass rate)
 
+10. **Advanced Dashboard for Pro Tier** - Full analytics dashboard for Pro+ users:
+    - **Backend Endpoint**: `GET /api/creators/me/advanced-dashboard`
+      - Feature-gated: Returns 403 for Free/Starter users with upgrade URL
+      - Returns full analytics data for Pro+ users
+    - **Performance Metrics**:
+      - Approval rate (percentage of approved proposals)
+      - Average review time (hours from submitted to reviewed)
+      - Completed/In-progress proposal counts
+      - Priority queue position (for priority review users)
+    - **Data Visualizations**:
+      - Monthly submission trends chart (last 6 months)
+      - Status breakdown (approved, in_progress, completed, etc.)
+      - Complexity distribution (ARRIS-analyzed: Low, Medium, High)
+      - ARRIS activity timeline (recent AI interactions)
+    - **Priority Review Banner**: Shows queue position for Pro+ users
+    - **Frontend Features**:
+      - Analytics tab with PRO badge for Free/Starter users
+      - Upgrade prompt with feature preview cards
+      - Full dashboard view for Pro+ users with all metrics
+      - Dynamic tier badge in header (FREE/STARTER/PRO/PREMIUM/ELITE)
+      - "Upgrade" vs "Manage Plan" button based on subscription
+    - **Testing**: 17 pytest tests covering all advanced dashboard features (100% pass rate)
+   - **Frontend Integration**:
+     - Gated insights display with lock icons and upgrade prompts
+     - "Unlock Full ARRIS Insights" CTA with "Upgrade Now" button
+     - Proposal limit error handling with upgrade URL
+   - **Testing**: 19 pytest tests covering all feature gating scenarios (100% pass rate)
+
 ## Upcoming Tasks
 
 - **P1**: Advanced Dashboard Features for Pro tier
