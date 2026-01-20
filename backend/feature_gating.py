@@ -169,6 +169,26 @@ class FeatureGatingService:
         tier, features = await self.get_creator_tier(creator_id)
         return features.get("api_access", False)
     
+    async def has_custom_arris_workflows(self, creator_id: str) -> bool:
+        """Check if creator has custom ARRIS workflows (Elite only)"""
+        tier, features = await self.get_creator_tier(creator_id)
+        return features.get("custom_arris_workflows", False)
+    
+    async def has_brand_integrations(self, creator_id: str) -> bool:
+        """Check if creator has brand integrations (Elite only)"""
+        tier, features = await self.get_creator_tier(creator_id)
+        return features.get("brand_integrations", False)
+    
+    async def has_custom_dashboard(self, creator_id: str) -> bool:
+        """Check if creator has custom dashboard (Elite only)"""
+        tier, features = await self.get_creator_tier(creator_id)
+        return features.get("dashboard_level") == "custom"
+    
+    async def is_elite_tier(self, creator_id: str) -> bool:
+        """Check if creator is Elite tier"""
+        tier, _ = await self.get_creator_tier(creator_id)
+        return tier == SubscriptionTier.ELITE
+    
     async def get_arris_processing_speed(self, creator_id: str) -> str:
         """
         Get ARRIS processing speed for creator.
