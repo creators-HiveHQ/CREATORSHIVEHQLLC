@@ -465,7 +465,7 @@ export const SubscriptionPlans = () => {
                 Thank You!
               </h3>
               <p className="text-slate-600">
-                We've received your inquiry and will be in touch within 24 hours.
+                We&apos;ve received your inquiry and will be in touch within 24 hours.
               </p>
             </div>
           ) : (
