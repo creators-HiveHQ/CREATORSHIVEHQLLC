@@ -429,10 +429,36 @@ Dashboard Updates → Memory Palace Synthesizes
       - ARRIS insights completion notifies creators
     - **Toast Integration**: Uses `sonner` for non-intrusive toast notifications
 
+20. **CSV/JSON Export for Pro/Premium Analytics** - Data export functionality:
+    - **Backend Endpoints**:
+      - `GET /api/export/proposals` - Export proposals data (Pro+ tier)
+      - `GET /api/export/analytics` - Export analytics summary (Pro+ tier)
+      - `GET /api/export/revenue` - Export revenue data (Premium+ tier)
+      - `GET /api/export/full-report` - Complete export (Premium+ tier)
+    - **Export Service** (`/app/backend/export_service.py`):
+      - `ExportService` class with 3 main export methods
+      - Proposals export: id, title, status, platforms, timeline, priority, dates, ARRIS insights
+      - Analytics export: status breakdown, platform breakdown, priority breakdown, approval rate
+      - Revenue export: transactions summary, net profit calculations
+    - **Format Options**:
+      - JSON: Structured data with metadata (filename, record_count, content_type)
+      - CSV: Formatted text with sections and headers
+    - **Date Range Filtering**: 7d, 30d, 90d, 1y, all
+    - **Tier-Based Features**:
+      - Pro: Basic exports (proposals, analytics)
+      - Premium/Elite: Enhanced exports with comparative analytics, revenue data, full reports
+    - **Frontend Integration** (`/app/frontend/src/components/CreatorDashboard.js`):
+      - Export Section in Analytics tab with 3 export cards
+      - `handleExport` function with API call and file download
+      - Loading spinner during export requests
+      - Error message display for failed exports
+      - Premium-only "Full Report" with badge overlay
+    - **Testing**: 13 pytest tests covering all export features (100% pass rate)
+
 ## Upcoming Tasks
 
-- **P3**: CSV/JSON export for Pro/Premium analytics reports
-- **P3**: Real-time ARRIS activity feed for Premium users
+- **P1**: Build real-time ARRIS activity feed for Premium users (shows queue position)
+- **P2**: Historical comparison visualization for ARRIS learning over time
 - **P3**: ARRIS voice interaction capabilities
 
 ---
