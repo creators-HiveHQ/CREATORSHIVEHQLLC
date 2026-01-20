@@ -1310,6 +1310,11 @@ function App() {
                 <Layout><Dashboard /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/revenue" element={
+              <ProtectedRoute>
+                <Layout><AdminRevenueDashboard /></Layout>
+              </ProtectedRoute>
+            } />
             <Route path="/users" element={
               <ProtectedRoute>
                 <Layout><UsersPage /></Layout>
