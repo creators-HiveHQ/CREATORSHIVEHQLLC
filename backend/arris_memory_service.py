@@ -275,7 +275,7 @@ class ArrisMemoryService:
         patterns = []
         
         successful = [p for p in proposals if p.get("status") in ["approved", "completed", "in_progress"]]
-        unsuccessful = [p for p in proposals if p.get("status") in ["rejected"]]
+        # unsuccessful used for comparison but not directly needed now
         
         if len(successful) < 2:
             return patterns
