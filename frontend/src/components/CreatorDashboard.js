@@ -1008,9 +1008,18 @@ export const CreatorDashboard = () => {
                       {/* ARRIS Insights */}
                       {selectedProposal.arris_insights && (
                         <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-2xl">🧠</span>
-                            <h4 className="font-semibold text-purple-800">ARRIS AI Insights</h4>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">🧠</span>
+                              <h4 className="font-semibold text-purple-800">ARRIS AI Insights</h4>
+                            </div>
+                            {selectedProposal.arris_insights.insight_level && (
+                              <Badge className="bg-purple-200 text-purple-700 text-xs">
+                                {selectedProposal.arris_insights.insight_level === "full" ? "Full Access" :
+                                 selectedProposal.arris_insights.insight_level === "summary_strengths" ? "Starter" :
+                                 "Free Tier"}
+                              </Badge>
+                            )}
                           </div>
                           
                           {/* Summary */}
@@ -1033,7 +1042,7 @@ export const CreatorDashboard = () => {
                           )}
 
                           {/* Strengths */}
-                          {selectedProposal.arris_insights.strengths?.length > 0 && (
+                          {selectedProposal.arris_insights.strengths?.length > 0 ? (
                             <div className="mb-3">
                               <p className="text-xs text-green-700 font-medium mb-1">✅ Strengths</p>
                               <ul className="text-sm text-slate-700 space-y-1">
@@ -1044,10 +1053,14 @@ export const CreatorDashboard = () => {
                                 ))}
                               </ul>
                             </div>
+                          ) : selectedProposal.arris_insights._gated?.strengths && (
+                            <div className="mb-3 p-2 bg-amber-50 rounded border border-amber-200">
+                              <p className="text-xs text-amber-700">🔒 {selectedProposal.arris_insights._gated.strengths}</p>
+                            </div>
                           )}
 
                           {/* Risks */}
-                          {selectedProposal.arris_insights.risks?.length > 0 && (
+                          {selectedProposal.arris_insights.risks?.length > 0 ? (
                             <div className="mb-3">
                               <p className="text-xs text-amber-700 font-medium mb-1">⚠️ Potential Risks</p>
                               <ul className="text-sm text-slate-700 space-y-1">
@@ -1058,10 +1071,14 @@ export const CreatorDashboard = () => {
                                 ))}
                               </ul>
                             </div>
+                          ) : selectedProposal.arris_insights._gated?.risks && (
+                            <div className="mb-3 p-2 bg-amber-50 rounded border border-amber-200">
+                              <p className="text-xs text-amber-700">🔒 {selectedProposal.arris_insights._gated.risks}</p>
+                            </div>
                           )}
 
                           {/* Recommendations */}
-                          {selectedProposal.arris_insights.recommendations?.length > 0 && (
+                          {selectedProposal.arris_insights.recommendations?.length > 0 ? (
                             <div className="mb-3">
                               <p className="text-xs text-blue-700 font-medium mb-1">💡 Recommendations</p>
                               <ul className="text-sm text-slate-700 space-y-1">
