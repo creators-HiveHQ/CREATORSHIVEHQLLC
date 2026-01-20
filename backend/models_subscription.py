@@ -39,43 +39,75 @@ SUBSCRIPTION_PLANS = {
         },
         "description": "Basic access to get started"
     },
+    "starter_monthly": {
+        "name": "Starter Monthly",
+        "tier": SubscriptionTier.STARTER,
+        "billing_cycle": BillingCycle.MONTHLY,
+        "price": 9.99,
+        "stripe_price_id": None,
+        "features": {
+            "arris_insights": True,
+            "proposal_limit": 10,
+            "priority_review": False,
+            "advanced_dashboards": False,
+            "support_level": "email"
+        },
+        "description": "Perfect for getting started with ARRIS insights"
+    },
+    "starter_annual": {
+        "name": "Starter Annual",
+        "tier": SubscriptionTier.STARTER,
+        "billing_cycle": BillingCycle.ANNUAL,
+        "price": 99.99,  # ~17% discount
+        "monthly_equivalent": 8.33,
+        "savings": 19.89,
+        "stripe_price_id": None,
+        "features": {
+            "arris_insights": True,
+            "proposal_limit": 10,
+            "priority_review": False,
+            "advanced_dashboards": False,
+            "support_level": "email"
+        },
+        "description": "Save $19.89/year with annual billing"
+    },
     "pro_monthly": {
         "name": "Pro Monthly",
         "tier": SubscriptionTier.PRO,
         "billing_cycle": BillingCycle.MONTHLY,
-        "price": 29.0,
-        "stripe_price_id": None,  # Will be set dynamically or via env
+        "price": 29.99,
+        "stripe_price_id": None,
         "features": {
             "arris_insights": True,
-            "proposal_limit": 20,
+            "proposal_limit": 25,
             "priority_review": True,
             "advanced_dashboards": True,
-            "support_level": "email"
+            "support_level": "priority"
         },
-        "description": "Full access to ARRIS insights and priority features"
+        "description": "Full access with priority review and advanced dashboards"
     },
     "pro_annual": {
         "name": "Pro Annual",
         "tier": SubscriptionTier.PRO,
         "billing_cycle": BillingCycle.ANNUAL,
-        "price": 290.0,  # ~17% discount
-        "monthly_equivalent": 24.17,
-        "savings": 58.0,
+        "price": 299.99,  # ~17% discount
+        "monthly_equivalent": 25.00,
+        "savings": 59.89,
         "stripe_price_id": None,
         "features": {
             "arris_insights": True,
-            "proposal_limit": 20,
+            "proposal_limit": 25,
             "priority_review": True,
             "advanced_dashboards": True,
-            "support_level": "email"
+            "support_level": "priority"
         },
-        "description": "Save $58/year with annual billing"
+        "description": "Save $59.89/year with annual billing"
     },
-    "enterprise_monthly": {
-        "name": "Enterprise Monthly",
-        "tier": SubscriptionTier.ENTERPRISE,
+    "premium_monthly": {
+        "name": "Premium Monthly",
+        "tier": SubscriptionTier.PREMIUM,
         "billing_cycle": BillingCycle.MONTHLY,
-        "price": 99.0,
+        "price": 99.99,
         "stripe_price_id": None,
         "features": {
             "arris_insights": True,
@@ -86,15 +118,15 @@ SUBSCRIPTION_PLANS = {
             "api_access": True,
             "custom_integrations": True
         },
-        "description": "Unlimited access with priority support"
+        "description": "Unlimited access with API and custom integrations"
     },
-    "enterprise_annual": {
-        "name": "Enterprise Annual",
-        "tier": SubscriptionTier.ENTERPRISE,
+    "premium_annual": {
+        "name": "Premium Annual",
+        "tier": SubscriptionTier.PREMIUM,
         "billing_cycle": BillingCycle.ANNUAL,
-        "price": 990.0,  # ~17% discount
-        "monthly_equivalent": 82.50,
-        "savings": 198.0,
+        "price": 999.99,  # ~17% discount
+        "monthly_equivalent": 83.33,
+        "savings": 199.89,
         "stripe_price_id": None,
         "features": {
             "arris_insights": True,
@@ -105,7 +137,28 @@ SUBSCRIPTION_PLANS = {
             "api_access": True,
             "custom_integrations": True
         },
-        "description": "Save $198/year with annual billing"
+        "description": "Save $199.89/year with annual billing"
+    },
+    "elite": {
+        "name": "Elite",
+        "tier": SubscriptionTier.ELITE,
+        "billing_cycle": None,
+        "price": 0,  # Custom pricing
+        "is_custom": True,
+        "stripe_price_id": None,
+        "features": {
+            "arris_insights": True,
+            "proposal_limit": -1,
+            "priority_review": True,
+            "advanced_dashboards": True,
+            "support_level": "dedicated",
+            "api_access": True,
+            "custom_integrations": True,
+            "dedicated_account_manager": True,
+            "custom_training": True,
+            "sla_guarantee": True
+        },
+        "description": "Custom enterprise solution with dedicated support"
     }
 }
 
