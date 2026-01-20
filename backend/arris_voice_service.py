@@ -131,8 +131,8 @@ class ArrisVoiceService:
             # Initialize TTS client
             tts = OpenAITextToSpeech(api_key=self.api_key)
             
-            # Generate speech
-            audio_bytes = await tts.speak(
+            # Generate speech - use generate_speech_base64 for direct base64 output
+            audio_base64 = await tts.generate_speech_base64(
                 text=text,
                 model=self.tts_model,
                 voice=voice,
@@ -141,9 +141,6 @@ class ArrisVoiceService:
             )
             
             processing_time = (datetime.now(timezone.utc) - start_time).total_seconds()
-            
-            # Encode to base64 for easy transmission
-            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
             
             logger.info(f"ARRIS Voice: Generated speech ({len(text)} chars) in {processing_time:.2f}s")
             
