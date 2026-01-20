@@ -735,7 +735,6 @@ class ArrisMemoryService:
     async def _find_similar_proposals(self, creator_id: str, proposal: Dict[str, Any]) -> List[Dict]:
         """Find similar proposals from history"""
         platforms = proposal.get("platforms", [])
-        priority = proposal.get("priority")
         
         # Find proposals with similar platforms
         query = {"user_id": creator_id}
