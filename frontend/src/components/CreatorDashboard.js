@@ -801,6 +801,16 @@ export const CreatorDashboard = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="overview" data-testid="tab-overview">📊 Overview</TabsTrigger>
             <TabsTrigger value="proposals" data-testid="tab-proposals">📋 My Proposals ({proposals.length})</TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              data-testid="tab-analytics"
+              className={!hasAdvancedDashboard ? "relative" : ""}
+            >
+              📈 Analytics
+              {!hasAdvancedDashboard && (
+                <Badge className="ml-2 bg-amber-500 text-white text-xs px-1.5 py-0">PRO</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
