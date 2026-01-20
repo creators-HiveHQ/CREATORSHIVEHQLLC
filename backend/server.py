@@ -7,8 +7,9 @@ Based on Sheet 15 Index - Schema Map
 Self-Funding Loop: 17_Subscriptions → 06_Calculator
 """
 
-from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
