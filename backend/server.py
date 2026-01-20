@@ -2657,6 +2657,168 @@ async def send_test_email(
         logger.error(f"Test email error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Email error: {str(e)}")
 
+@api_router.post("/elite/contact")
+async def submit_elite_inquiry(
+    inquiry: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Submit an Elite plan inquiry from an authenticated creator.
+    Sends notification to sales team and confirmation to creator.
+    
+    Request body:
+    - message: str (required) - Inquiry message
+    - company_name: str (optional) - Creator's company name
+    - team_size: str (optional) - Team size (solo, 2-5, 6-20, 21-50, 50+)
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    creator_email = creator["email"]
+    creator_name = creator.get("name", "Creator")
+    
+    message = inquiry.get("message")
+    if not message or not message.strip():
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    company_name = inquiry.get("company_name")
+    team_size = inquiry.get("team_size")
+    
+    # Store inquiry in database
+    inquiry_doc = {
+        "id": f"EI-{str(uuid.uuid4())[:8]}",
+        "creator_id": creator_id,
+        "creator_email": creator_email,
+        "creator_name": creator_name,
+        "company_name": company_name,
+        "team_size": team_size,
+        "message": message.strip(),
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.elite_inquiries.insert_one(inquiry_doc)
+    
+    # Send emails
+    sales_email_sent = False
+    confirmation_email_sent = False
+    
+    if email_service.is_configured():
+        try:
+            # Send to sales team
+            sales_email_sent = await email_service.send_elite_inquiry_to_sales(
+                creator_name=creator_name,
+                creator_email=creator_email,
+                company_name=company_name,
+                team_size=team_size,
+                message=message.strip(),
+                creator_id=creator_id
+            )
+            logger.info(f"Elite inquiry email sent to sales for creator {creator_id}")
+        except Exception as e:
+            logger.error(f"Failed to send Elite inquiry to sales: {str(e)}")
+        
+        try:
+            # Send confirmation to creator
+            confirmation_email_sent = await email_service.send_elite_inquiry_confirmation(
+                creator_email=creator_email,
+                creator_name=creator_name
+            )
+            logger.info(f"Elite inquiry confirmation sent to {creator_email}")
+        except Exception as e:
+            logger.error(f"Failed to send Elite inquiry confirmation: {str(e)}")
+    
+    # Emit webhook event
+    await webhook_service.emit(
+        event_type=WebhookEventType.ELITE_INQUIRY_SUBMITTED,
+        payload={
+            "inquiry_id": inquiry_doc["id"],
+            "creator_name": creator_name,
+            "creator_email": creator_email,
+            "company_name": company_name,
+            "team_size": team_size
+        },
+        source_entity="elite_inquiry",
+        source_id=inquiry_doc["id"],
+        user_id=creator_id
+    )
+    
+    return {
+        "message": "Thank you for your interest in Elite! Our team will be in touch within 24 hours.",
+        "inquiry_id": inquiry_doc["id"],
+        "sales_email_sent": sales_email_sent,
+        "confirmation_email_sent": confirmation_email_sent
+    }
+
+@api_router.get("/elite/inquiries")
+async def get_elite_inquiries(
+    status: Optional[str] = None,
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all Elite plan inquiries (admin only).
+    """
+    await get_current_user(credentials, db)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    inquiries = await db.elite_inquiries.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    
+    # Get stats
+    total = await db.elite_inquiries.count_documents({})
+    pending = await db.elite_inquiries.count_documents({"status": "pending"})
+    contacted = await db.elite_inquiries.count_documents({"status": "contacted"})
+    converted = await db.elite_inquiries.count_documents({"status": "converted"})
+    
+    return {
+        "inquiries": inquiries,
+        "stats": {
+            "total": total,
+            "pending": pending,
+            "contacted": contacted,
+            "converted": converted
+        }
+    }
+
+@api_router.patch("/elite/inquiries/{inquiry_id}")
+async def update_elite_inquiry(
+    inquiry_id: str,
+    update: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update an Elite inquiry status (admin only).
+    
+    Status options: pending, contacted, converted, declined
+    """
+    await get_current_user(credentials, db)
+    
+    allowed_statuses = ["pending", "contacted", "converted", "declined"]
+    new_status = update.get("status")
+    notes = update.get("notes")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if new_status:
+        if new_status not in allowed_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {allowed_statuses}")
+        update_data["status"] = new_status
+    
+    if notes:
+        update_data["notes"] = notes
+    
+    result = await db.elite_inquiries.update_one(
+        {"id": inquiry_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+    
+    return {"message": "Inquiry updated", "inquiry_id": inquiry_id}
+
 # ============== SUBSCRIPTION & STRIPE (Self-Funding Loop) ==============
 
 @api_router.get("/subscriptions/plans")
