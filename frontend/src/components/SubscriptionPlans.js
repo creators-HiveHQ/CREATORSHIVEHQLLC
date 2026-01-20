@@ -89,16 +89,24 @@ export const SubscriptionPlans = () => {
   const getFilteredPlans = () => {
     return plans.filter(plan => {
       if (plan.plan_id === "free") return true;
+      if (plan.plan_id === "elite") return true; // Always show Elite
       return plan.billing_cycle === billingCycle;
     });
   };
 
   const getTierColor = (tier) => {
     switch (tier) {
+      case "starter": return "bg-blue-500";
       case "pro": return "bg-purple-500";
-      case "enterprise": return "bg-amber-500";
+      case "premium": return "bg-amber-500";
+      case "elite": return "bg-gradient-to-r from-amber-500 to-orange-500";
       default: return "bg-slate-400";
     }
+  };
+
+  const handleContactUs = () => {
+    // Open email or contact form
+    window.location.href = "mailto:sales@hivehq.com?subject=Elite Plan Inquiry";
   };
 
   if (loading) {
