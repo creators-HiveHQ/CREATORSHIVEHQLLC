@@ -366,11 +366,28 @@ Dashboard Updates → Memory Palace Synthesizes
       - `GET /api/calculator/creator/{id}/summary` - Creator-specific financials
     - **Testing**: 34 pytest tests covering all Calculator functionality (100% pass rate)
 
+17. **Elite "Contact Us" Email Flow** - Full inquiry system for Elite plan:
+    - **Contact Form Modal** (`/app/frontend/src/components/SubscriptionPlans.js`):
+      - Beautiful modal triggered by "Contact Us" button on Elite plan
+      - Fields: Company Name (optional), Team Size (optional), Message (required)
+      - Success message displayed after submission
+      - Form validation and error handling
+    - **Backend Endpoints**:
+      - `POST /api/elite/contact` - Submit inquiry (creator auth required)
+      - `GET /api/elite/inquiries` - List all inquiries with stats (admin only)
+      - `PATCH /api/elite/inquiries/{id}` - Update inquiry status (admin only)
+    - **Inquiry Status Workflow**: pending → contacted → converted/declined
+    - **Database Collection**: `elite_inquiries` with full tracking
+    - **Email Templates**: Sales team notification + Creator confirmation
+    - **Webhook Event**: `elite.inquiry_submitted` for automation
+    - **Testing**: 14 pytest tests + Playwright frontend tests (100% pass rate)
+
 ## Upcoming Tasks
 
-- **P2**: "Contact Us" email flow for Elite tier button
 - **P2**: Admin revenue dashboard UI with subscription analytics
 - **P2**: Real-time notifications via WebSocket
+- **P3**: CSV/JSON export for Pro/Premium analytics reports
+- **P3**: Real-time ARRIS activity feed for Premium users
 - **P3**: ARRIS voice interaction capabilities
 
 ---
