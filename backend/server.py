@@ -132,6 +132,9 @@ from arris_activity_service import arris_activity_service
 # Import ARRIS Historical Learning service
 from arris_historical_service import ArrisHistoricalService
 
+# Import ARRIS Voice service
+from arris_voice_service import arris_voice_service
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
