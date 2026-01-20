@@ -108,6 +108,14 @@ from models_subscription import (
 # Import feature gating service
 from feature_gating import FeatureGatingService
 
+# Import Elite service
+from elite_service import EliteService
+from models_elite import (
+    WorkflowCreateRequest, WorkflowRunRequest, WorkflowFocusArea,
+    BrandIntegrationCreate, BrandIntegrationUpdate, BrandPartnershipStatus,
+    DashboardConfigUpdate, DashboardWidgetType
+)
+
 from database import create_indexes, seed_schema_index, seed_lookups, SCHEMA_INDEX
 from seed_data import seed_all_data
 
