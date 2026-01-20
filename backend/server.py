@@ -185,11 +185,12 @@ async def get_any_authenticated_user(credentials: HTTPAuthorizationCredentials =
 stripe_service = None
 feature_gating = None
 elite_service = None
+arris_memory_service = None
 
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service, feature_gating, elite_service
+    global stripe_service, feature_gating, elite_service, arris_memory_service
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
@@ -210,6 +211,9 @@ async def startup_db():
     # Initialize Elite service
     elite_service = EliteService(db)
     logger.info("Elite service initialized - Custom Workflows & Brand Integrations active")
+    # Initialize ARRIS Memory service
+    arris_memory_service = ArrisMemoryService(db)
+    logger.info("ARRIS Memory service initialized - Memory Palace & Pattern Engine active")
     logger.info("Feature Gating service initialized")
     logger.info("Stripe service initialized - Self-Funding Loop active")
     logger.info("Database ready - Zero-Human Operational Model active")
