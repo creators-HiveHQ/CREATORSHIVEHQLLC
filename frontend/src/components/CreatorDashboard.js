@@ -640,6 +640,9 @@ export const CreatorDashboard = () => {
   const [showNewProposal, setShowNewProposal] = useState(false);
   const [advancedData, setAdvancedData] = useState(null);
   const [advancedLoading, setAdvancedLoading] = useState(false);
+  const [premiumData, setPremiumData] = useState(null);
+  const [premiumLoading, setPremiumLoading] = useState(false);
+  const [premiumDateRange, setPremiumDateRange] = useState("30d");
   const [featureAccess, setFeatureAccess] = useState(null);
   const navigate = useNavigate();
 
@@ -685,6 +688,20 @@ export const CreatorDashboard = () => {
     }
   }, [advancedData]);
 
+  const fetchPremiumAnalytics = useCallback(async (dateRange = "30d") => {
+    try {
+      setPremiumLoading(true);
+      const headers = getAuthHeaders();
+      const response = await axios.get(`${API}/creators/me/premium-analytics?date_range=${dateRange}`, { headers });
+      setPremiumData(response.data);
+    } catch (error) {
+      console.error("Error fetching premium analytics:", error);
+      // Feature might be gated
+    } finally {
+      setPremiumLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -694,7 +711,11 @@ export const CreatorDashboard = () => {
     if (activeTab === "analytics" && !advancedData && !advancedLoading) {
       fetchAdvancedDashboard();
     }
-  }, [activeTab, advancedData, advancedLoading, fetchAdvancedDashboard]);
+    // Fetch premium data when switching to premium-analytics tab
+    if (activeTab === "premium-analytics" && !premiumData && !premiumLoading) {
+      fetchPremiumAnalytics(premiumDateRange);
+    }
+  }, [activeTab, advancedData, advancedLoading, fetchAdvancedDashboard, premiumData, premiumLoading, fetchPremiumAnalytics, premiumDateRange]);
 
   const handleNewProposalSuccess = (proposal) => {
     // Refresh data and switch to proposals tab
