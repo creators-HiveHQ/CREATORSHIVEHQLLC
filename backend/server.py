@@ -411,6 +411,169 @@ async def get_creator_dashboard(credentials: HTTPAuthorizationCredentials = Depe
         "tasks": task_stats
     }
 
+@api_router.get("/creators/me/advanced-dashboard")
+async def get_creator_advanced_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get advanced dashboard data for Pro+ creators.
+    Returns enhanced analytics, trends, and performance metrics.
+    Feature-gated: Requires 'advanced' or 'custom' dashboard_level.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check dashboard level access
+    dashboard_level = await feature_gating.get_dashboard_level(creator_id)
+    has_priority_review = await feature_gating.has_priority_review(creator_id)
+    has_advanced_analytics = await feature_gating.has_advanced_analytics(creator_id)
+    
+    if dashboard_level == "basic":
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Advanced dashboard requires Pro plan or higher",
+                "required_tier": "pro",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # ===== PERFORMANCE ANALYTICS =====
+    # Calculate approval rate
+    total_proposals = await db.proposals.count_documents({"user_id": creator_id})
+    approved_proposals = await db.proposals.count_documents({
+        "user_id": creator_id, 
+        "status": {"$in": ["approved", "in_progress", "completed"]}
+    })
+    approval_rate = round((approved_proposals / total_proposals * 100), 1) if total_proposals > 0 else 0
+    
+    # Calculate average review time (submitted -> approved/rejected)
+    review_pipeline = [
+        {"$match": {
+            "user_id": creator_id,
+            "status": {"$in": ["approved", "rejected", "in_progress", "completed"]},
+            "submitted_at": {"$exists": True},
+            "reviewed_at": {"$exists": True}
+        }},
+        {"$project": {
+            "review_time_hours": {
+                "$divide": [
+                    {"$subtract": [
+                        {"$dateFromString": {"dateString": "$reviewed_at"}},
+                        {"$dateFromString": {"dateString": "$submitted_at"}}
+                    ]},
+                    3600000  # Convert ms to hours
+                ]
+            }
+        }},
+        {"$group": {"_id": None, "avg_review_time": {"$avg": "$review_time_hours"}}}
+    ]
+    review_time_result = await db.proposals.aggregate(review_pipeline).to_list(1)
+    avg_review_time = round(review_time_result[0]["avg_review_time"], 1) if review_time_result else None
+    
+    # ===== PROPOSAL TRENDS (Last 6 months) =====
+    six_months_ago = datetime.now(timezone.utc) - timedelta(days=180)
+    trends_pipeline = [
+        {"$match": {
+            "user_id": creator_id,
+            "created_at": {"$gte": six_months_ago.isoformat()}
+        }},
+        {"$project": {
+            "month": {"$substr": ["$created_at", 0, 7]}  # YYYY-MM
+        }},
+        {"$group": {"_id": "$month", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    monthly_trends = await db.proposals.aggregate(trends_pipeline).to_list(12)
+    
+    # ===== ARRIS ACTIVITY =====
+    arris_usage = await db.arris_usage_log.find(
+        {"user_id": creator_id},
+        {"_id": 0, "timestamp": 1, "query_category": 1, "response_type": 1, "success": 1}
+    ).sort("timestamp", -1).limit(10).to_list(10)
+    
+    arris_stats = {
+        "total_interactions": await db.arris_usage_log.count_documents({"user_id": creator_id}),
+        "successful": await db.arris_usage_log.count_documents({"user_id": creator_id, "success": True}),
+        "recent_activity": arris_usage
+    }
+    
+    # ===== STATUS BREAKDOWN WITH TIMELINE =====
+    status_pipeline = [
+        {"$match": {"user_id": creator_id}},
+        {"$group": {
+            "_id": "$status",
+            "count": {"$sum": 1},
+            "latest": {"$max": "$updated_at"}
+        }}
+    ]
+    status_breakdown = await db.proposals.aggregate(status_pipeline).to_list(10)
+    
+    # ===== PRIORITY REVIEW STATUS =====
+    priority_queue_position = None
+    if has_priority_review:
+        # Count proposals ahead in queue (simplified - just count pending reviews)
+        pending_reviews = await db.proposals.count_documents({
+            "status": "submitted",
+            "created_at": {"$lt": datetime.now(timezone.utc).isoformat()}
+        })
+        priority_queue_position = max(1, pending_reviews // 3)  # Priority gets ~3x faster
+    
+    # ===== COMPLEXITY DISTRIBUTION =====
+    complexity_pipeline = [
+        {"$match": {
+            "user_id": creator_id,
+            "arris_insights.estimated_complexity": {"$exists": True}
+        }},
+        {"$group": {"_id": "$arris_insights.estimated_complexity", "count": {"$sum": 1}}}
+    ]
+    complexity_dist = await db.proposals.aggregate(complexity_pipeline).to_list(5)
+    
+    # ===== SUCCESS METRICS =====
+    completed_proposals = await db.proposals.count_documents({
+        "user_id": creator_id,
+        "status": "completed"
+    })
+    in_progress = await db.proposals.count_documents({
+        "user_id": creator_id,
+        "status": "in_progress"
+    })
+    
+    return {
+        "dashboard_level": dashboard_level,
+        "has_priority_review": has_priority_review,
+        "has_advanced_analytics": has_advanced_analytics,
+        
+        "performance": {
+            "total_proposals": total_proposals,
+            "approval_rate": approval_rate,
+            "avg_review_time_hours": avg_review_time,
+            "completed": completed_proposals,
+            "in_progress": in_progress,
+            "priority_queue_position": priority_queue_position
+        },
+        
+        "trends": {
+            "monthly_submissions": [{"month": t["_id"], "count": t["count"]} for t in monthly_trends]
+        },
+        
+        "status_breakdown": [
+            {"status": s["_id"], "count": s["count"], "latest": s["latest"]} 
+            for s in status_breakdown
+        ],
+        
+        "complexity_distribution": [
+            {"complexity": c["_id"], "count": c["count"]} 
+            for c in complexity_dist
+        ],
+        
+        "arris": arris_stats,
+        
+        "insights": {
+            "top_performing_month": max(monthly_trends, key=lambda x: x["count"])["_id"] if monthly_trends else None,
+            "most_common_complexity": max(complexity_dist, key=lambda x: x["count"])["_id"] if complexity_dist else None
+        }
+    }
+
 @api_router.get("/creators")
 async def get_creators(
     status: Optional[str] = None,
