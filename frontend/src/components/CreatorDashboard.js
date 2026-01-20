@@ -2303,6 +2303,12 @@ export const CreatorDashboard = () => {
                   </Card>
                 </div>
 
+                {/* ARRIS Activity Feed - Real-time Queue Updates */}
+                <ArrisActivityFeed 
+                  creatorId={creator?.id}
+                  hasPremiumAccess={hasPremiumAnalytics}
+                />
+
                 {/* Premium Badge */}
                 <div className="text-center pt-4 border-t">
                   <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
