@@ -14,8 +14,10 @@ import uuid
 
 class SubscriptionTier(str, Enum):
     FREE = "free"
+    STARTER = "starter"
     PRO = "pro"
-    ENTERPRISE = "enterprise"
+    PREMIUM = "premium"
+    ELITE = "elite"
 
 
 class BillingCycle(str, Enum):
