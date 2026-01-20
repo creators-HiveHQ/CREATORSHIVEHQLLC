@@ -944,26 +944,41 @@ async def regenerate_insights(
     proposal_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
-    """Regenerate ARRIS insights for a proposal"""
-    await get_current_user(credentials, db)
+    """Regenerate ARRIS insights for a proposal with priority processing for Premium/Elite"""
+    auth_user = await get_any_authenticated_user(credentials)
     
     proposal = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
     if not proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
     
-    # Regenerate insights
-    arris_insights = await arris_service.generate_project_insights(proposal, None)
+    # Get processing speed for the user
+    processing_speed = "standard"
+    if auth_user["user_type"] == "creator":
+        processing_speed = await feature_gating.get_arris_processing_speed(auth_user["user_id"])
+    
+    # Regenerate insights with priority processing
+    arris_insights = await arris_service.generate_project_insights(
+        proposal, 
+        None,
+        processing_speed=processing_speed
+    )
     
     await db.proposals.update_one(
         {"id": proposal_id},
         {"$set": {
             "arris_insights": arris_insights,
             "arris_insights_generated_at": datetime.now(timezone.utc).isoformat(),
+            "arris_processing_speed": processing_speed,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
     
-    return {"message": "Insights regenerated", "arris_insights": arris_insights}
+    return {
+        "message": "Insights regenerated", 
+        "arris_insights": arris_insights,
+        "processing_speed": processing_speed,
+        "priority_processed": processing_speed == "fast"
+    }
 
 @api_router.get("/arris/queue-stats")
 async def get_arris_queue_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
