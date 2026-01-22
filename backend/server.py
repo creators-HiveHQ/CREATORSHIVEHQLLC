@@ -5111,6 +5111,119 @@ async def trigger_rejection_recommendations(proposal_id: str, rejection_reason: 
         logger.error(f"Failed to auto-generate recommendations for {proposal_id}: {str(e)}")
 
 
+# ============== ENHANCED MEMORY PALACE (Phase 4 Module C) ==============
+
+@api_router.post("/admin/memory/consolidate")
+async def run_memory_consolidation(
+    creator_id: Optional[str] = Query(default=None, description="Consolidate for specific creator"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Run memory consolidation to optimize storage and retrieval.
+    Merges similar memories, summarizes old content, archives low-value memories.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    results = await enhanced_memory_palace.run_consolidation(creator_id=creator_id)
+    return results
+
+
+@api_router.get("/admin/memory/health")
+async def get_memory_health_report(
+    creator_id: Optional[str] = Query(default=None, description="Get health for specific creator"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get memory health report showing consolidation candidates and recommendations.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await enhanced_memory_palace.get_memory_health_report(creator_id=creator_id)
+
+
+@api_router.get("/admin/memory/consolidation-history")
+async def get_consolidation_history(
+    limit: int = Query(default=10, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get history of memory consolidation runs.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await enhanced_memory_palace.get_consolidation_history(limit=limit)
+
+
+@api_router.get("/creators/me/cross-insights")
+async def get_my_cross_creator_insights(
+    insight_types: Optional[str] = Query(default=None, description="Comma-separated insight types"),
+    limit: int = Query(default=10, le=20),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get cross-creator insights ("Creators like you...") for the current creator.
+    Premium feature - provides anonymized insights from similar creators.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if user has Premium access
+    has_premium = await feature_gating.has_advanced_analytics(creator_id)
+    if not has_premium:
+        return {
+            "insights": [],
+            "limited": True,
+            "message": "Cross-creator insights require Premium plan or higher",
+            "upgrade_url": "/creator/subscription"
+        }
+    
+    # Parse insight types if provided
+    types_list = None
+    if insight_types:
+        types_list = [t.strip() for t in insight_types.split(",")]
+    
+    return await enhanced_memory_palace.get_cross_creator_insights(
+        creator_id=creator_id,
+        insight_types=types_list,
+        limit=limit
+    )
+
+
+@api_router.get("/admin/creators/{creator_id}/cross-insights")
+async def get_creator_cross_insights_admin(
+    creator_id: str,
+    insight_types: Optional[str] = Query(default=None),
+    limit: int = Query(default=10, le=20),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get cross-creator insights for any creator.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    types_list = None
+    if insight_types:
+        types_list = [t.strip() for t in insight_types.split(",")]
+    
+    return await enhanced_memory_palace.get_cross_creator_insights(
+        creator_id=creator_id,
+        insight_types=types_list,
+        limit=limit
+    )
+
+
 # ============== LOOKUPS (Sheet 16) ==============
 
 @api_router.get("/lookups")
