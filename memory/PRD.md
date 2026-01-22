@@ -457,15 +457,70 @@ Dashboard Updates → Memory Palace Synthesizes
 
 ## Upcoming Tasks
 
-**Phase 4 Modules A & B Complete** - Pattern Engine & Smart Automation implemented
-**Phase 4 Module C (C1, C2, C3) Complete** - Memory Consolidation, Cross-Creator Insights, Memory Search implemented
+**Phase 4 Module C Complete** - Memory Search, Export/Import, and Forgetting Protocol implemented
 
 **Remaining Phase 4 Tasks:**
-- **Module C (C4-C5)**: Memory Export/Import (Elite), Forgetting Protocol (GDPR)
 - **Module D**: Self-Service Creator Onboarding 2.0
 - **Module E**: ARRIS Command Center (Elite)
 
 ## Completed Features - Phase 4
+
+28. **Memory Export/Import (Phase 4 Module C - C4)** - Data portability for creators:
+    - **Export Features** (`/app/backend/enhanced_memory_palace.py`):
+      - `export_memories()` - Full or portable format export with integrity checksum (SHA256)
+      - Statistics: memory counts, type distribution, date range
+      - Pattern grouping by category
+      - Learning metrics included
+    - **Import Features**:
+      - `import_memories()` - Import with merge strategies
+        - `skip_duplicates`: Skip existing memories (safest)
+        - `overwrite`: Replace existing with imported
+        - `merge`: Keep both versions, mark imports
+      - Validation with checksum verification
+      - Import history tracking
+    - **API Endpoints**:
+      - `GET /api/memory/export` - Export memories (Pro+ limited, Elite full)
+      - `POST /api/memory/import` - Import memories (Elite only)
+      - `GET /api/memory/export-history` - View export history
+      - `GET /api/memory/import-history` - View import history (Elite only)
+    - **Tier Restrictions**:
+      - Free: Cannot export
+      - Pro/Premium: Portable format only, no archived memories
+      - Elite: Full export/import, all formats, archived included
+    - **Collections**: memory_export_log, memory_import_log
+    - **Testing**: 47 pytest tests, 100% pass rate
+
+29. **Forgetting Protocol (Phase 4 Module C - C5)** - GDPR-compliant memory deletion:
+    - **Deletion Types**:
+      - Soft delete: 30-day recovery window, moves to deletion queue
+      - Permanent delete: Immediate irreversible deletion
+    - **Selection Criteria**:
+      - `memory_ids`: Specific memory IDs
+      - `memory_types`: By type (interaction, proposal, pattern, etc.)
+      - `tags`: By tags
+      - `date_before`: By date range
+    - **Recovery**:
+      - `recover_memories()` - Restore soft-deleted memories by deletion_id
+      - `get_pending_deletions()` - View recoverable memories
+    - **GDPR Compliance**:
+      - Article 17 (Right to Erasure): `DELETE /api/memory/gdpr-erase?confirm=true`
+      - Article 20 (Data Portability): `GET /api/memory/gdpr-export`
+      - Full audit trail in memory_deletion_audit
+      - GDPR erasure audit in gdpr_erasure_audit
+    - **API Endpoints**:
+      - `DELETE /api/memory/delete` - Selective deletion (soft/permanent)
+      - `POST /api/memory/recover` - Recover soft-deleted memories
+      - `GET /api/memory/deletion-history` - View deletion audit
+      - `GET /api/memory/pending-deletions` - View pending permanent deletions
+      - `GET /api/memory/gdpr-export` - Full data portability export
+      - `DELETE /api/memory/gdpr-erase` - Full account erasure
+    - **Admin Endpoints**:
+      - `GET /api/admin/memory/export/{creator_id}` - Export any creator's memories
+      - `GET /api/admin/memory/deletion-audit` - View all deletion logs
+      - `GET /api/admin/memory/gdpr-erasure-audit` - View GDPR erasure logs
+      - `POST /api/admin/memory/purge-expired` - Purge expired soft-deleted memories
+    - **Collections**: memory_deletion_queue, memory_deletion_audit, gdpr_erasure_audit, memory_recovery_log, memory_purge_log
+    - **Testing**: Included in 47 pytest tests, 100% pass rate
 
 27. **Memory Search API (Phase 4 Module C - C3)** - Full-text search across ARRIS memories:
     - **Backend Service** (`/app/backend/enhanced_memory_palace.py`):
