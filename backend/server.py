@@ -4646,6 +4646,132 @@ async def get_memory_palace(user_id: Optional[str] = None):
     
     return memory
 
+
+# ============== ADMIN PATTERN ENGINE DASHBOARD (Phase 4) ==============
+
+@api_router.get("/admin/patterns/overview")
+async def get_admin_pattern_overview(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get platform-wide pattern overview for admin dashboard.
+    Admin-only endpoint.
+    """
+    # Verify admin access
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await pattern_engine.get_platform_overview()
+
+
+@api_router.get("/admin/patterns/detect")
+async def detect_platform_patterns(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Run comprehensive pattern detection across the platform.
+    Returns categorized patterns with confidence scores and recommendations.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await pattern_engine.detect_all_patterns()
+
+
+@api_router.get("/admin/patterns/cohorts")
+async def get_cohort_analysis(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Analyze creators by cohort (registration month, tier, engagement level).
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await pattern_engine.get_cohort_analysis()
+
+
+@api_router.get("/admin/patterns/rankings")
+async def get_creator_rankings(
+    sort_by: str = Query(default="approval_rate", description="approval_rate, total_proposals, approved_proposals"),
+    limit: int = Query(default=20, le=100),
+    tier: Optional[str] = Query(default=None, description="Filter by tier"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get ranked list of creators by performance metrics.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await pattern_engine.get_creator_ranking(
+        sort_by=sort_by,
+        limit=limit,
+        tier_filter=tier
+    )
+
+
+@api_router.get("/admin/patterns/revenue")
+async def get_revenue_analysis(
+    period_days: int = Query(default=90, le=365, description="Analysis period in days"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Analyze revenue patterns from subscriptions and Calculator entries.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await pattern_engine.get_revenue_analysis(period_days=period_days)
+
+
+@api_router.get("/admin/patterns/insights")
+async def get_actionable_insights(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Generate actionable insights for admin based on detected patterns.
+    Returns prioritized list of insights with recommendations.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await pattern_engine.get_actionable_insights()
+
+
+@api_router.get("/admin/patterns/churn-risk")
+async def get_churn_risk_creators(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get list of creators at risk of churning.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    patterns = await pattern_engine.detect_all_patterns()
+    return {
+        "at_risk_creators": patterns.get("churn_patterns", []),
+        "total_at_risk": len(patterns.get("churn_patterns", [])),
+        "high_risk_count": len([p for p in patterns.get("churn_patterns", []) if p.get("risk_level") == "high"]),
+        "medium_risk_count": len([p for p in patterns.get("churn_patterns", []) if p.get("risk_level") == "medium"]),
+        "detected_at": patterns.get("detected_at")
+    }
+
+
 # ============== LOOKUPS (Sheet 16) ==============
 
 @api_router.get("/lookups")
