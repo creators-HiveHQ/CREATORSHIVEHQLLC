@@ -235,11 +235,12 @@ smart_automation_engine = None
 proposal_recommendation_service = None
 enhanced_memory_palace = None
 onboarding_wizard = None
+auto_approval_service = None
 
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service, pattern_engine, smart_automation_engine, proposal_recommendation_service, enhanced_memory_palace, onboarding_wizard
+    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service, pattern_engine, smart_automation_engine, proposal_recommendation_service, enhanced_memory_palace, onboarding_wizard, auto_approval_service
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
