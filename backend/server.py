@@ -139,6 +139,12 @@ from arris_voice_service import arris_voice_service
 # Import ARRIS Pattern Engine
 from arris_pattern_engine import ArrisPatternEngine
 
+# Import Smart Automation Engine
+from smart_automation_engine import SmartAutomationEngine
+
+# Import Proposal Recommendation Service
+from proposal_recommendation_service import ProposalRecommendationService
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
