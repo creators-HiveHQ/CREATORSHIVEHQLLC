@@ -22,6 +22,7 @@ import { CreatorAuthProvider, CreatorLoginPage, CreatorProtectedRoute, CreatorDa
 import { SubscriptionPlans, SubscriptionSuccess, SubscriptionCancel } from "@/components/SubscriptionPlans";
 import { AdminRevenueDashboard } from "@/components/AdminRevenueDashboard";
 import { AdminPatternDashboard } from "@/components/AdminPatternDashboard";
+import { AdminAutomationDashboard } from "@/components/AdminAutomationDashboard";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
