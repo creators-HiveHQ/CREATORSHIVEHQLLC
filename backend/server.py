@@ -539,6 +539,213 @@ async def get_creator_dashboard(credentials: HTTPAuthorizationCredentials = Depe
         "tasks": task_stats
     }
 
+# ============== SMART ONBOARDING WIZARD (Phase 4 Module D - D1) ==============
+
+@api_router.get("/onboarding/status")
+async def get_onboarding_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get the current onboarding status for the logged-in creator.
+    
+    Returns:
+        - Current step number
+        - Completed steps
+        - Completion percentage
+        - Whether onboarding is complete
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    status = await onboarding_wizard.get_onboarding_status(creator_id)
+    return status
+
+
+@api_router.get("/onboarding/steps")
+async def get_onboarding_steps():
+    """
+    Get all onboarding steps configuration (public endpoint).
+    
+    Returns the structure and field definitions for each step.
+    """
+    return {
+        "total_steps": len(ONBOARDING_STEPS),
+        "steps": ONBOARDING_STEPS
+    }
+
+
+@api_router.get("/onboarding/step/{step_number}")
+async def get_onboarding_step(
+    step_number: int,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get details for a specific onboarding step with ARRIS personalization.
+    
+    Returns:
+        - Step metadata (title, description, fields)
+        - Previously saved data for this step
+        - ARRIS personalized context and tips
+        - Navigation options
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if step_number < 1 or step_number > len(ONBOARDING_STEPS):
+        raise HTTPException(status_code=400, detail=f"Invalid step number. Must be 1-{len(ONBOARDING_STEPS)}")
+    
+    step_details = await onboarding_wizard.get_step_details(step_number, creator_id)
+    
+    if "error" in step_details:
+        raise HTTPException(status_code=400, detail=step_details["error"])
+    
+    return step_details
+
+
+@api_router.post("/onboarding/step/{step_number}")
+async def save_onboarding_step(
+    step_number: int,
+    data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Save data from a completed onboarding step and advance to next.
+    
+    Request Body:
+        Field values collected in this step (varies by step)
+    
+    Returns:
+        - Success status
+        - Next step number
+        - Updated completion percentage
+        - ARRIS insight for this step (if available)
+        - Reward earned (if completing final step)
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if step_number < 1 or step_number > len(ONBOARDING_STEPS):
+        raise HTTPException(status_code=400, detail=f"Invalid step number. Must be 1-{len(ONBOARDING_STEPS)}")
+    
+    result = await onboarding_wizard.save_step_data(creator_id, step_number, data)
+    
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+
+@api_router.get("/onboarding/personalization")
+async def get_onboarding_personalization(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get the personalization summary from completed onboarding.
+    
+    Returns:
+        - Personalization profile (platforms, goals, preferences)
+        - ARRIS insights generated during onboarding
+        - Rewards earned
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    summary = await onboarding_wizard.get_personalization_summary(creator_id)
+    return summary
+
+
+@api_router.post("/onboarding/skip")
+async def skip_onboarding(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Skip remaining onboarding steps.
+    
+    The creator can complete onboarding later from settings.
+    Some features may be limited until onboarding is complete.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    result = await onboarding_wizard.skip_onboarding(creator_id)
+    return result
+
+
+@api_router.post("/onboarding/reset")
+async def reset_onboarding(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Reset onboarding to start fresh.
+    
+    All previous onboarding data will be cleared.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    result = await onboarding_wizard.reset_onboarding(creator_id)
+    return result
+
+
+@api_router.get("/admin/onboarding/analytics")
+async def get_onboarding_analytics(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get platform-wide onboarding analytics (admin only).
+    
+    Returns:
+        - Total onboardings (complete, skipped, in-progress)
+        - Completion rate
+        - Drop-off by step
+        - Most common goals and platforms
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    analytics = await onboarding_wizard.get_onboarding_analytics()
+    return analytics
+
+
+@api_router.get("/admin/onboarding/{creator_id}")
+async def admin_get_creator_onboarding(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get onboarding details for a specific creator (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Verify creator exists
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0, "id": 1, "name": 1})
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    
+    status = await onboarding_wizard.get_onboarding_status(creator_id)
+    summary = await onboarding_wizard.get_personalization_summary(creator_id)
+    
+    return {
+        "creator": creator,
+        "status": status,
+        "personalization": summary
+    }
+
+
+@api_router.post("/admin/onboarding/{creator_id}/reset")
+async def admin_reset_creator_onboarding(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Reset onboarding for a specific creator (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Verify creator exists
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0, "id": 1})
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    
+    result = await onboarding_wizard.reset_onboarding(creator_id)
+    return result
+
+
 @api_router.get("/creators/me/advanced-dashboard")
 async def get_creator_advanced_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
