@@ -872,6 +872,612 @@ Provide a brief statement about how you'll help them based on these preferences.
             "top_platforms": [{"platform": p["_id"], "count": p["count"]} for p in top_platforms],
             "analyzed_at": datetime.now(timezone.utc).isoformat()
         }
+    
+    # ============== PROGRESS TRACKER (D3) ==============
+    
+    async def get_detailed_progress(self, creator_id: str) -> Dict[str, Any]:
+        """
+        Get detailed progress tracking for a creator with ARRIS encouragement.
+        
+        Returns comprehensive progress information including:
+        - Overall progress percentage
+        - Detailed status of each step
+        - Time spent and estimated remaining
+        - ARRIS encouragement message
+        - Post-onboarding checklist status
+        """
+        # Get onboarding record
+        onboarding = await self.db.creator_onboarding.find_one(
+            {"creator_id": creator_id},
+            {"_id": 0}
+        )
+        
+        if not onboarding:
+            return {
+                "has_started": False,
+                "message": "Onboarding not started yet",
+                "next_action": "Start your creator journey"
+            }
+        
+        # Get creator info
+        creator = await self.db.creators.find_one(
+            {"id": creator_id},
+            {"_id": 0, "name": 1}
+        )
+        creator_name = creator.get("name", "Creator") if creator else "Creator"
+        
+        completed_steps = onboarding.get("completed_steps", [])
+        current_step = onboarding.get("current_step", 1)
+        step_data = onboarding.get("step_data", {})
+        is_complete = onboarding.get("completed_at") is not None
+        is_skipped = onboarding.get("skipped", False)
+        
+        # Build detailed step status
+        steps_status = []
+        for step in self.steps:
+            step_id = step["step_id"]
+            is_completed = step_id in completed_steps
+            is_current = step["step_number"] == current_step and not is_complete
+            has_data = step_id in step_data
+            
+            step_status = {
+                "step_number": step["step_number"],
+                "step_id": step_id,
+                "title": step["title"],
+                "subtitle": step["subtitle"],
+                "status": "completed" if is_completed else ("current" if is_current else "pending"),
+                "is_required": step["required"],
+                "has_data": has_data,
+                "data_summary": self._summarize_step_data(step_id, step_data.get(step_id, {}))
+            }
+            steps_status.append(step_status)
+        
+        # Calculate progress metrics
+        total_required = len([s for s in self.steps if s["required"]])
+        completed_count = len(completed_steps)
+        progress_percentage = int((completed_count / max(total_required, 1)) * 100)
+        
+        # Time tracking
+        started_at = onboarding.get("started_at")
+        last_activity = onboarding.get("last_activity")
+        completed_at = onboarding.get("completed_at")
+        
+        time_metrics = self._calculate_time_metrics(started_at, last_activity, completed_at, completed_count, total_required)
+        
+        # Generate ARRIS encouragement
+        arris_message = await self._generate_progress_encouragement(
+            creator_name=creator_name,
+            progress_percentage=progress_percentage,
+            current_step=current_step,
+            is_complete=is_complete,
+            is_skipped=is_skipped,
+            completed_steps=completed_steps
+        )
+        
+        # Get post-onboarding checklist if completed
+        post_onboarding_checklist = None
+        if is_complete:
+            post_onboarding_checklist = await self._get_post_onboarding_checklist(creator_id)
+        
+        # Calculate next action
+        next_action = self._get_next_action(current_step, is_complete, is_skipped, completed_steps)
+        
+        return {
+            "creator_id": creator_id,
+            "creator_name": creator_name,
+            "has_started": True,
+            "is_complete": is_complete,
+            "is_skipped": is_skipped,
+            "progress": {
+                "percentage": progress_percentage,
+                "completed_steps": completed_count,
+                "total_steps": total_required,
+                "current_step": current_step
+            },
+            "steps": steps_status,
+            "time_metrics": time_metrics,
+            "arris_message": arris_message,
+            "next_action": next_action,
+            "post_onboarding_checklist": post_onboarding_checklist,
+            "rewards": onboarding.get("rewards_earned", []),
+            "last_activity": last_activity
+        }
+    
+    def _summarize_step_data(self, step_id: str, data: Dict) -> Optional[str]:
+        """Generate a brief summary of step data"""
+        if not data:
+            return None
+        
+        if step_id == "profile":
+            name = data.get("display_name", "")
+            return f"Profile: {name}" if name else None
+        elif step_id == "platforms":
+            platform = data.get("primary_platform", "")
+            return f"Primary: {PLATFORM_LABELS.get(platform, platform)}" if platform else None
+        elif step_id == "niche":
+            niche = data.get("primary_niche", "")
+            return f"Niche: {NICHE_LABELS.get(niche, niche)}" if niche else None
+        elif step_id == "goals":
+            goal = data.get("primary_goal", "")
+            return f"Goal: {GOAL_LABELS.get(goal, goal)}" if goal else None
+        elif step_id == "arris_intro":
+            style = data.get("arris_communication_style", "")
+            return f"Style: {style.title()}" if style else None
+        
+        return None
+    
+    def _calculate_time_metrics(
+        self,
+        started_at: Optional[str],
+        last_activity: Optional[str],
+        completed_at: Optional[str],
+        completed_steps: int,
+        total_steps: int
+    ) -> Dict[str, Any]:
+        """Calculate time-related metrics"""
+        now = datetime.now(timezone.utc)
+        
+        metrics = {
+            "started_at": started_at,
+            "last_activity": last_activity,
+            "completed_at": completed_at,
+            "time_since_start": None,
+            "time_since_last_activity": None,
+            "total_duration": None,
+            "estimated_remaining": None
+        }
+        
+        if started_at:
+            try:
+                start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                metrics["time_since_start"] = self._format_duration(now - start)
+            except:
+                pass
+        
+        if last_activity:
+            try:
+                last = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
+                metrics["time_since_last_activity"] = self._format_duration(now - last)
+            except:
+                pass
+        
+        if completed_at:
+            try:
+                start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                end = datetime.fromisoformat(completed_at.replace("Z", "+00:00"))
+                metrics["total_duration"] = self._format_duration(end - start)
+            except:
+                pass
+        else:
+            # Estimate remaining time
+            remaining_steps = total_steps - completed_steps
+            if remaining_steps > 0:
+                # Assume ~2 minutes per step
+                estimated_minutes = remaining_steps * 2
+                metrics["estimated_remaining"] = f"~{estimated_minutes} minutes"
+        
+        return metrics
+    
+    def _format_duration(self, delta: timedelta) -> str:
+        """Format a timedelta as human-readable string"""
+        total_seconds = int(delta.total_seconds())
+        
+        if total_seconds < 60:
+            return "Just now"
+        elif total_seconds < 3600:
+            minutes = total_seconds // 60
+            return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+        elif total_seconds < 86400:
+            hours = total_seconds // 3600
+            return f"{hours} hour{'s' if hours > 1 else ''} ago"
+        else:
+            days = total_seconds // 86400
+            return f"{days} day{'s' if days > 1 else ''} ago"
+    
+    async def _generate_progress_encouragement(
+        self,
+        creator_name: str,
+        progress_percentage: int,
+        current_step: int,
+        is_complete: bool,
+        is_skipped: bool,
+        completed_steps: List[str]
+    ) -> Dict[str, Any]:
+        """Generate ARRIS encouragement message based on progress"""
+        if is_complete:
+            return {
+                "type": "celebration",
+                "icon": "🎉",
+                "message": f"Congratulations, {creator_name}! You've completed your onboarding. ARRIS is now fully personalized to help you succeed.",
+                "sub_message": "Check out your personalized dashboard for tailored insights."
+            }
+        
+        if is_skipped:
+            return {
+                "type": "reminder",
+                "icon": "📝",
+                "message": f"Hey {creator_name}, you skipped onboarding earlier. Complete it anytime to unlock personalized ARRIS insights!",
+                "sub_message": "It only takes a few minutes to finish."
+            }
+        
+        if progress_percentage == 0:
+            return {
+                "type": "welcome",
+                "icon": "👋",
+                "message": f"Welcome, {creator_name}! Let's get your creator journey started.",
+                "sub_message": "Just 7 quick steps to personalize your experience."
+            }
+        
+        if progress_percentage < 30:
+            return {
+                "type": "early",
+                "icon": "🚀",
+                "message": f"Great start, {creator_name}! You're making progress.",
+                "sub_message": f"{100 - progress_percentage}% to go - keep the momentum!"
+            }
+        
+        if progress_percentage < 60:
+            return {
+                "type": "midway",
+                "icon": "💪",
+                "message": f"You're doing great, {creator_name}! Halfway there.",
+                "sub_message": "The more I learn about you, the better I can help."
+            }
+        
+        if progress_percentage < 90:
+            return {
+                "type": "almost",
+                "icon": "⭐",
+                "message": f"Almost there, {creator_name}! Just a few more steps.",
+                "sub_message": "You're about to unlock your full personalized experience."
+            }
+        
+        return {
+            "type": "final",
+            "icon": "🏁",
+            "message": f"One last step, {creator_name}! Let's finish this together.",
+            "sub_message": "Complete your setup to earn the Hive Newcomer badge!"
+        }
+    
+    async def _get_post_onboarding_checklist(self, creator_id: str) -> Dict[str, Any]:
+        """Get post-onboarding setup checklist"""
+        checklist = await self.db.creator_checklist.find_one(
+            {"creator_id": creator_id},
+            {"_id": 0}
+        )
+        
+        if not checklist:
+            # Initialize checklist
+            checklist = {
+                "id": f"CHECKLIST-{uuid.uuid4().hex[:8]}",
+                "creator_id": creator_id,
+                "items": [
+                    {
+                        "id": "first_proposal",
+                        "title": "Create Your First Proposal",
+                        "description": "Submit a project proposal to get feedback from ARRIS",
+                        "completed": False,
+                        "completed_at": None,
+                        "points": 50,
+                        "category": "engagement"
+                    },
+                    {
+                        "id": "connect_socials",
+                        "title": "Connect Social Accounts",
+                        "description": "Link your social media for better insights",
+                        "completed": False,
+                        "completed_at": None,
+                        "points": 30,
+                        "category": "setup"
+                    },
+                    {
+                        "id": "explore_arris",
+                        "title": "Chat with ARRIS",
+                        "description": "Have your first conversation with ARRIS",
+                        "completed": False,
+                        "completed_at": None,
+                        "points": 25,
+                        "category": "engagement"
+                    },
+                    {
+                        "id": "explore_dashboard",
+                        "title": "Explore Your Dashboard",
+                        "description": "Check out all the features available to you",
+                        "completed": False,
+                        "completed_at": None,
+                        "points": 15,
+                        "category": "discovery"
+                    },
+                    {
+                        "id": "set_notification_prefs",
+                        "title": "Set Notification Preferences",
+                        "description": "Customize how and when ARRIS reaches out",
+                        "completed": False,
+                        "completed_at": None,
+                        "points": 20,
+                        "category": "setup"
+                    },
+                    {
+                        "id": "upgrade_tier",
+                        "title": "Explore Subscription Plans",
+                        "description": "Discover Premium features to accelerate your growth",
+                        "completed": False,
+                        "completed_at": None,
+                        "points": 10,
+                        "category": "discovery"
+                    }
+                ],
+                "total_points": 150,
+                "earned_points": 0,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await self.db.creator_checklist.insert_one(checklist)
+        
+        # Calculate progress
+        completed_items = [i for i in checklist["items"] if i["completed"]]
+        earned_points = sum(i["points"] for i in completed_items)
+        progress = int((len(completed_items) / len(checklist["items"])) * 100)
+        
+        return {
+            "items": checklist["items"],
+            "progress": progress,
+            "completed_count": len(completed_items),
+            "total_count": len(checklist["items"]),
+            "earned_points": earned_points,
+            "total_points": checklist["total_points"]
+        }
+    
+    def _get_next_action(
+        self,
+        current_step: int,
+        is_complete: bool,
+        is_skipped: bool,
+        completed_steps: List[str]
+    ) -> Dict[str, str]:
+        """Get the next recommended action for the creator"""
+        if is_complete:
+            return {
+                "action": "explore_dashboard",
+                "title": "Explore Your Dashboard",
+                "description": "Your personalized dashboard is ready",
+                "url": "/creator/dashboard"
+            }
+        
+        if is_skipped:
+            return {
+                "action": "resume_onboarding",
+                "title": "Complete Onboarding",
+                "description": "Finish setting up your profile",
+                "url": "/creator/onboarding"
+            }
+        
+        current = next((s for s in self.steps if s["step_number"] == current_step), None)
+        if current:
+            return {
+                "action": f"complete_{current['step_id']}",
+                "title": current["title"],
+                "description": current["subtitle"],
+                "url": f"/creator/onboarding?step={current_step}"
+            }
+        
+        return {
+            "action": "start_onboarding",
+            "title": "Start Onboarding",
+            "description": "Begin your creator journey",
+            "url": "/creator/onboarding"
+        }
+    
+    async def update_checklist_item(
+        self,
+        creator_id: str,
+        item_id: str,
+        completed: bool = True
+    ) -> Dict[str, Any]:
+        """Update a post-onboarding checklist item"""
+        checklist = await self.db.creator_checklist.find_one(
+            {"creator_id": creator_id},
+            {"_id": 0}
+        )
+        
+        if not checklist:
+            return {"error": "Checklist not found"}
+        
+        # Find and update the item
+        item_found = False
+        points_change = 0
+        
+        for item in checklist["items"]:
+            if item["id"] == item_id:
+                item_found = True
+                if completed and not item["completed"]:
+                    item["completed"] = True
+                    item["completed_at"] = datetime.now(timezone.utc).isoformat()
+                    points_change = item["points"]
+                elif not completed and item["completed"]:
+                    item["completed"] = False
+                    item["completed_at"] = None
+                    points_change = -item["points"]
+                break
+        
+        if not item_found:
+            return {"error": "Item not found"}
+        
+        # Update earned points
+        checklist["earned_points"] = checklist.get("earned_points", 0) + points_change
+        
+        # Save
+        await self.db.creator_checklist.update_one(
+            {"creator_id": creator_id},
+            {"$set": {
+                "items": checklist["items"],
+                "earned_points": checklist["earned_points"]
+            }}
+        )
+        
+        # Award badge if all items completed
+        completed_items = [i for i in checklist["items"] if i["completed"]]
+        if len(completed_items) == len(checklist["items"]):
+            await self._award_checklist_completion(creator_id, checklist)
+        
+        return {
+            "success": True,
+            "item_id": item_id,
+            "completed": completed,
+            "points_change": points_change,
+            "total_earned": checklist["earned_points"]
+        }
+    
+    async def _award_checklist_completion(self, creator_id: str, checklist: Dict):
+        """Award badge for completing post-onboarding checklist"""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Add reward to onboarding record
+        reward = {
+            "type": "checklist_complete",
+            "name": "Setup Champion",
+            "description": "Completed the post-onboarding checklist",
+            "earned_at": now,
+            "points": 100
+        }
+        
+        await self.db.creator_onboarding.update_one(
+            {"creator_id": creator_id},
+            {"$push": {"rewards_earned": reward}}
+        )
+        
+        # Store ARRIS memory about this achievement
+        memory = {
+            "id": f"MEM-CHECKLIST-{uuid.uuid4().hex[:8]}",
+            "creator_id": creator_id,
+            "memory_type": "milestone",
+            "content": {
+                "event": "checklist_complete",
+                "title": "Setup Champion Badge Earned",
+                "description": f"Completed all {len(checklist['items'])} post-onboarding tasks",
+                "points_earned": checklist["earned_points"] + 100
+            },
+            "importance": 0.8,
+            "tags": ["milestone", "badge", "onboarding"],
+            "created_at": now
+        }
+        await self.db.arris_memories.insert_one(memory)
+    
+    async def get_progress_timeline(self, creator_id: str) -> List[Dict[str, Any]]:
+        """Get timeline of onboarding progress events"""
+        onboarding = await self.db.creator_onboarding.find_one(
+            {"creator_id": creator_id},
+            {"_id": 0}
+        )
+        
+        if not onboarding:
+            return []
+        
+        timeline = []
+        
+        # Started event
+        if onboarding.get("started_at"):
+            timeline.append({
+                "event": "started",
+                "title": "Onboarding Started",
+                "description": "Began the creator journey",
+                "timestamp": onboarding["started_at"],
+                "icon": "🚀"
+            })
+        
+        # Step completion events (from ARRIS insights timestamps)
+        arris_insights = onboarding.get("arris_insights", {})
+        step_data = onboarding.get("step_data", {})
+        
+        for step in self.steps:
+            step_id = step["step_id"]
+            if step_id in onboarding.get("completed_steps", []):
+                # Use ARRIS insight timestamp if available
+                insight = arris_insights.get(step_id, {})
+                timestamp = insight.get("generated_at") or onboarding.get("last_activity")
+                
+                timeline.append({
+                    "event": f"completed_{step_id}",
+                    "title": f"Completed: {step['title']}",
+                    "description": self._summarize_step_data(step_id, step_data.get(step_id, {})) or step["subtitle"],
+                    "timestamp": timestamp,
+                    "icon": "✅"
+                })
+        
+        # Completion event
+        if onboarding.get("completed_at"):
+            timeline.append({
+                "event": "completed",
+                "title": "Onboarding Complete",
+                "description": "Earned the Hive Newcomer badge",
+                "timestamp": onboarding["completed_at"],
+                "icon": "🎉"
+            })
+        
+        # Rewards earned
+        for reward in onboarding.get("rewards_earned", []):
+            timeline.append({
+                "event": "reward",
+                "title": f"Badge Earned: {reward['name']}",
+                "description": reward["description"],
+                "timestamp": reward["earned_at"],
+                "icon": "🏆",
+                "points": reward["points"]
+            })
+        
+        # Sort by timestamp
+        timeline.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        
+        return timeline
+    
+    async def get_arris_progress_insight(self, creator_id: str) -> Dict[str, Any]:
+        """Get ARRIS AI-generated progress insight"""
+        progress = await self.get_detailed_progress(creator_id)
+        
+        if not progress.get("has_started"):
+            return {
+                "insight": "Ready to begin your creator journey? Let's get started!",
+                "recommendation": "Start onboarding to unlock personalized ARRIS assistance."
+            }
+        
+        if progress.get("is_complete"):
+            # Get personalization to provide relevant insight
+            onboarding = await self.db.creator_onboarding.find_one(
+                {"creator_id": creator_id},
+                {"_id": 0, "personalization_profile": 1}
+            )
+            
+            profile = onboarding.get("personalization_profile", {}) if onboarding else {}
+            goal = profile.get("primary_goal", "")
+            platform = profile.get("primary_platform", "")
+            
+            goal_label = GOAL_LABELS.get(goal, goal)
+            platform_label = PLATFORM_LABELS.get(platform, platform)
+            
+            return {
+                "insight": f"Your profile is set up for success! I'm tracking your goal to {goal_label.lower()} on {platform_label}.",
+                "recommendation": "Check your dashboard for personalized growth tips based on your profile.",
+                "personalization": {
+                    "goal": goal_label,
+                    "platform": platform_label
+                }
+            }
+        
+        # In progress
+        current_step = progress["progress"]["current_step"]
+        percentage = progress["progress"]["percentage"]
+        
+        step = next((s for s in self.steps if s["step_number"] == current_step), None)
+        step_title = step["title"] if step else "Next step"
+        
+        return {
+            "insight": f"You're {percentage}% through onboarding. Your next step: {step_title}.",
+            "recommendation": "Complete your setup to unlock full ARRIS personalization.",
+            "progress": {
+                "percentage": percentage,
+                "current_step": current_step,
+                "step_title": step_title
+            }
+        }
 
 
 # Global instance (will be initialized in server startup)
