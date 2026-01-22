@@ -82,7 +82,7 @@ class TestOnboardingCreatorAuth:
     def setup(self):
         """Get creator token for authenticated requests"""
         # Login as premium creator (likely hasn't completed onboarding)
-        response = requests.post(f"{BASE_URL}/api/creator/login", json={
+        response = requests.post(f"{BASE_URL}/api/creators/login", json={
             "email": PREMIUM_CREATOR_EMAIL,
             "password": PREMIUM_CREATOR_PASSWORD
         })
@@ -94,7 +94,7 @@ class TestOnboardingCreatorAuth:
             self.premium_creator_id = None
         
         # Login as pro creator
-        response = requests.post(f"{BASE_URL}/api/creator/login", json={
+        response = requests.post(f"{BASE_URL}/api/creators/login", json={
             "email": PRO_CREATOR_EMAIL,
             "password": PRO_CREATOR_PASSWORD
         })
@@ -250,7 +250,7 @@ class TestOnboardingFullFlow:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Get creator token for authenticated requests"""
-        response = requests.post(f"{BASE_URL}/api/creator/login", json={
+        response = requests.post(f"{BASE_URL}/api/creators/login", json={
             "email": PREMIUM_CREATOR_EMAIL,
             "password": PREMIUM_CREATOR_PASSWORD
         })
