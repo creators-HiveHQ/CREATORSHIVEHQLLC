@@ -783,6 +783,150 @@ async def admin_reset_creator_onboarding(
     return result
 
 
+# ============== ONBOARDING PROGRESS TRACKER (Phase 4 Module D - D3) ==============
+
+@api_router.get("/onboarding/progress")
+async def get_onboarding_progress(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get detailed onboarding progress with ARRIS encouragement.
+    
+    Returns comprehensive progress information including:
+    - Overall progress percentage and step status
+    - Time metrics (started, last activity, estimated remaining)
+    - ARRIS encouragement message based on progress
+    - Post-onboarding checklist (if onboarding complete)
+    - Rewards earned
+    - Next recommended action
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    progress = await onboarding_wizard.get_detailed_progress(creator_id)
+    return progress
+
+
+@api_router.get("/onboarding/progress/timeline")
+async def get_onboarding_timeline(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get timeline of onboarding progress events.
+    
+    Returns a chronological list of:
+    - When onboarding started
+    - Each step completion
+    - Rewards and badges earned
+    - Completion timestamp
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    timeline = await onboarding_wizard.get_progress_timeline(creator_id)
+    return {"timeline": timeline, "total_events": len(timeline)}
+
+
+@api_router.get("/onboarding/progress/arris-insight")
+async def get_arris_progress_insight(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get ARRIS AI-generated progress insight.
+    
+    Returns a personalized insight based on:
+    - Current progress status
+    - Creator's goals and platform
+    - Next recommended action
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    insight = await onboarding_wizard.get_arris_progress_insight(creator_id)
+    return insight
+
+
+@api_router.get("/onboarding/checklist")
+async def get_post_onboarding_checklist(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get post-onboarding setup checklist.
+    
+    Available after completing the main onboarding wizard.
+    Includes additional setup tasks with point rewards.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check if onboarding is complete
+    status = await onboarding_wizard.get_onboarding_status(creator_id)
+    if not status.get("is_complete"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "onboarding_incomplete",
+                "message": "Complete onboarding to access the checklist",
+                "progress": status.get("completion_percentage", 0)
+            }
+        )
+    
+    checklist = await onboarding_wizard._get_post_onboarding_checklist(creator_id)
+    return checklist
+
+
+@api_router.patch("/onboarding/checklist/{item_id}")
+async def update_checklist_item(
+    item_id: str,
+    completed: bool = Query(default=True, description="Mark as completed or not"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update a post-onboarding checklist item.
+    
+    Mark items as completed to earn points and badges.
+    Complete all items to earn the 'Setup Champion' badge.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    result = await onboarding_wizard.update_checklist_item(creator_id, item_id, completed)
+    
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+
+@api_router.get("/admin/onboarding/progress/{creator_id}")
+async def admin_get_creator_progress(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get detailed onboarding progress for any creator (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Verify creator exists
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0, "id": 1, "name": 1})
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    
+    progress = await onboarding_wizard.get_detailed_progress(creator_id)
+    return progress
+
+
+@api_router.get("/admin/onboarding/progress/{creator_id}/timeline")
+async def admin_get_creator_timeline(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get onboarding timeline for any creator (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    timeline = await onboarding_wizard.get_progress_timeline(creator_id)
+    return {"creator_id": creator_id, "timeline": timeline, "total_events": len(timeline)}
+
+
 # ============== AUTO-APPROVAL RULES (Phase 4 Module D - D2) ==============
 
 @api_router.get("/admin/auto-approval/config")
