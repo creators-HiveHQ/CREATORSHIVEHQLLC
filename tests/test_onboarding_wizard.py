@@ -618,7 +618,7 @@ class TestOnboardingDataPersistence:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Get creator token"""
-        response = requests.post(f"{BASE_URL}/api/creator/login", json={
+        response = requests.post(f"{BASE_URL}/api/creators/login", json={
             "email": PREMIUM_CREATOR_EMAIL,
             "password": PREMIUM_CREATOR_PASSWORD
         })
