@@ -5224,6 +5224,276 @@ async def get_creator_cross_insights_admin(
     )
 
 
+# ============== MEMORY SEARCH API (Phase 4 Module C - C3) ==============
+
+@api_router.get("/memory/search")
+async def search_memories(
+    q: str = Query(..., description="Search query", min_length=1),
+    memory_types: Optional[str] = Query(default=None, description="Comma-separated memory types"),
+    tags: Optional[str] = Query(default=None, description="Comma-separated tags to filter"),
+    min_importance: float = Query(default=0.0, ge=0.0, le=1.0, description="Minimum importance"),
+    date_from: Optional[str] = Query(default=None, description="Start date (ISO format)"),
+    date_to: Optional[str] = Query(default=None, description="End date (ISO format)"),
+    include_archived: bool = Query(default=False, description="Include archived memories"),
+    sort_by: str = Query(default="relevance", description="Sort by: relevance, date, importance"),
+    limit: int = Query(default=20, le=100, description="Maximum results"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Full-text search across your ARRIS memories.
+    
+    Search your Memory Palace for specific memories, patterns, and insights.
+    Implements workspace isolation - you can only search your own memories.
+    
+    **Search Features:**
+    - Full-text search across memory content, tags, and metadata
+    - Filter by memory type (interaction, proposal, outcome, pattern, etc.)
+    - Filter by importance and date range
+    - Relevance scoring based on match quality
+    - Match highlights showing where your query matched
+    
+    **Memory Types:**
+    - interaction: ARRIS conversation memories
+    - proposal: Proposal-related memories
+    - outcome: Outcomes and results
+    - pattern: Identified behavioral patterns
+    - preference: Stored preferences
+    - feedback: Feedback records
+    - milestone: Achievement milestones
+    
+    **Pro Feature:** Requires Pro tier or higher for full search capabilities.
+    Free tier limited to 10 results per search.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check tier for feature access
+    tier, _ = await feature_gating.get_creator_tier(creator_id)
+    is_paid_tier = tier.lower() in ["pro", "premium", "elite"]
+    
+    # Free tier limitations
+    if not is_paid_tier:
+        limit = min(limit, 10)
+        include_archived = False
+    
+    # Parse comma-separated values
+    types_list = None
+    if memory_types:
+        types_list = [t.strip() for t in memory_types.split(",")]
+    
+    tags_list = None
+    if tags:
+        tags_list = [t.strip() for t in tags.split(",")]
+    
+    # Validate sort_by
+    if sort_by not in ["relevance", "date", "importance"]:
+        sort_by = "relevance"
+    
+    results = await enhanced_memory_palace.search_memories(
+        creator_id=creator_id,
+        query=q,
+        memory_types=types_list,
+        tags=tags_list,
+        min_importance=min_importance,
+        date_from=date_from,
+        date_to=date_to,
+        include_archived=include_archived,
+        include_consolidated=True,
+        sort_by=sort_by,
+        limit=limit
+    )
+    
+    # Add tier limitation info for free users
+    if not is_paid_tier:
+        results["tier_limited"] = True
+        results["tier_message"] = "Free tier limited to 10 results. Upgrade to Pro for full search."
+        results["upgrade_url"] = "/creator/subscription"
+    
+    return results
+
+
+@api_router.get("/memory/search/suggestions")
+async def get_memory_search_suggestions(
+    q: str = Query(..., description="Partial search query", min_length=1),
+    limit: int = Query(default=10, le=20, description="Maximum suggestions"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get search suggestions as you type.
+    
+    Returns suggestions based on:
+    - Matching tags from your memories
+    - Memory types that match
+    - Your recent search queries
+    
+    Useful for autocomplete functionality.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    return await enhanced_memory_palace.get_search_suggestions(
+        creator_id=creator_id,
+        partial_query=q,
+        limit=limit
+    )
+
+
+@api_router.get("/memory/search/analytics")
+async def get_memory_search_analytics(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get your memory search analytics.
+    
+    Shows:
+    - Total searches performed
+    - Average search time
+    - Popular queries
+    - Most searched memory types
+    - Search activity over time
+    
+    **Pro Feature:** Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check tier for feature access
+    tier, _ = await feature_gating.get_creator_tier(creator_id)
+    if tier.lower() not in ["pro", "premium", "elite"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Search analytics requires Pro plan or higher",
+                "required_tier": "pro",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    return await enhanced_memory_palace.get_search_analytics(creator_id)
+
+
+@api_router.get("/admin/memory/search")
+async def admin_search_memories(
+    creator_id: str = Query(..., description="Creator ID to search"),
+    q: str = Query(..., description="Search query", min_length=1),
+    memory_types: Optional[str] = Query(default=None),
+    tags: Optional[str] = Query(default=None),
+    min_importance: float = Query(default=0.0, ge=0.0, le=1.0),
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    include_archived: bool = Query(default=False),
+    sort_by: str = Query(default="relevance"),
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Admin endpoint to search any creator's memories.
+    
+    Allows admins to search and review creator memories for support,
+    debugging, and compliance purposes.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Verify creator exists
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0, "id": 1, "name": 1})
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    
+    types_list = None
+    if memory_types:
+        types_list = [t.strip() for t in memory_types.split(",")]
+    
+    tags_list = None
+    if tags:
+        tags_list = [t.strip() for t in tags.split(",")]
+    
+    if sort_by not in ["relevance", "date", "importance"]:
+        sort_by = "relevance"
+    
+    results = await enhanced_memory_palace.search_memories(
+        creator_id=creator_id,
+        query=q,
+        memory_types=types_list,
+        tags=tags_list,
+        min_importance=min_importance,
+        date_from=date_from,
+        date_to=date_to,
+        include_archived=include_archived,
+        include_consolidated=True,
+        sort_by=sort_by,
+        limit=limit
+    )
+    
+    # Add creator info for admin context
+    results["creator"] = creator
+    results["admin_search"] = True
+    
+    return results
+
+
+@api_router.get("/admin/memory/search/analytics")
+async def admin_get_search_analytics(
+    creator_id: Optional[str] = Query(default=None, description="Creator ID (optional for platform-wide)"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Admin endpoint to view search analytics.
+    
+    If creator_id is provided, shows that creator's analytics.
+    If omitted, shows platform-wide search analytics.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if creator_id:
+        return await enhanced_memory_palace.get_search_analytics(creator_id)
+    
+    # Platform-wide analytics
+    total_searches = await db.memory_search_log.count_documents({})
+    
+    # Top searching creators
+    top_creators_pipeline = [
+        {"$group": {"_id": "$creator_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    top_creators = await db.memory_search_log.aggregate(top_creators_pipeline).to_list(10)
+    
+    # Popular platform queries
+    popular_pipeline = [
+        {"$group": {"_id": "$query", "count": {"$sum": 1}, "avg_results": {"$avg": "$results_count"}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 20}
+    ]
+    popular_queries = await db.memory_search_log.aggregate(popular_pipeline).to_list(20)
+    
+    # Average search time platform-wide
+    time_pipeline = [
+        {"$group": {"_id": None, "avg_time": {"$avg": "$search_time_ms"}}}
+    ]
+    time_result = await db.memory_search_log.aggregate(time_pipeline).to_list(1)
+    avg_search_time = time_result[0]["avg_time"] if time_result else 0
+    
+    return {
+        "platform_wide": True,
+        "total_searches": total_searches,
+        "avg_search_time_ms": round(avg_search_time, 2),
+        "top_searching_creators": [
+            {"creator_id": c["_id"], "search_count": c["count"]}
+            for c in top_creators
+        ],
+        "popular_queries": [
+            {"query": q["_id"], "count": q["count"], "avg_results": round(q["avg_results"], 1)}
+            for q in popular_queries
+        ],
+        "analyzed_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
 # ============== LOOKUPS (Sheet 16) ==============
 
 @api_router.get("/lookups")
