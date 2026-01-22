@@ -2380,6 +2380,15 @@ export const CreatorDashboard = () => {
               onUpgrade={() => navigate("/creator/subscription")}
             />
           </TabsContent>
+
+          {/* Peer Insights Tab (Premium) */}
+          <TabsContent value="insights" data-testid="insights-tab-content">
+            <CrossCreatorInsights 
+              token={creatorToken}
+              creatorTier={featureAccess?.tier || dashboard?.creator?.tier || "free"}
+              onUpgrade={() => navigate("/creator/subscription")}
+            />
+          </TabsContent>
         </Tabs>
       </main>
 
