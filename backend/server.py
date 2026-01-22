@@ -151,6 +151,9 @@ from enhanced_memory_palace import EnhancedMemoryPalace
 # Import Smart Onboarding Wizard
 from onboarding_wizard_service import SmartOnboardingWizard, ONBOARDING_STEPS
 
+# Import Auto-Approval Service
+from auto_approval_service import AutoApprovalService
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
