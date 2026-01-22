@@ -891,6 +891,17 @@ export const CreatorDashboard = () => {
     );
   }
 
+  // Show onboarding wizard if needed
+  if (showOnboarding && onboardingChecked) {
+    return (
+      <SmartOnboardingWizard
+        token={creatorToken}
+        onComplete={handleOnboardingComplete}
+        onSkip={handleOnboardingSkip}
+      />
+    );
+  }
+
   return (
     <NotificationProvider userType="creator" userId={creator?.id} userName={creator?.name}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50" data-testid="creator-dashboard">
