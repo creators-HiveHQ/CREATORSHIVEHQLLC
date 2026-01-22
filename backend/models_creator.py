@@ -22,13 +22,18 @@ class CreatorRegistration(BaseModel):
     # Platform & Niche
     platforms: List[str] = []  # YouTube, Instagram, TikTok, etc.
     niche: str = ""
+    follower_count: Optional[str] = None  # "0-1K", "1K-10K", etc.
     
     # Goals
     goals: str = ""
     
+    # Website/Portfolio
+    website: Optional[str] = None
+    
     # ARRIS Intake
     arris_intake_question: str = ""  # Response to ARRIS's intake question
     arris_intake_prompt: str = "What's the biggest challenge you're facing in your creator journey right now?"
+    arris_response: Optional[str] = None  # Alternative field name for intake response
     
     # Status & Metadata
     status: str = "pending"  # pending, approved, rejected, active
@@ -50,8 +55,11 @@ class CreatorRegistrationCreate(BaseModel):
     password: str = Field(..., min_length=6, max_length=100)  # Added password field
     platforms: List[str] = Field(default=[], description="Selected platforms")
     niche: str = Field(default="", max_length=200)
+    follower_count: Optional[str] = Field(default=None, description="Audience size range")
     goals: str = Field(default="", max_length=1000)
+    website: Optional[str] = Field(default=None, max_length=500)
     arris_intake_question: str = Field(default="", max_length=2000)
+    arris_response: Optional[str] = Field(default=None, max_length=2000)
 
 class CreatorRegistrationUpdate(BaseModel):
     """Admin update for registration status"""
