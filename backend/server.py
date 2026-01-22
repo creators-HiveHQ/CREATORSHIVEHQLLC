@@ -755,6 +755,321 @@ async def admin_reset_creator_onboarding(
     return result
 
 
+# ============== AUTO-APPROVAL RULES (Phase 4 Module D - D2) ==============
+
+@api_router.get("/admin/auto-approval/config")
+async def get_auto_approval_config(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get auto-approval configuration (admin only).
+    
+    Returns current settings including:
+    - Approval threshold score
+    - Auto-reject settings
+    - ARRIS review settings
+    - Admin notification preferences
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    config = await auto_approval_service.get_approval_config()
+    return config
+
+
+@api_router.patch("/admin/auto-approval/config")
+async def update_auto_approval_config(
+    updates: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update auto-approval configuration (admin only).
+    
+    Configurable settings:
+    - enabled: Turn auto-approval on/off
+    - approval_threshold: Minimum score to auto-approve (0-100)
+    - require_arris_review: Whether ARRIS should review edge cases
+    - arris_override_enabled: Allow ARRIS to override recommendations
+    - auto_reject_enabled: Enable automatic rejection
+    - auto_reject_threshold: Score below which to auto-reject
+    - notify_admin_on_auto_approve: Send admin notification on auto-approval
+    - notify_admin_on_edge_case: Notify when manual review needed
+    - edge_case_range: [min, max] score range for edge cases
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Validate threshold values
+    if "approval_threshold" in updates:
+        if not 0 <= updates["approval_threshold"] <= 100:
+            raise HTTPException(status_code=400, detail="approval_threshold must be 0-100")
+    
+    if "auto_reject_threshold" in updates:
+        if not 0 <= updates["auto_reject_threshold"] <= 100:
+            raise HTTPException(status_code=400, detail="auto_reject_threshold must be 0-100")
+    
+    config = await auto_approval_service.update_approval_config(updates)
+    return config
+
+
+@api_router.get("/admin/auto-approval/rules")
+async def get_auto_approval_rules(
+    enabled_only: bool = Query(default=False, description="Only return enabled rules"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all auto-approval rules (admin only).
+    
+    Rules define the criteria for evaluating creator applications.
+    Each rule has a score weight and can be required or optional.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    rules = await auto_approval_service.get_rules(enabled_only=enabled_only)
+    return {"rules": rules, "total": len(rules)}
+
+
+@api_router.get("/admin/auto-approval/rules/{rule_id}")
+async def get_auto_approval_rule(
+    rule_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific auto-approval rule (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    rule = await auto_approval_service.get_rule(rule_id)
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    
+    return rule
+
+
+@api_router.post("/admin/auto-approval/rules")
+async def create_auto_approval_rule(
+    rule_data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Create a new auto-approval rule (admin only).
+    
+    Required fields:
+    - name: Rule name
+    - condition_type: exists, threshold, length, pattern, contains, in_list
+    - field: Creator field to evaluate
+    - operator: Comparison operator (>=, >, <=, <, ==, not_empty, matches, etc.)
+    
+    Optional fields:
+    - description: Rule description
+    - value: Expected value for comparison
+    - score_weight: Points awarded (default: 10)
+    - is_required: If true, must pass for approval
+    - enabled: Whether rule is active
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Validate required fields
+    required = ["name", "condition_type", "field", "operator"]
+    missing = [f for f in required if f not in rule_data]
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Missing required fields: {missing}")
+    
+    rule = await auto_approval_service.create_rule(rule_data)
+    return rule
+
+
+@api_router.patch("/admin/auto-approval/rules/{rule_id}")
+async def update_auto_approval_rule(
+    rule_id: str,
+    updates: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update an auto-approval rule (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    rule = await auto_approval_service.update_rule(rule_id, updates)
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    
+    return rule
+
+
+@api_router.delete("/admin/auto-approval/rules/{rule_id}")
+async def delete_auto_approval_rule(
+    rule_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete an auto-approval rule (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    deleted = await auto_approval_service.delete_rule(rule_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    
+    return {"message": "Rule deleted", "rule_id": rule_id}
+
+
+@api_router.post("/admin/auto-approval/evaluate/{creator_id}")
+async def evaluate_creator_for_approval(
+    creator_id: str,
+    include_arris: bool = Query(default=True, description="Include ARRIS AI assessment"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Evaluate a creator application without taking action (admin only).
+    
+    Returns the evaluation result with:
+    - Overall score
+    - Individual rule results
+    - ARRIS AI assessment (if enabled)
+    - Recommendation (auto_approve, auto_reject, manual_review)
+    
+    Use this to preview what would happen before processing.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Get creator data
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0})
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    
+    evaluation = await auto_approval_service.evaluate_creator(
+        creator,
+        include_arris_assessment=include_arris
+    )
+    
+    return evaluation
+
+
+@api_router.post("/admin/auto-approval/process/{creator_id}")
+async def process_creator_registration(
+    creator_id: str,
+    auto_execute: bool = Query(default=True, description="Automatically execute the recommendation"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Process a creator registration through auto-approval (admin only).
+    
+    This evaluates the creator and optionally executes the recommendation:
+    - auto_approve: Creates user account and approves creator
+    - auto_reject: Rejects the creator (if enabled)
+    - manual_review: Marks for manual admin review
+    
+    Set auto_execute=false to only evaluate without taking action.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    result = await auto_approval_service.process_registration(
+        creator_id,
+        auto_execute=auto_execute
+    )
+    
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+
+@api_router.post("/admin/auto-approval/process-all")
+async def process_all_pending_registrations(
+    auto_execute: bool = Query(default=False, description="Execute recommendations (defaults to dry run)"),
+    limit: int = Query(default=50, le=200, description="Maximum registrations to process"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Process all pending creator registrations (admin only).
+    
+    By default, this is a dry run (auto_execute=false).
+    Set auto_execute=true to actually approve/reject/mark for review.
+    
+    Returns results for each processed registration.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Get pending creators
+    pending_creators = await db.creators.find(
+        {"status": {"$in": ["pending", None]}},
+        {"_id": 0, "id": 1}
+    ).limit(limit).to_list(limit)
+    
+    results = []
+    for creator in pending_creators:
+        result = await auto_approval_service.process_registration(
+            creator["id"],
+            auto_execute=auto_execute
+        )
+        results.append(result)
+    
+    # Summary
+    summary = {
+        "total_processed": len(results),
+        "auto_approved": sum(1 for r in results if r.get("new_status") == "approved"),
+        "auto_rejected": sum(1 for r in results if r.get("new_status") == "rejected"),
+        "marked_for_review": sum(1 for r in results if r.get("new_status") == "pending_review"),
+        "errors": sum(1 for r in results if r.get("error"))
+    }
+    
+    return {
+        "summary": summary,
+        "dry_run": not auto_execute,
+        "results": results
+    }
+
+
+@api_router.get("/admin/auto-approval/history")
+async def get_approval_evaluation_history(
+    creator_id: Optional[str] = Query(default=None, description="Filter by creator ID"),
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get auto-approval evaluation history (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    history = await auto_approval_service.get_evaluation_history(
+        creator_id=creator_id,
+        limit=limit
+    )
+    
+    return {"history": history, "total": len(history)}
+
+
+@api_router.get("/admin/auto-approval/analytics")
+async def get_auto_approval_analytics(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get auto-approval analytics (admin only).
+    
+    Returns:
+    - Total evaluations
+    - Average score
+    - Breakdown by recommendation
+    - Actions taken (approved, rejected, review)
+    - Most commonly failed rules
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    analytics = await auto_approval_service.get_approval_analytics()
+    return analytics
+
+
 @api_router.get("/creators/me/advanced-dashboard")
 async def get_creator_advanced_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
