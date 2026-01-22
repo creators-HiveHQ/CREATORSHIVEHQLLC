@@ -361,7 +361,7 @@ export const SmartOnboardingWizard = ({ token, onComplete, onSkip }) => {
                   </Button>
                 )}
                 
-                {stepData?.step?.step_id !== "complete" && (
+                {stepData?.step?.step_id !== "complete" ? (
                   <Button
                     onClick={handleCompleteStep}
                     disabled={saving}
@@ -372,6 +372,19 @@ export const SmartOnboardingWizard = ({ token, onComplete, onSkip }) => {
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     ) : null}
                     {currentStep === 6 ? "Complete Setup" : "Continue"}
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleCompleteStep}
+                    disabled={saving}
+                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                    data-testid="finish-button"
+                  >
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : null}
+                    Go to Dashboard
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 )}
