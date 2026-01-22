@@ -1316,6 +1316,11 @@ function App() {
                 <Layout><AdminRevenueDashboard /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/patterns" element={
+              <ProtectedRoute>
+                <Layout><AdminPatternDashboardPage /></Layout>
+              </ProtectedRoute>
+            } />
             <Route path="/users" element={
               <ProtectedRoute>
                 <Layout><UsersPage /></Layout>
