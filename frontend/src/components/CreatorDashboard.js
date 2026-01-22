@@ -955,6 +955,16 @@ export const CreatorDashboard = () => {
                 <Badge className="ml-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs px-1.5 py-0">PREMIUM</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger 
+              value="insights" 
+              data-testid="tab-insights"
+              className={!hasPremiumAnalytics ? "relative" : ""}
+            >
+              👥 Peer Insights
+              {!hasPremiumAnalytics && (
+                <Badge className="ml-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs px-1.5 py-0">PREMIUM</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
