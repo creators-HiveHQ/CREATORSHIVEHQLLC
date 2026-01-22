@@ -136,6 +136,9 @@ from arris_historical_service import ArrisHistoricalService
 # Import ARRIS Voice service
 from arris_voice_service import arris_voice_service
 
+# Import ARRIS Pattern Engine
+from arris_pattern_engine import ArrisPatternEngine
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
