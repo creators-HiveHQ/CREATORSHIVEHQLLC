@@ -457,12 +457,40 @@ async def register_creator(registration: CreatorRegistrationCreate):
         user_id=creator.id
     )
     
+    # AUTO-APPROVAL: Process registration through auto-approval system
+    auto_approval_result = None
+    response_message = "Thank you for registering! Your application is being reviewed. We'll be in touch soon."
+    final_status = creator.status
+    
+    try:
+        if auto_approval_service:
+            # Get fresh creator data with all fields
+            creator_data = await db.creators.find_one({"id": creator.id}, {"_id": 0})
+            if creator_data:
+                auto_approval_result = await auto_approval_service.process_registration(
+                    creator.id,
+                    auto_execute=True
+                )
+                
+                if auto_approval_result.get("new_status") == "approved":
+                    response_message = "Congratulations! Your application has been automatically approved. You can now log in to your dashboard."
+                    final_status = "approved"
+                elif auto_approval_result.get("new_status") == "rejected":
+                    response_message = "Thank you for your interest. Unfortunately, your application did not meet our current requirements."
+                    final_status = "rejected"
+                elif auto_approval_result.get("new_status") == "pending_review":
+                    response_message = "Thank you for registering! Your application is being reviewed by our team. We'll be in touch soon."
+                    final_status = "pending_review"
+    except Exception as e:
+        logger.error(f"Auto-approval processing error: {e}")
+        # Continue with manual review if auto-approval fails
+    
     return CreatorRegistrationResponse(
         id=creator.id,
         name=creator.name,
         email=creator.email,
-        status=creator.status,
-        message="Thank you for registering! Your application is being reviewed. We'll be in touch soon.",
+        status=final_status,
+        message=response_message,
         submitted_at=doc['submitted_at']
     )
 
