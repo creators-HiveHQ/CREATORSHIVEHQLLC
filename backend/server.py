@@ -148,6 +148,9 @@ from proposal_recommendation_service import ProposalRecommendationService
 # Import Enhanced Memory Palace
 from enhanced_memory_palace import EnhancedMemoryPalace
 
+# Import Smart Onboarding Wizard
+from onboarding_wizard_service import SmartOnboardingWizard, ONBOARDING_STEPS
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
