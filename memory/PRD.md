@@ -457,10 +457,9 @@ Dashboard Updates → Memory Palace Synthesizes
 
 ## Upcoming Tasks
 
-**Phase 4 Module A Complete** - Pattern Engine Dashboard implemented
+**Phase 4 Modules A & B Complete** - Pattern Engine & Smart Automation implemented
 
 **Remaining Phase 4 Tasks:**
-- **Module B**: Autonomous Automation Engine (Smart Automation Rules, Auto-Recommendations)
 - **Module C**: Enhanced Memory Palace (Memory Consolidation, Cross-Creator Insights)
 - **Module D**: Self-Service Creator Onboarding 2.0
 - **Module E**: ARRIS Command Center (Elite)
@@ -495,6 +494,62 @@ Dashboard Updates → Memory Palace Synthesizes
       - Actionable Insights alerts at top with priority badges
     - **Navigation**: Added to admin sidebar as "Pattern Engine" (🧠)
     - **Testing**: 35 pytest tests covering all endpoints and data structures (100% pass rate)
+
+25. **Smart Automation Engine (Admin Feature)** - Condition-based automation:
+    - **Backend Service** (`/app/backend/smart_automation_engine.py`):
+      - `SmartAutomationEngine` class with condition evaluation
+      - 5 default rules seeded on startup:
+        - Low Approval Rate Coaching (approval_rate < 50%, proposals ≥ 5, 30 days since approval)
+        - Rejection Streak Alert (3+ consecutive rejections)
+        - Inactivity Re-engagement (60+ days since last proposal)
+        - High Performer Recognition (80%+ approval rate, 10+ proposals)
+        - Proposal Rejection Auto-Recommendations (event-triggered)
+      - Condition types: threshold, time_based, count, pattern, composite (AND/OR)
+      - Action handlers: send_email, create_task, notify_admin, generate_recommendation, update_status, log_event
+      - Cooldown periods prevent rule spam (configurable per rule: 72h to 720h)
+      - Rule toggle (enable/disable) functionality
+      - Execution logging with metrics snapshot
+    - **API Endpoints (Admin-only)**:
+      - `GET /api/admin/automation/rules` - List all rules
+      - `GET /api/admin/automation/rules/{rule_id}` - Get specific rule
+      - `POST /api/admin/automation/rules` - Create new rule
+      - `PUT /api/admin/automation/rules/{rule_id}` - Update rule
+      - `POST /api/admin/automation/rules/{rule_id}/toggle` - Toggle active status
+      - `POST /api/admin/automation/evaluate/{creator_id}` - Evaluate rules for creator
+      - `POST /api/admin/automation/evaluate-all` - Evaluate all creators
+      - `GET /api/admin/automation/log` - Get execution log
+    - **Frontend Component** (`/app/frontend/src/components/AdminAutomationDashboard.js`):
+      - Stats cards: Total Rules, Active Rules, Recent Executions, Successful
+      - **Rules Tab**: All rules with conditions, action badges, toggle switches, cooldown info
+      - **Execution Log Tab**: Log entries with rule name, creator ID, timestamp, action results
+      - "Run All Rules" button to trigger platform-wide evaluation
+    - **Navigation**: Added to admin sidebar as "Automation" (⚡)
+    - **Testing**: 19 backend tests passed (100%)
+
+26. **Automated Proposal Recommendations (All Users)** - AI-powered improvement suggestions:
+    - **Backend Service** (`/app/backend/proposal_recommendation_service.py`):
+      - `ProposalRecommendationService` using GPT-4o via Emergent LLM Key
+      - Rejection analysis with likely_issues, severity, improvement_potential
+      - Detailed recommendations by category (title, description, goals, timeline, platforms, priority)
+      - Quick wins for easy improvements
+      - Success tips based on historical patterns
+      - Encouragement message
+      - Fallback recommendations if AI fails
+      - Auto-triggered on proposal rejection via `asyncio.create_task`
+    - **API Endpoints**:
+      - `POST /api/proposals/{proposal_id}/generate-recommendations` - Generate AI recommendations
+      - `GET /api/proposals/{proposal_id}/recommendations` - Get existing recommendations
+      - `GET /api/creators/{creator_id}/recommendation-history` - Creator's recommendation history
+      - `GET /api/admin/recommendations/common-issues` - Platform-wide rejection analysis (Admin)
+    - **Frontend Component** (`/app/frontend/src/components/ProposalRecommendations.js`):
+      - Analysis summary with severity badge
+      - Quick wins section with badges
+      - Detailed recommendations with category icons
+      - Revised approach and success tips
+      - Encouragement message
+      - "Generate Recommendations" and "Resubmit Proposal" buttons
+    - **Auto-trigger**: Recommendations generated automatically when proposal is rejected
+    - **Testing**: AI recommendations verified with GPT-4o response structure validation
 
 ## Completed Features - Phase 3
 
