@@ -433,7 +433,6 @@ class SmartOnboardingWizard:
             }
         
         elif step_id == "platforms":
-            platforms = previous_data.get("profile", {}).get("platforms", [])
             return {
                 "message": "Where does your content live?",
                 "why_important": "Understanding your platform mix helps me provide platform-specific strategies and identify cross-promotion opportunities.",
