@@ -21,6 +21,7 @@ import WebhooksAdmin from "@/components/WebhooksAdmin";
 import { CreatorAuthProvider, CreatorLoginPage, CreatorProtectedRoute, CreatorDashboard } from "@/components/CreatorDashboard";
 import { SubscriptionPlans, SubscriptionSuccess, SubscriptionCancel } from "@/components/SubscriptionPlans";
 import { AdminRevenueDashboard } from "@/components/AdminRevenueDashboard";
+import { AdminPatternDashboard } from "@/components/AdminPatternDashboard";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
