@@ -215,11 +215,12 @@ arris_memory_service = None
 arris_historical_service = None
 calculator_service = None
 export_service = None
+pattern_engine = None
 
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service
+    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service, pattern_engine
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
@@ -254,6 +255,10 @@ async def startup_db():
     # Initialize Export service
     export_service = ExportService(db)
     logger.info("Export service initialized - CSV/JSON analytics exports active")
+    
+    # Initialize ARRIS Pattern Engine
+    pattern_engine = ArrisPatternEngine(db)
+    logger.info("ARRIS Pattern Engine initialized - Platform-wide pattern detection active")
     
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
