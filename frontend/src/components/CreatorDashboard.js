@@ -751,7 +751,8 @@ export const CreatorDashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    checkOnboarding();
+  }, [fetchData, checkOnboarding]);
 
   useEffect(() => {
     // Fetch advanced data when switching to analytics tab
