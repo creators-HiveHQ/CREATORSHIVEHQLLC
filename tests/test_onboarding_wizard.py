@@ -520,7 +520,7 @@ class TestOnboardingAdmin:
             self.admin_token = None
         
         # Creator login to get creator_id
-        response = requests.post(f"{BASE_URL}/api/creator/login", json={
+        response = requests.post(f"{BASE_URL}/api/creators/login", json={
             "email": PREMIUM_CREATOR_EMAIL,
             "password": PREMIUM_CREATOR_PASSWORD
         })
