@@ -197,6 +197,7 @@ const Sidebar = () => {
     { path: "/revenue", label: "Revenue", icon: "💰" },
     { path: "/admin/patterns", label: "Pattern Engine", icon: "🧠" },
     { path: "/admin/automation", label: "Automation", icon: "⚡" },
+    { path: "/admin/memory", label: "Memory Palace", icon: "🏛️" },
     { path: "/creators", label: "Creators", icon: "✨" },
     { path: "/proposals", label: "Proposals", icon: "📋" },
     { path: "/webhooks", label: "Webhooks", icon: "🔗" },
