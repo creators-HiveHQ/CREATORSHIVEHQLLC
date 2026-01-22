@@ -297,6 +297,11 @@ async def startup_db():
     onboarding_wizard = SmartOnboardingWizard(db, llm_client=arris_service)
     logger.info("Smart Onboarding Wizard initialized - ARRIS personalization active")
     
+    # Initialize Auto-Approval Service
+    auto_approval_service = AutoApprovalService(db, llm_client=arris_service)
+    await auto_approval_service.initialize()
+    logger.info("Auto-Approval Service initialized - ARRIS evaluation active")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
