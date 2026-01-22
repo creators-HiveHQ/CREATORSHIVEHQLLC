@@ -1064,6 +1064,12 @@ const AdminAutomationDashboardPage = () => {
   return <AdminAutomationDashboard token={token} />;
 };
 
+// Admin Memory Dashboard Page
+const AdminMemoryDashboardPage = () => {
+  const token = localStorage.getItem("hivehq_token");
+  return <AdminMemoryDashboard token={token} />;
+};
+
 // Patterns Page
 const PatternsPage = () => {
   const [patterns, setPatterns] = useState(null);
