@@ -193,6 +193,7 @@ const Sidebar = () => {
   const navItems = [
     { path: "/", label: "Dashboard", icon: "📊" },
     { path: "/revenue", label: "Revenue", icon: "💰" },
+    { path: "/admin/patterns", label: "Pattern Engine", icon: "🧠" },
     { path: "/creators", label: "Creators", icon: "✨" },
     { path: "/proposals", label: "Proposals", icon: "📋" },
     { path: "/webhooks", label: "Webhooks", icon: "⚡" },
@@ -200,8 +201,8 @@ const Sidebar = () => {
     { path: "/projects", label: "Projects", icon: "📁" },
     { path: "/calculator", label: "Calculator", icon: "🧮" },
     { path: "/subscriptions", label: "Subscriptions", icon: "💳" },
-    { path: "/arris", label: "ARRIS Engine", icon: "🧠" },
-    { path: "/patterns", label: "Patterns", icon: "🔮" },
+    { path: "/arris", label: "ARRIS Logs", icon: "🤖" },
+    { path: "/patterns", label: "Patterns (Legacy)", icon: "🔮" },
     { path: "/schema", label: "Schema Index", icon: "🗄️" },
   ];
 
