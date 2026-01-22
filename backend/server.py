@@ -231,11 +231,12 @@ pattern_engine = None
 smart_automation_engine = None
 proposal_recommendation_service = None
 enhanced_memory_palace = None
+onboarding_wizard = None
 
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service, pattern_engine, smart_automation_engine, proposal_recommendation_service, enhanced_memory_palace
+    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service, pattern_engine, smart_automation_engine, proposal_recommendation_service, enhanced_memory_palace, onboarding_wizard
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
@@ -287,6 +288,10 @@ async def startup_db():
     # Initialize Enhanced Memory Palace
     enhanced_memory_palace = EnhancedMemoryPalace(db)
     logger.info("Enhanced Memory Palace initialized - Consolidation & Cross-Creator Insights active")
+    
+    # Initialize Smart Onboarding Wizard
+    onboarding_wizard = SmartOnboardingWizard(db, llm_client=arris_service)
+    logger.info("Smart Onboarding Wizard initialized - ARRIS personalization active")
     
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
