@@ -246,6 +246,8 @@ class AutoApprovalService:
         }
         
         await self.db.auto_approval_rules.insert_one(rule)
+        # Remove MongoDB _id before returning (not JSON serializable)
+        rule.pop("_id", None)
         return rule
     
     async def update_rule(self, rule_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
