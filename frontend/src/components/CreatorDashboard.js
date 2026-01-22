@@ -654,6 +654,8 @@ export const CreatorDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const navigate = useNavigate();
 
   // Get token for child components
@@ -662,6 +664,38 @@ export const CreatorDashboard = () => {
   const getAuthHeaders = () => {
     const token = localStorage.getItem("creator_token");
     return { Authorization: `Bearer ${token}` };
+  };
+
+  // Check if creator needs onboarding
+  const checkOnboarding = useCallback(async () => {
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.get(`${API}/onboarding/status`, { headers });
+      const { is_complete, completion_percentage } = response.data;
+      
+      // Show onboarding if not complete and hasn't been skipped
+      if (!is_complete && completion_percentage < 100) {
+        // Check if creator.onboarding_skipped is set
+        const creatorRes = await axios.get(`${API}/creators/me`, { headers });
+        if (!creatorRes.data.onboarding_skipped) {
+          setShowOnboarding(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking onboarding:", error);
+    } finally {
+      setOnboardingChecked(true);
+    }
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    // Refresh data to get updated profile
+    fetchData();
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
   };
 
   const fetchData = useCallback(async () => {
