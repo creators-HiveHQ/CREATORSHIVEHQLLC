@@ -864,6 +864,450 @@ class EnhancedMemoryPalace:
         ).sort("run_at", -1).to_list(limit)
         
         return history
+    
+    # ============== MEMORY SEARCH API (C3) ==============
+    
+    async def search_memories(
+        self,
+        creator_id: str,
+        query: str,
+        memory_types: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+        min_importance: float = 0.0,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        include_archived: bool = False,
+        include_consolidated: bool = True,
+        sort_by: str = "relevance",  # relevance, date, importance
+        limit: int = 50
+    ) -> Dict[str, Any]:
+        """
+        Full-text search across a creator's ARRIS memories.
+        
+        Implements workspace isolation (creator can only search their own memories).
+        
+        Search features:
+        - Full-text search across memory content, tags, and metadata
+        - Filter by memory type, date range, importance
+        - Optional inclusion of archived memories
+        - Relevance scoring based on match quality
+        
+        Args:
+            creator_id: The creator's ID (workspace isolation)
+            query: Search query string
+            memory_types: Filter by memory types (interaction, proposal, outcome, pattern, etc.)
+            tags: Filter by tags
+            min_importance: Minimum importance threshold (0.0-1.0)
+            date_from: Start date filter (ISO format)
+            date_to: End date filter (ISO format)
+            include_archived: Whether to search archived memories
+            include_consolidated: Whether to include consolidated/summary memories
+            sort_by: Sort order (relevance, date, importance)
+            limit: Maximum results to return
+        
+        Returns:
+            Search results with relevance scores and metadata
+        """
+        search_start = datetime.now(timezone.utc)
+        
+        # Build base query with workspace isolation
+        base_query = {"creator_id": creator_id}
+        
+        # Filter by memory types
+        if memory_types:
+            base_query["memory_type"] = {"$in": memory_types}
+        
+        # Filter by tags
+        if tags:
+            base_query["tags"] = {"$in": tags}
+        
+        # Filter by importance
+        if min_importance > 0:
+            base_query["importance"] = {"$gte": min_importance}
+        
+        # Date range filters
+        if date_from:
+            base_query["created_at"] = {"$gte": date_from}
+        if date_to:
+            if "created_at" in base_query:
+                base_query["created_at"]["$lte"] = date_to
+            else:
+                base_query["created_at"] = {"$lte": date_to}
+        
+        # Exclude superseded memories unless specifically requested
+        if not include_consolidated:
+            base_query["superseded"] = {"$ne": True}
+        
+        # Search in main memories collection
+        main_results = await self._search_collection(
+            collection=self.db.arris_memories,
+            query=query,
+            base_filter=base_query,
+            limit=limit
+        )
+        
+        # Optionally search archived memories
+        archived_results = []
+        if include_archived:
+            archived_query = base_query.copy()
+            archived_results = await self._search_collection(
+                collection=self.db.arris_memories_archive,
+                query=query,
+                base_filter=archived_query,
+                limit=limit // 2  # Limit archived results
+            )
+            # Mark archived results
+            for r in archived_results:
+                r["is_archived"] = True
+        
+        # Combine and deduplicate results
+        all_results = main_results + archived_results
+        
+        # Sort results
+        if sort_by == "relevance":
+            all_results.sort(key=lambda x: -x.get("_relevance_score", 0))
+        elif sort_by == "date":
+            all_results.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        elif sort_by == "importance":
+            all_results.sort(key=lambda x: -x.get("importance", 0))
+        
+        # Limit results
+        all_results = all_results[:limit]
+        
+        # Calculate search statistics
+        search_time_ms = (datetime.now(timezone.utc) - search_start).total_seconds() * 1000
+        
+        # Get type distribution in results
+        type_distribution = defaultdict(int)
+        for r in all_results:
+            type_distribution[r.get("memory_type", "unknown")] += 1
+        
+        # Log search for analytics
+        search_log = {
+            "id": f"SEARCH-{uuid.uuid4().hex[:10]}",
+            "creator_id": creator_id,
+            "query": query,
+            "filters": {
+                "memory_types": memory_types,
+                "tags": tags,
+                "min_importance": min_importance,
+                "date_from": date_from,
+                "date_to": date_to,
+                "include_archived": include_archived
+            },
+            "results_count": len(all_results),
+            "search_time_ms": round(search_time_ms, 2),
+            "searched_at": search_start.isoformat()
+        }
+        await self.db.memory_search_log.insert_one(search_log)
+        
+        return {
+            "query": query,
+            "results": all_results,
+            "total_found": len(all_results),
+            "search_time_ms": round(search_time_ms, 2),
+            "type_distribution": dict(type_distribution),
+            "filters_applied": {
+                "memory_types": memory_types,
+                "tags": tags,
+                "min_importance": min_importance,
+                "date_range": {"from": date_from, "to": date_to} if date_from or date_to else None,
+                "include_archived": include_archived,
+                "include_consolidated": include_consolidated
+            },
+            "sort_by": sort_by,
+            "searched_at": search_start.isoformat()
+        }
+    
+    async def _search_collection(
+        self,
+        collection,
+        query: str,
+        base_filter: Dict[str, Any],
+        limit: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Search a memory collection using multiple matching strategies.
+        
+        Strategies:
+        1. Exact phrase match in content (highest relevance)
+        2. Word match in content fields
+        3. Tag match
+        4. Memory type match
+        """
+        results = []
+        query_lower = query.lower()
+        query_words = query_lower.split()
+        
+        # Fetch memories matching base filter
+        memories = await collection.find(
+            base_filter,
+            {"_id": 0}
+        ).limit(limit * 3).to_list(limit * 3)  # Fetch more, then filter
+        
+        for memory in memories:
+            relevance_score = self._calculate_relevance(memory, query_lower, query_words)
+            
+            if relevance_score > 0:
+                memory["_relevance_score"] = relevance_score
+                memory["_match_highlights"] = self._get_match_highlights(memory, query_words)
+                results.append(memory)
+        
+        return results
+    
+    def _calculate_relevance(
+        self, 
+        memory: Dict[str, Any], 
+        query_lower: str, 
+        query_words: List[str]
+    ) -> float:
+        """
+        Calculate relevance score for a memory based on query match.
+        
+        Scoring:
+        - Exact phrase match in content: +50 points
+        - Word match in content: +10 points per word
+        - Tag match: +15 points per matching tag
+        - Title/summary match: +20 points
+        - Memory type match: +5 points
+        - Importance boost: +5 * importance
+        """
+        score = 0.0
+        content = memory.get("content", {})
+        content_str = json.dumps(content).lower() if isinstance(content, dict) else str(content).lower()
+        
+        # Exact phrase match (highest value)
+        if query_lower in content_str:
+            score += 50
+        
+        # Word matches in content
+        for word in query_words:
+            if len(word) >= 2 and word in content_str:
+                score += 10
+        
+        # Tag matches
+        tags = [t.lower() for t in memory.get("tags", [])]
+        for word in query_words:
+            if word in tags:
+                score += 15
+            # Partial tag match
+            for tag in tags:
+                if word in tag:
+                    score += 5
+        
+        # Title/summary matches
+        title = content.get("title", "").lower() if isinstance(content, dict) else ""
+        summary = content.get("summary", "").lower() if isinstance(content, dict) else ""
+        
+        if query_lower in title:
+            score += 30
+        elif any(word in title for word in query_words):
+            score += 20
+        
+        if query_lower in summary:
+            score += 25
+        elif any(word in summary for word in query_words):
+            score += 15
+        
+        # Memory type match
+        memory_type = memory.get("memory_type", "").lower()
+        if any(word in memory_type for word in query_words):
+            score += 5
+        
+        # Importance boost
+        importance = memory.get("importance", 0.5)
+        score += 5 * importance
+        
+        # Recall frequency boost (more recalled = more relevant)
+        recall_count = memory.get("recall_count", 0)
+        score += min(10, recall_count * 2)
+        
+        return round(score, 2)
+    
+    def _get_match_highlights(
+        self, 
+        memory: Dict[str, Any], 
+        query_words: List[str]
+    ) -> List[Dict[str, str]]:
+        """
+        Generate match highlights showing where query matched.
+        """
+        highlights = []
+        content = memory.get("content", {})
+        
+        if isinstance(content, dict):
+            # Check each content field
+            for key, value in content.items():
+                if isinstance(value, str):
+                    value_lower = value.lower()
+                    for word in query_words:
+                        if word in value_lower:
+                            # Find context around match
+                            idx = value_lower.find(word)
+                            start = max(0, idx - 30)
+                            end = min(len(value), idx + len(word) + 30)
+                            snippet = value[start:end]
+                            if start > 0:
+                                snippet = "..." + snippet
+                            if end < len(value):
+                                snippet = snippet + "..."
+                            
+                            highlights.append({
+                                "field": key,
+                                "snippet": snippet,
+                                "matched_word": word
+                            })
+        
+        # Check tags
+        tags = memory.get("tags", [])
+        for tag in tags:
+            for word in query_words:
+                if word in tag.lower():
+                    highlights.append({
+                        "field": "tags",
+                        "snippet": tag,
+                        "matched_word": word
+                    })
+        
+        return highlights[:5]  # Limit highlights
+    
+    async def get_search_suggestions(
+        self,
+        creator_id: str,
+        partial_query: str,
+        limit: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Get search suggestions based on partial query.
+        
+        Returns suggestions from:
+        - Recent search queries
+        - Popular tags
+        - Memory titles/topics
+        """
+        partial_lower = partial_query.lower()
+        suggestions = []
+        
+        # Get tags that match
+        tag_pipeline = [
+            {"$match": {"creator_id": creator_id}},
+            {"$unwind": "$tags"},
+            {"$match": {"tags": {"$regex": f"^{partial_lower}", "$options": "i"}}},
+            {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": limit}
+        ]
+        tag_suggestions = await self.db.arris_memories.aggregate(tag_pipeline).to_list(limit)
+        
+        for t in tag_suggestions:
+            suggestions.append({
+                "type": "tag",
+                "value": t["_id"],
+                "frequency": t["count"]
+            })
+        
+        # Get memory types that match
+        valid_types = ["interaction", "proposal", "outcome", "pattern", "preference", "feedback", "milestone"]
+        for mtype in valid_types:
+            if partial_lower in mtype:
+                type_count = await self.db.arris_memories.count_documents({
+                    "creator_id": creator_id,
+                    "memory_type": mtype
+                })
+                if type_count > 0:
+                    suggestions.append({
+                        "type": "memory_type",
+                        "value": mtype,
+                        "frequency": type_count
+                    })
+        
+        # Get recent search queries
+        recent_searches = await self.db.memory_search_log.find(
+            {
+                "creator_id": creator_id,
+                "query": {"$regex": f"^{partial_lower}", "$options": "i"}
+            },
+            {"_id": 0, "query": 1}
+        ).sort("searched_at", -1).limit(5).to_list(5)
+        
+        for s in recent_searches:
+            if not any(sug["value"] == s["query"] for sug in suggestions):
+                suggestions.append({
+                    "type": "recent_search",
+                    "value": s["query"],
+                    "frequency": 1
+                })
+        
+        # Sort by frequency and limit
+        suggestions.sort(key=lambda x: -x.get("frequency", 0))
+        
+        return {
+            "partial_query": partial_query,
+            "suggestions": suggestions[:limit]
+        }
+    
+    async def get_search_analytics(self, creator_id: str) -> Dict[str, Any]:
+        """
+        Get search analytics for a creator.
+        Shows popular searches, search patterns, and memory access stats.
+        """
+        # Get total searches
+        total_searches = await self.db.memory_search_log.count_documents({"creator_id": creator_id})
+        
+        # Get popular queries
+        popular_pipeline = [
+            {"$match": {"creator_id": creator_id}},
+            {"$group": {"_id": "$query", "count": {"$sum": 1}, "avg_results": {"$avg": "$results_count"}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 10}
+        ]
+        popular_queries = await self.db.memory_search_log.aggregate(popular_pipeline).to_list(10)
+        
+        # Get average search time
+        time_pipeline = [
+            {"$match": {"creator_id": creator_id}},
+            {"$group": {"_id": None, "avg_time": {"$avg": "$search_time_ms"}}}
+        ]
+        time_result = await self.db.memory_search_log.aggregate(time_pipeline).to_list(1)
+        avg_search_time = time_result[0]["avg_time"] if time_result else 0
+        
+        # Get most searched memory types
+        type_pipeline = [
+            {"$match": {"creator_id": creator_id, "filters.memory_types": {"$exists": True, "$ne": None}}},
+            {"$unwind": "$filters.memory_types"},
+            {"$group": {"_id": "$filters.memory_types", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 5}
+        ]
+        popular_types = await self.db.memory_search_log.aggregate(type_pipeline).to_list(5)
+        
+        # Get search activity over time (last 30 days)
+        thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        activity_pipeline = [
+            {"$match": {"creator_id": creator_id, "searched_at": {"$gte": thirty_days_ago}}},
+            {"$project": {"day": {"$substr": ["$searched_at", 0, 10]}}},
+            {"$group": {"_id": "$day", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}}
+        ]
+        daily_activity = await self.db.memory_search_log.aggregate(activity_pipeline).to_list(30)
+        
+        return {
+            "total_searches": total_searches,
+            "avg_search_time_ms": round(avg_search_time, 2),
+            "popular_queries": [
+                {"query": q["_id"], "count": q["count"], "avg_results": round(q["avg_results"], 1)}
+                for q in popular_queries
+            ],
+            "popular_memory_types": [
+                {"type": t["_id"], "count": t["count"]}
+                for t in popular_types
+            ],
+            "daily_activity": [
+                {"date": a["_id"], "searches": a["count"]}
+                for a in daily_activity
+            ],
+            "analyzed_at": datetime.now(timezone.utc).isoformat()
+        }
 
 
 # Global instance (will be initialized in server startup)
