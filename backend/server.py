@@ -3191,6 +3191,12 @@ async def update_proposal(
             user_id=updated_proposal.get("user_id")
         )
         
+        # AUTO-RECOMMENDATION: Generate improvement suggestions
+        asyncio.create_task(trigger_rejection_recommendations(
+            proposal_id=proposal_id,
+            rejection_reason=update.review_notes
+        ))
+        
         # EMAIL: Send rejection notification
         if creator_email and email_service.is_configured():
             try:
@@ -3215,6 +3221,7 @@ async def update_proposal(
         
         return {
             "message": "Proposal rejected",
+            "recommendations_generating": True,
             "email_sent": creator_email and email_service.is_configured()
         }
     
