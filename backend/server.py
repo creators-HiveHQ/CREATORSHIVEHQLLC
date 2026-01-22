@@ -281,6 +281,10 @@ async def startup_db():
     proposal_recommendation_service = ProposalRecommendationService(db)
     logger.info("Proposal Recommendation Service initialized - Auto-recommendations active")
     
+    # Initialize Enhanced Memory Palace
+    enhanced_memory_palace = EnhancedMemoryPalace(db)
+    logger.info("Enhanced Memory Palace initialized - Consolidation & Cross-Creator Insights active")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
