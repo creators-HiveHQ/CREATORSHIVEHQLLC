@@ -1048,6 +1048,12 @@ const ArrisPage = () => {
   );
 };
 
+// Admin Pattern Dashboard Page
+const AdminPatternDashboardPage = () => {
+  const token = localStorage.getItem("admin_token");
+  return <AdminPatternDashboard token={token} />;
+};
+
 // Patterns Page
 const PatternsPage = () => {
   const [patterns, setPatterns] = useState(null);
