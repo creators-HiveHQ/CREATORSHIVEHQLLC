@@ -1348,6 +1348,11 @@ function App() {
                 <Layout><AdminAutomationDashboardPage /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/memory" element={
+              <ProtectedRoute>
+                <Layout><AdminMemoryDashboardPage /></Layout>
+              </ProtectedRoute>
+            } />
             <Route path="/users" element={
               <ProtectedRoute>
                 <Layout><UsersPage /></Layout>
