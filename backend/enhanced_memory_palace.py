@@ -11,6 +11,7 @@ This module implements:
 
 import os
 import logging
+import uuid
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timezone, timedelta
 from motor.motor_asyncio import AsyncIOMotorDatabase
