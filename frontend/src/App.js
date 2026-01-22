@@ -23,6 +23,7 @@ import { SubscriptionPlans, SubscriptionSuccess, SubscriptionCancel } from "@/co
 import { AdminRevenueDashboard } from "@/components/AdminRevenueDashboard";
 import { AdminPatternDashboard } from "@/components/AdminPatternDashboard";
 import { AdminAutomationDashboard } from "@/components/AdminAutomationDashboard";
+import { AdminMemoryDashboard } from "@/components/AdminMemoryDashboard";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
