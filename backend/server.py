@@ -4789,6 +4789,313 @@ async def get_churn_risk_creators(
     }
 
 
+# ============== SMART AUTOMATION ENGINE (Phase 4 Module B) ==============
+
+@api_router.get("/admin/automation/rules")
+async def get_automation_rules(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all smart automation rules.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await smart_automation_engine.get_all_rules()
+
+
+@api_router.get("/admin/automation/rules/{rule_id}")
+async def get_automation_rule(
+    rule_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get a specific smart automation rule.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    rule = await smart_automation_engine.get_rule(rule_id)
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    return rule
+
+
+@api_router.post("/admin/automation/rules")
+async def create_automation_rule(
+    rule_data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Create a new smart automation rule.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await smart_automation_engine.create_rule(rule_data)
+
+
+@api_router.put("/admin/automation/rules/{rule_id}")
+async def update_automation_rule(
+    rule_id: str,
+    updates: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update a smart automation rule.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    success = await smart_automation_engine.update_rule(rule_id, updates)
+    if not success:
+        raise HTTPException(status_code=404, detail="Rule not found or update failed")
+    return {"success": True, "rule_id": rule_id}
+
+
+@api_router.post("/admin/automation/rules/{rule_id}/toggle")
+async def toggle_automation_rule(
+    rule_id: str,
+    is_active: bool = Query(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Toggle a smart automation rule on/off.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    success = await smart_automation_engine.toggle_rule(rule_id, is_active)
+    if not success:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    return {"success": True, "rule_id": rule_id, "is_active": is_active}
+
+
+@api_router.post("/admin/automation/evaluate/{creator_id}")
+async def evaluate_creator_automation(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Evaluate all automation rules for a specific creator.
+    Returns triggered rules and executes their actions.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Evaluate conditions
+    triggered_rules = await smart_automation_engine.evaluate_creator_conditions(creator_id)
+    
+    if not triggered_rules:
+        return {
+            "creator_id": creator_id,
+            "rules_triggered": 0,
+            "message": "No automation rules triggered for this creator"
+        }
+    
+    # Execute actions
+    results = await smart_automation_engine.execute_triggered_rules(triggered_rules)
+    
+    return {
+        "creator_id": creator_id,
+        "rules_triggered": len(results),
+        "execution_results": results
+    }
+
+
+@api_router.post("/admin/automation/evaluate-all")
+async def evaluate_all_creators_automation(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Evaluate automation rules for all active creators.
+    Use with caution - this can trigger many actions.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Get all active creators
+    creators = await db.creators.find(
+        {"status": "active"},
+        {"_id": 0, "id": 1}
+    ).to_list(10000)
+    
+    total_triggered = 0
+    all_results = []
+    
+    for creator in creators:
+        creator_id = creator.get("id")
+        triggered_rules = await smart_automation_engine.evaluate_creator_conditions(creator_id)
+        
+        if triggered_rules:
+            results = await smart_automation_engine.execute_triggered_rules(triggered_rules)
+            total_triggered += len(results)
+            all_results.extend(results)
+    
+    return {
+        "creators_evaluated": len(creators),
+        "total_rules_triggered": total_triggered,
+        "execution_results": all_results
+    }
+
+
+@api_router.get("/admin/automation/log")
+async def get_automation_log(
+    creator_id: Optional[str] = Query(default=None),
+    rule_id: Optional[str] = Query(default=None),
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get smart automation execution log.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await smart_automation_engine.get_automation_log(
+        creator_id=creator_id,
+        rule_id=rule_id,
+        limit=limit
+    )
+
+
+# ============== PROPOSAL RECOMMENDATIONS (Phase 4 Module B) ==============
+
+@api_router.post("/proposals/{proposal_id}/generate-recommendations")
+async def generate_proposal_recommendations(
+    proposal_id: str,
+    rejection_reason: Optional[str] = Query(default=None, description="Admin's rejection reason"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Generate AI-powered improvement recommendations for a proposal.
+    Can be called by admin after rejection or by creator.
+    """
+    # Verify authentication
+    try:
+        current_user = await get_current_user(credentials, db)
+        is_admin = True
+    except:
+        current_user = await get_current_creator(credentials, db)
+        is_admin = False
+    
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    # Generate recommendations
+    result = await proposal_recommendation_service.generate_rejection_recommendations(
+        proposal_id=proposal_id,
+        rejection_reason=rejection_reason
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Failed to generate recommendations"))
+    
+    return result
+
+
+@api_router.get("/proposals/{proposal_id}/recommendations")
+async def get_proposal_recommendations(
+    proposal_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get existing recommendations for a proposal.
+    """
+    # Verify authentication (either admin or creator)
+    try:
+        current_user = await get_current_user(credentials, db)
+    except:
+        current_user = await get_current_creator(credentials, db)
+    
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    recommendations = await proposal_recommendation_service.get_recommendations_for_proposal(proposal_id)
+    
+    if not recommendations:
+        return {
+            "proposal_id": proposal_id,
+            "recommendations": None,
+            "message": "No recommendations available for this proposal"
+        }
+    
+    return recommendations
+
+
+@api_router.get("/creators/{creator_id}/recommendation-history")
+async def get_creator_recommendation_history(
+    creator_id: str,
+    limit: int = Query(default=10, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get recommendation history for a creator.
+    """
+    # Verify creator access
+    creator = await get_current_creator(credentials, db)
+    if not creator or creator.get("id") != creator_id:
+        # Check if admin
+        try:
+            admin = await get_current_user(credentials, db)
+            if not admin:
+                raise HTTPException(status_code=403, detail="Access denied")
+        except:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    return await proposal_recommendation_service.get_creator_recommendation_history(
+        creator_id=creator_id,
+        limit=limit
+    )
+
+
+@api_router.get("/admin/recommendations/common-issues")
+async def get_common_rejection_issues(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get analysis of common rejection reasons across all proposals.
+    Admin-only endpoint.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    return await proposal_recommendation_service.get_common_rejection_reasons()
+
+
+# Hook to auto-generate recommendations on proposal rejection
+async def trigger_rejection_recommendations(proposal_id: str, rejection_reason: Optional[str] = None):
+    """
+    Automatically triggered when a proposal is rejected.
+    Called from proposal status update endpoint.
+    """
+    try:
+        await proposal_recommendation_service.generate_rejection_recommendations(
+            proposal_id=proposal_id,
+            rejection_reason=rejection_reason
+        )
+        logger.info(f"Auto-generated recommendations for rejected proposal: {proposal_id}")
+    except Exception as e:
+        logger.error(f"Failed to auto-generate recommendations for {proposal_id}: {str(e)}")
+
+
 # ============== LOOKUPS (Sheet 16) ==============
 
 @api_router.get("/lookups")
