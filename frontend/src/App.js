@@ -1051,7 +1051,7 @@ const ArrisPage = () => {
 
 // Admin Pattern Dashboard Page
 const AdminPatternDashboardPage = () => {
-  const token = localStorage.getItem("admin_token");
+  const token = localStorage.getItem("hivehq_token");
   return <AdminPatternDashboard token={token} />;
 };
 
