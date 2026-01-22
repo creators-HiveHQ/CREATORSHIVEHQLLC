@@ -227,6 +227,7 @@ export_service = None
 pattern_engine = None
 smart_automation_engine = None
 proposal_recommendation_service = None
+enhanced_memory_palace = None
 
 @app.on_event("startup")
 async def startup_db():
