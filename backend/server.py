@@ -5494,6 +5494,472 @@ async def admin_get_search_analytics(
     }
 
 
+# ============== MEMORY EXPORT/IMPORT (Phase 4 Module C - C4) ==============
+
+@api_router.get("/memory/export")
+async def export_memories(
+    include_archived: bool = Query(default=True, description="Include archived memories"),
+    include_patterns: bool = Query(default=True, description="Include pattern analysis"),
+    include_metadata: bool = Query(default=True, description="Include memory metadata"),
+    format: str = Query(default="json", description="Export format: json or portable"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export your complete ARRIS memory profile.
+    
+    **Elite Feature**: Full export requires Elite tier.
+    Pro/Premium users can export basic memory data.
+    
+    **Export Formats:**
+    - `json`: Full data export with all system fields
+    - `portable`: Cleaned data for cross-platform portability
+    
+    **Use Cases:**
+    - Backup your ARRIS memory profile
+    - Data portability (GDPR compliance)
+    - Migration between accounts
+    
+    Returns a complete export package with:
+    - All active and archived memories
+    - Pattern analysis summary
+    - Learning metrics
+    - Integrity checksum for verification
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check tier - Elite gets full export, others get limited
+    is_elite = await feature_gating.is_elite_tier(creator_id)
+    tier, _ = await feature_gating.get_creator_tier(creator_id)
+    
+    # Free tier cannot export
+    if tier.lower() == "free":
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Memory export requires Pro plan or higher",
+                "required_tier": "pro",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    # Non-Elite users get limited export
+    if not is_elite:
+        include_archived = False  # Only Elite can export archived
+        format = "portable"  # Force portable format
+    
+    export_data = await enhanced_memory_palace.export_memories(
+        creator_id=creator_id,
+        include_archived=include_archived,
+        include_patterns=include_patterns,
+        include_metadata=include_metadata,
+        format=format
+    )
+    
+    # Add tier info
+    export_data["tier_limitations"] = {
+        "is_elite": is_elite,
+        "archived_included": include_archived,
+        "format_used": format
+    }
+    
+    return export_data
+
+
+@api_router.post("/memory/import")
+async def import_memories(
+    import_data: Dict[str, Any],
+    merge_strategy: str = Query(default="skip_duplicates", description="skip_duplicates, overwrite, or merge"),
+    validate_only: bool = Query(default=False, description="Only validate without importing"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Import memories from an export package.
+    
+    **Elite Feature**: Memory import is only available for Elite tier users.
+    
+    **Merge Strategies:**
+    - `skip_duplicates`: Skip memories that already exist (default, safest)
+    - `overwrite`: Replace existing memories with imported ones
+    - `merge`: Keep both versions, marking imported ones
+    
+    **Request Body:**
+    Provide the export package JSON from a previous export.
+    
+    **Validation Mode:**
+    Set `validate_only=true` to check the import without making changes.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Check Elite tier
+    is_elite = await feature_gating.is_elite_tier(creator_id)
+    if not is_elite:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Memory import requires Elite plan",
+                "required_tier": "elite",
+                "upgrade_url": "/creator/subscription",
+                "feature": "memory_import"
+            }
+        )
+    
+    # Validate merge strategy
+    if merge_strategy not in ["skip_duplicates", "overwrite", "merge"]:
+        raise HTTPException(status_code=400, detail="Invalid merge_strategy. Use: skip_duplicates, overwrite, or merge")
+    
+    result = await enhanced_memory_palace.import_memories(
+        creator_id=creator_id,
+        export_data=import_data,
+        merge_strategy=merge_strategy,
+        validate_only=validate_only
+    )
+    
+    return result
+
+
+@api_router.get("/memory/export-history")
+async def get_export_history(
+    limit: int = Query(default=10, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get your memory export history.
+    
+    Shows past exports with timestamps, formats, and memory counts.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    history = await enhanced_memory_palace.get_export_history(creator_id, limit)
+    return {"history": history, "total": len(history)}
+
+
+@api_router.get("/memory/import-history")
+async def get_import_history(
+    limit: int = Query(default=10, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get your memory import history.
+    
+    Shows past imports with results and merge strategies used.
+    Elite feature.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    is_elite = await feature_gating.is_elite_tier(creator_id)
+    if not is_elite:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "Import history requires Elite plan",
+                "required_tier": "elite"
+            }
+        )
+    
+    history = await enhanced_memory_palace.get_import_history(creator_id, limit)
+    return {"history": history, "total": len(history)}
+
+
+# ============== FORGETTING PROTOCOL (Phase 4 Module C - C5) - GDPR Compliance ==============
+
+@api_router.delete("/memory/delete")
+async def delete_memories(
+    memory_ids: Optional[str] = Query(default=None, description="Comma-separated memory IDs"),
+    memory_types: Optional[str] = Query(default=None, description="Comma-separated memory types"),
+    tags: Optional[str] = Query(default=None, description="Comma-separated tags"),
+    date_before: Optional[str] = Query(default=None, description="Delete memories before this date (ISO format)"),
+    include_archived: bool = Query(default=True, description="Also delete archived memories"),
+    permanent: bool = Query(default=False, description="Permanently delete (no recovery)"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Selectively delete your ARRIS memories (Forgetting Protocol).
+    
+    **GDPR-Compliant Memory Deletion:**
+    - All users can delete their own memories
+    - Soft delete by default (30-day recovery window)
+    - Set `permanent=true` for immediate permanent deletion
+    
+    **Selection Criteria (at least one required):**
+    - `memory_ids`: Specific memory IDs to delete
+    - `memory_types`: Delete all memories of these types (interaction, proposal, outcome, pattern, etc.)
+    - `tags`: Delete memories with these tags
+    - `date_before`: Delete memories created before this date
+    
+    **Examples:**
+    - Delete specific memories: `?memory_ids=MEM-abc123,MEM-def456`
+    - Delete all patterns: `?memory_types=pattern,pattern_summary`
+    - Delete old memories: `?date_before=2025-01-01T00:00:00Z`
+    - Permanently delete: Add `&permanent=true`
+    
+    Returns deletion details including a deletion_id for recovery.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    # Parse comma-separated values
+    ids_list = [id.strip() for id in memory_ids.split(",")] if memory_ids else None
+    types_list = [t.strip() for t in memory_types.split(",")] if memory_types else None
+    tags_list = [t.strip() for t in tags.split(",")] if tags else None
+    
+    # Require at least one selection criteria
+    if not any([ids_list, types_list, tags_list, date_before]):
+        raise HTTPException(
+            status_code=400,
+            detail="At least one selection criteria required: memory_ids, memory_types, tags, or date_before"
+        )
+    
+    result = await enhanced_memory_palace.delete_memories(
+        creator_id=creator_id,
+        memory_ids=ids_list,
+        memory_types=types_list,
+        tags=tags_list,
+        date_before=date_before,
+        include_archived=include_archived,
+        reason="user_request",
+        permanent=permanent
+    )
+    
+    return result
+
+
+@api_router.post("/memory/recover")
+async def recover_memories(
+    deletion_id: str = Query(..., description="Deletion ID from the delete operation"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Recover soft-deleted memories.
+    
+    Memories can be recovered within 30 days of soft deletion.
+    Permanently deleted memories cannot be recovered.
+    
+    **Required:**
+    - `deletion_id`: The deletion ID returned from the delete operation
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    result = await enhanced_memory_palace.recover_memories(
+        creator_id=creator_id,
+        deletion_id=deletion_id
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Recovery failed"))
+    
+    return result
+
+
+@api_router.get("/memory/deletion-history")
+async def get_deletion_history(
+    limit: int = Query(default=20, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get your memory deletion history.
+    
+    Shows all deletion operations with audit details for compliance.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    history = await enhanced_memory_palace.get_deletion_history(creator_id, limit)
+    return {"history": history, "total": len(history)}
+
+
+@api_router.get("/memory/pending-deletions")
+async def get_pending_deletions(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get memories pending permanent deletion.
+    
+    Shows soft-deleted memories that can still be recovered.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    pending = await enhanced_memory_palace.get_pending_deletions(creator_id)
+    return pending
+
+
+@api_router.get("/memory/gdpr-export")
+async def request_gdpr_data_export(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    GDPR Article 20: Request complete data export (Right to Data Portability).
+    
+    Exports ALL your memory-related data including:
+    - All active and archived memories
+    - Learning metrics and patterns
+    - Search activity history
+    - Deletion history
+    - Export/Import history
+    
+    This is a comprehensive export for GDPR compliance.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    export_data = await enhanced_memory_palace.request_full_data_export(creator_id)
+    
+    return export_data
+
+
+@api_router.delete("/memory/gdpr-erase")
+async def request_gdpr_erasure(
+    confirm: bool = Query(..., description="Set to true to confirm irreversible deletion"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    GDPR Article 17: Right to Erasure (Right to be Forgotten).
+    
+    **⚠️ WARNING: This action is IRREVERSIBLE.**
+    
+    Permanently deletes ALL your memory data including:
+    - All active and archived memories
+    - Soft-deleted memories in recovery queue
+    - Search history
+    - Learning metrics
+    - Export/Import history
+    
+    **Required:**
+    - `confirm=true` to proceed with erasure
+    
+    An audit record will be kept for GDPR compliance.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "confirmation_required",
+                "message": "This action is irreversible. Set confirm=true to proceed.",
+                "warning": "All your ARRIS memory data will be permanently deleted."
+            }
+        )
+    
+    result = await enhanced_memory_palace.request_full_erasure(
+        creator_id=creator_id,
+        reason="gdpr_erasure"
+    )
+    
+    return result
+
+
+# ============== ADMIN MEMORY MANAGEMENT ENDPOINTS ==============
+
+@api_router.get("/admin/memory/export/{creator_id}")
+async def admin_export_creator_memories(
+    creator_id: str,
+    include_archived: bool = Query(default=True),
+    include_patterns: bool = Query(default=True),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Admin endpoint to export any creator's memories.
+    For support, compliance, and debugging purposes.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Verify creator exists
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0, "id": 1, "name": 1})
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    
+    export_data = await enhanced_memory_palace.export_memories(
+        creator_id=creator_id,
+        include_archived=include_archived,
+        include_patterns=include_patterns,
+        include_metadata=True,
+        format="json"
+    )
+    
+    export_data["admin_export"] = True
+    export_data["creator"] = creator
+    
+    return export_data
+
+
+@api_router.get("/admin/memory/deletion-audit")
+async def admin_get_deletion_audit(
+    creator_id: Optional[str] = Query(default=None),
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Admin endpoint to view deletion audit logs.
+    For GDPR compliance verification.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    query = {}
+    if creator_id:
+        query["creator_id"] = creator_id
+    
+    audit_logs = await db.memory_deletion_audit.find(
+        query, {"_id": 0}
+    ).sort("executed_at", -1).to_list(limit)
+    
+    return {"audit_logs": audit_logs, "total": len(audit_logs)}
+
+
+@api_router.get("/admin/memory/gdpr-erasure-audit")
+async def admin_get_gdpr_erasure_audit(
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Admin endpoint to view GDPR full erasure audit logs.
+    Required for compliance reporting.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    audit_logs = await db.gdpr_erasure_audit.find(
+        {}, {"_id": 0}
+    ).sort("executed_at", -1).to_list(limit)
+    
+    return {"audit_logs": audit_logs, "total": len(audit_logs)}
+
+
+@api_router.post("/admin/memory/purge-expired")
+async def admin_purge_expired_deletions(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Admin endpoint to purge expired soft-deleted memories.
+    
+    Permanently removes soft-deleted memories whose 30-day
+    retention period has expired.
+    
+    Should be run periodically (e.g., daily) for storage management.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    result = await enhanced_memory_palace.purge_expired_deletions()
+    
+    return result
+
+
 # ============== LOOKUPS (Sheet 16) ==============
 
 @api_router.get("/lookups")
