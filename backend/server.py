@@ -268,6 +268,15 @@ async def startup_db():
     pattern_engine = ArrisPatternEngine(db)
     logger.info("ARRIS Pattern Engine initialized - Platform-wide pattern detection active")
     
+    # Initialize Smart Automation Engine
+    smart_automation_engine = SmartAutomationEngine(db)
+    await smart_automation_engine.initialize()
+    logger.info("Smart Automation Engine initialized - Condition-based automations active")
+    
+    # Initialize Proposal Recommendation Service
+    proposal_recommendation_service = ProposalRecommendationService(db)
+    logger.info("Proposal Recommendation Service initialized - Auto-recommendations active")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
