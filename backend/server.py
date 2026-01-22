@@ -145,6 +145,9 @@ from smart_automation_engine import SmartAutomationEngine
 # Import Proposal Recommendation Service
 from proposal_recommendation_service import ProposalRecommendationService
 
+# Import Enhanced Memory Palace
+from enhanced_memory_palace import EnhancedMemoryPalace
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
