@@ -35,6 +35,10 @@ class CreatorRegistration(BaseModel):
     arris_intake_prompt: str = "What's the biggest challenge you're facing in your creator journey right now?"
     arris_response: Optional[str] = None  # Alternative field name for intake response
     
+    # Referral tracking
+    referred_by_code: Optional[str] = None  # Referral code used during registration
+    referral_id: Optional[str] = None  # Link to referral record
+    
     # Status & Metadata
     status: str = "pending"  # pending, approved, rejected, active
     registration_source: str = "web_form"
