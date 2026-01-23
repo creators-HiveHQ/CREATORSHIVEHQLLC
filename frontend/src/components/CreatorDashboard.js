@@ -1019,6 +1019,16 @@ export const CreatorDashboard = () => {
             <TabsTrigger value="referrals" data-testid="tab-referrals">
               🎁 Referrals
             </TabsTrigger>
+            <TabsTrigger 
+              value="elite" 
+              data-testid="tab-elite"
+              className={featureAccess?.tier !== "elite" ? "relative" : ""}
+            >
+              ⚡ Elite
+              {featureAccess?.tier !== "elite" && (
+                <Badge className="ml-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-1.5 py-0">ELITE</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Progress Tab */}
