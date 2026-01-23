@@ -1400,6 +1400,17 @@ async def get_referral_tier_info(credentials: HTTPAuthorizationCredentials = Dep
     }
 
 
+@api_router.post("/referral/check-qualification")
+async def check_referral_qualification(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Check if the current creator's referral qualifies (based on activity criteria).
+    Triggered automatically on onboarding completion or proposal creation.
+    """
+    creator = await get_current_creator(credentials, db)
+    result = await referral_service.check_and_qualify_referral(creator["id"])
+    return result
+
+
 # ============== REFERRAL ADMIN ENDPOINTS ==============
 
 @api_router.get("/admin/referral/analytics")
