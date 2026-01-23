@@ -157,6 +157,12 @@ from auto_approval_service import AutoApprovalService
 # Import Referral Service
 from referral_service import ReferralService, ReferralStatus, CommissionStatus
 
+# Import ARRIS Persona Service
+from arris_persona_service import (
+    ArrisPersonaService, DEFAULT_PERSONAS,
+    AVAILABLE_TONES, AVAILABLE_STYLES, AVAILABLE_FOCUS_AREAS, AVAILABLE_RESPONSE_LENGTHS
+)
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
