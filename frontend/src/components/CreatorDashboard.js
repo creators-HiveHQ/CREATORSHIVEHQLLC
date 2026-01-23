@@ -972,6 +972,7 @@ export const CreatorDashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="overview" data-testid="tab-overview">📊 Overview</TabsTrigger>
+            <TabsTrigger value="progress" data-testid="tab-progress">🎯 Progress</TabsTrigger>
             <TabsTrigger value="proposals" data-testid="tab-proposals">📋 My Proposals ({proposals.length})</TabsTrigger>
             <TabsTrigger 
               value="analytics" 
@@ -1014,6 +1015,14 @@ export const CreatorDashboard = () => {
               )}
             </TabsTrigger>
           </TabsList>
+
+          {/* Progress Tab */}
+          <TabsContent value="progress">
+            <OnboardingProgressTracker 
+              token={creatorToken}
+              onResumeOnboarding={() => setShowOnboarding(true)}
+            />
+          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
