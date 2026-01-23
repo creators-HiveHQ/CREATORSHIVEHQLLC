@@ -1031,14 +1031,14 @@ Provide a brief statement about how you'll help them based on these preferences.
             try:
                 start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
                 metrics["time_since_start"] = self._format_duration(now - start)
-            except:
+            except (ValueError, TypeError):
                 pass
         
         if last_activity:
             try:
                 last = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
                 metrics["time_since_last_activity"] = self._format_duration(now - last)
-            except:
+            except (ValueError, TypeError):
                 pass
         
         if completed_at:
@@ -1046,7 +1046,7 @@ Provide a brief statement about how you'll help them based on these preferences.
                 start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
                 end = datetime.fromisoformat(completed_at.replace("Z", "+00:00"))
                 metrics["total_duration"] = self._format_duration(end - start)
-            except:
+            except (ValueError, TypeError):
                 pass
         else:
             # Estimate remaining time
