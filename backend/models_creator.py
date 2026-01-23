@@ -60,6 +60,7 @@ class CreatorRegistrationCreate(BaseModel):
     website: Optional[str] = Field(default=None, max_length=500)
     arris_intake_question: str = Field(default="", max_length=2000)
     arris_response: Optional[str] = Field(default=None, max_length=2000)
+    referral_code: Optional[str] = Field(default=None, max_length=50, description="Optional referral code")
 
 class CreatorRegistrationUpdate(BaseModel):
     """Admin update for registration status"""
