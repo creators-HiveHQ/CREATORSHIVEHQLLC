@@ -77,7 +77,13 @@ export default function ReferralDashboard({ token }) {
       toast.error('Failed to load referral data');
     }
     setLoading(false);
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      loadData();
+    }
+  }, [token, loadData]);
 
   const generateCode = async () => {
     setGeneratingCode(true);
