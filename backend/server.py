@@ -2791,7 +2791,7 @@ async def create_persona(
     
     # Check Elite access
     features = await feature_gating.get_full_feature_access(creator["id"])
-    if not features.get("custom_arris_workflows"):
+    if not features.get("features", {}).get("custom_arris_workflows"):
         raise HTTPException(
             status_code=403,
             detail="Custom ARRIS Personas require Elite tier. Upgrade to create custom personas."
@@ -2821,7 +2821,7 @@ async def update_persona(
     
     # Check Elite access
     features = await feature_gating.get_full_feature_access(creator["id"])
-    if not features.get("custom_arris_workflows"):
+    if not features.get("features", {}).get("custom_arris_workflows"):
         raise HTTPException(status_code=403, detail="Elite feature required")
     
     result = await persona_service.update_persona(creator["id"], persona_id, updates)
@@ -2847,7 +2847,7 @@ async def delete_persona(
     
     # Check Elite access
     features = await feature_gating.get_full_feature_access(creator["id"])
-    if not features.get("custom_arris_workflows"):
+    if not features.get("features", {}).get("custom_arris_workflows"):
         raise HTTPException(status_code=403, detail="Elite feature required")
     
     success = await persona_service.delete_persona(creator["id"], persona_id)
@@ -2872,7 +2872,7 @@ async def activate_persona(
     
     # Check Elite access
     features = await feature_gating.get_full_feature_access(creator["id"])
-    if not features.get("custom_arris_workflows"):
+    if not features.get("features", {}).get("custom_arris_workflows"):
         raise HTTPException(status_code=403, detail="Elite feature required")
     
     result = await persona_service.activate_persona(creator["id"], persona_id)
@@ -2896,7 +2896,7 @@ async def test_persona(
     
     # Check Elite access
     features = await feature_gating.get_full_feature_access(creator["id"])
-    if not features.get("custom_arris_workflows"):
+    if not features.get("features", {}).get("custom_arris_workflows"):
         raise HTTPException(status_code=403, detail="Elite feature required")
     
     result = await persona_service.test_persona(creator["id"], persona_id, test_message)
@@ -2915,7 +2915,7 @@ async def get_persona_analytics(credentials: HTTPAuthorizationCredentials = Depe
     
     # Check Elite access
     features = await feature_gating.get_full_feature_access(creator["id"])
-    if not features.get("custom_arris_workflows"):
+    if not features.get("features", {}).get("custom_arris_workflows"):
         raise HTTPException(status_code=403, detail="Elite feature required")
     
     analytics = await persona_service.get_persona_analytics(creator["id"])
