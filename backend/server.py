@@ -2692,6 +2692,236 @@ async def get_elite_status(credentials: HTTPAuthorizationCredentials = Depends(s
         "contact_sales": "sales@hivehq.com" if not is_elite else None
     }
 
+
+# ============== ARRIS PERSONA ENDPOINTS (Elite) ==============
+
+@api_router.get("/elite/personas")
+async def get_all_personas(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get all available ARRIS personas (default + custom) for an Elite creator.
+    Includes which persona is currently active.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    features = await feature_gating.get_creator_features(creator["id"])
+    if not features.get("custom_arris_workflows"):
+        raise HTTPException(
+            status_code=403,
+            detail="ARRIS Personas are an Elite feature. Upgrade to access custom personas."
+        )
+    
+    result = await persona_service.get_all_personas(creator["id"])
+    return result
+
+
+@api_router.get("/elite/personas/options")
+async def get_persona_options(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get available options for creating/customizing personas.
+    Returns available tones, styles, focus areas, etc.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    return {
+        "tones": AVAILABLE_TONES,
+        "communication_styles": AVAILABLE_STYLES,
+        "focus_areas": AVAILABLE_FOCUS_AREAS,
+        "response_lengths": AVAILABLE_RESPONSE_LENGTHS,
+        "emoji_options": ["none", "minimal", "moderate", "frequent"],
+        "icon_options": ["user", "briefcase", "smile", "chart-line", "lightbulb", "trophy", "star", "rocket", "heart", "brain"]
+    }
+
+
+@api_router.get("/elite/personas/active")
+async def get_active_persona(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get the currently active ARRIS persona for the creator.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    persona = await persona_service.get_active_persona(creator["id"])
+    return persona
+
+
+@api_router.get("/elite/personas/{persona_id}")
+async def get_persona(
+    persona_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get details of a specific persona.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    persona = await persona_service.get_persona(creator["id"], persona_id)
+    if not persona:
+        raise HTTPException(status_code=404, detail="Persona not found")
+    
+    return persona
+
+
+@api_router.post("/elite/personas")
+async def create_persona(
+    persona_data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Create a new custom ARRIS persona.
+    
+    Required fields:
+    - name: Persona name (max 50 chars)
+    
+    Optional fields:
+    - description: Description of the persona
+    - tone: Communication tone (professional, friendly, analytical, creative, motivational, direct, empathetic)
+    - communication_style: Response style (detailed, concise, conversational, structured, storytelling, socratic)
+    - response_length: Preferred length (brief, short, medium, detailed, adaptive)
+    - primary_focus_areas: List of focus areas (growth, monetization, content, engagement, strategy, etc.)
+    - emoji_usage: How often to use emojis (none, minimal, moderate, frequent)
+    - custom_greeting: Custom greeting message
+    - signature_phrase: Signature phrase to occasionally use
+    - personality_traits: List of personality traits
+    - avoid_topics: Topics to avoid discussing
+    - custom_instructions: Additional custom instructions
+    - example_responses: Example responses to mimic style
+    - icon: Icon identifier
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    features = await feature_gating.get_creator_features(creator["id"])
+    if not features.get("custom_arris_workflows"):
+        raise HTTPException(
+            status_code=403,
+            detail="Custom ARRIS Personas require Elite tier. Upgrade to create custom personas."
+        )
+    
+    # Validate name
+    if not persona_data.get("name"):
+        raise HTTPException(status_code=400, detail="Persona name is required")
+    
+    if len(persona_data.get("name", "")) > 50:
+        raise HTTPException(status_code=400, detail="Persona name must be 50 characters or less")
+    
+    result = await persona_service.create_persona(creator["id"], persona_data)
+    return result
+
+
+@api_router.patch("/elite/personas/{persona_id}")
+async def update_persona(
+    persona_id: str,
+    updates: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update a custom persona. System personas cannot be modified.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    features = await feature_gating.get_creator_features(creator["id"])
+    if not features.get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    result = await persona_service.update_persona(creator["id"], persona_id, updates)
+    if not result:
+        raise HTTPException(
+            status_code=400,
+            detail="Persona not found or cannot be modified (system personas are read-only)"
+        )
+    
+    return result
+
+
+@api_router.delete("/elite/personas/{persona_id}")
+async def delete_persona(
+    persona_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Delete a custom persona. System personas cannot be deleted.
+    If the deleted persona was active, switches to Professional.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    features = await feature_gating.get_creator_features(creator["id"])
+    if not features.get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    success = await persona_service.delete_persona(creator["id"], persona_id)
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="Persona not found or cannot be deleted (system personas are protected)"
+        )
+    
+    return {"success": True, "message": "Persona deleted successfully"}
+
+
+@api_router.post("/elite/personas/{persona_id}/activate")
+async def activate_persona(
+    persona_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Set a persona as the active one for all ARRIS interactions.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    features = await feature_gating.get_creator_features(creator["id"])
+    if not features.get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    result = await persona_service.activate_persona(creator["id"], persona_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Activation failed"))
+    
+    return result
+
+
+@api_router.post("/elite/personas/{persona_id}/test")
+async def test_persona(
+    persona_id: str,
+    test_message: str = Query(..., description="Test message to preview persona response style"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Test a persona with a sample message.
+    Returns the system prompt configuration and preview.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    features = await feature_gating.get_creator_features(creator["id"])
+    if not features.get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    result = await persona_service.test_persona(creator["id"], persona_id, test_message)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Persona not found"))
+    
+    return result
+
+
+@api_router.get("/elite/personas/analytics/summary")
+async def get_persona_analytics(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get usage analytics for the creator's personas.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    features = await feature_gating.get_creator_features(creator["id"])
+    if not features.get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    analytics = await persona_service.get_persona_analytics(creator["id"])
+    return analytics
+
+
 # ============== ARRIS MEMORY & LEARNING ENDPOINTS ==============
 
 @api_router.get("/arris/memory/summary")
