@@ -306,6 +306,10 @@ async def startup_db():
     await auto_approval_service.initialize()
     logger.info("Auto-Approval Service initialized - ARRIS evaluation active")
     
+    # Initialize Referral Service
+    referral_service = ReferralService(db)
+    logger.info("Referral Service initialized - Commission tracking & Calculator integration active")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
