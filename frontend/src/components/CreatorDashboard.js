@@ -2466,6 +2466,55 @@ export const CreatorDashboard = () => {
           <TabsContent value="referrals" data-testid="referrals-tab-content">
             <ReferralDashboard token={creatorToken} />
           </TabsContent>
+
+          {/* Elite Tab - ARRIS Personas & Elite Features */}
+          <TabsContent value="elite" data-testid="elite-tab-content">
+            {featureAccess?.tier === "elite" ? (
+              <ArrisPersonaManager 
+                token={creatorToken}
+                onPersonaChange={(persona) => {
+                  console.log('Persona changed:', persona.name);
+                }}
+              />
+            ) : (
+              <Card className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 border-amber-700/30">
+                <CardContent className="py-12 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2">Elite Features</h3>
+                  <p className="text-gray-300 mb-6 max-w-md mx-auto">
+                    Unlock Custom ARRIS Personas, Brand Integrations, Adaptive Intelligence, 
+                    and more with Elite tier.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
+                    <div className="bg-gray-900/50 rounded-lg p-3">
+                      <span className="text-2xl">🎭</span>
+                      <p className="text-sm text-gray-400 mt-1">Custom Personas</p>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg p-3">
+                      <span className="text-2xl">🤝</span>
+                      <p className="text-sm text-gray-400 mt-1">Brand Integrations</p>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg p-3">
+                      <span className="text-2xl">🧠</span>
+                      <p className="text-sm text-gray-400 mt-1">Adaptive AI</p>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg p-3">
+                      <span className="text-2xl">📊</span>
+                      <p className="text-sm text-gray-400 mt-1">Advanced Reports</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => navigate("/creator/subscription")}
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                  >
+                    Upgrade to Elite
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
