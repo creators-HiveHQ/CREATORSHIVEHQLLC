@@ -53,6 +53,25 @@ export const CreatorRegistrationForm = () => {
     fetchOptions();
   }, []);
 
+  // Validate referral code if present
+  useEffect(() => {
+    const validateReferral = async () => {
+      if (referralCode) {
+        try {
+          const response = await axios.get(`${API}/referral/validate/${referralCode}`);
+          if (response.data.valid) {
+            setReferralInfo(response.data);
+            // Track the click
+            axios.post(`${API}/referral/track-click/${referralCode}`).catch(() => {});
+          }
+        } catch (err) {
+          console.error("Invalid referral code:", err);
+        }
+      }
+    };
+    validateReferral();
+  }, [referralCode]);
+
   const handlePlatformToggle = (platform) => {
     setFormData(prev => ({
       ...prev,
