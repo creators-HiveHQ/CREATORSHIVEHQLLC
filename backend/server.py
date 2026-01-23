@@ -1250,6 +1250,225 @@ async def get_auto_approval_analytics(credentials: HTTPAuthorizationCredentials 
     return analytics
 
 
+# ============== REFERRAL SYSTEM ENDPOINTS ==============
+
+@api_router.post("/referral/generate-code")
+async def generate_referral_code(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Generate a unique referral code for the authenticated creator.
+    Returns an existing code if one already exists.
+    """
+    creator = await get_current_creator(credentials, db)
+    result = await referral_service.generate_referral_code(creator["id"])
+    return result
+
+
+@api_router.get("/referral/my-code")
+async def get_my_referral_code(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get the creator's active referral code."""
+    creator = await get_current_creator(credentials, db)
+    code_data = await referral_service.get_referral_code(creator["id"])
+    
+    if not code_data:
+        raise HTTPException(
+            status_code=404,
+            detail="No referral code found. Generate one first."
+        )
+    
+    return code_data
+
+
+@api_router.get("/referral/validate/{code}")
+async def validate_referral_code(code: str):
+    """
+    Validate a referral code (public endpoint for registration flow).
+    Returns referrer info if valid.
+    """
+    result = await referral_service.validate_referral_code(code)
+    return result
+
+
+@api_router.post("/referral/track-click/{code}")
+async def track_referral_click(
+    code: str,
+    request: Request
+):
+    """Track when a referral link is clicked (public endpoint)."""
+    metadata = {
+        "user_agent": request.headers.get("user-agent", ""),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    result = await referral_service.track_referral_click(code, metadata)
+    return result
+
+
+@api_router.get("/referral/my-stats")
+async def get_my_referral_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get comprehensive referral statistics for the authenticated creator.
+    Includes tier, earnings, conversion rates, and milestone progress.
+    """
+    creator = await get_current_creator(credentials, db)
+    stats = await referral_service.get_referrer_stats(creator["id"])
+    return stats
+
+
+@api_router.get("/referral/my-referrals")
+async def get_my_referrals(
+    status: Optional[str] = Query(default=None, description="Filter by status"),
+    limit: int = Query(default=50, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get list of referrals made by the authenticated creator."""
+    creator = await get_current_creator(credentials, db)
+    referrals = await referral_service.get_creator_referrals(
+        creator_id=creator["id"],
+        status=status,
+        limit=limit
+    )
+    return {"referrals": referrals, "total": len(referrals)}
+
+
+@api_router.get("/referral/my-commissions")
+async def get_my_commissions(
+    status: Optional[str] = Query(default=None, description="Filter by commission status"),
+    limit: int = Query(default=50, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all commissions earned by the authenticated creator."""
+    creator = await get_current_creator(credentials, db)
+    result = await referral_service.get_creator_commissions(
+        creator_id=creator["id"],
+        status=status,
+        limit=limit
+    )
+    return result
+
+
+@api_router.get("/referral/leaderboard")
+async def get_referral_leaderboard(
+    limit: int = Query(default=20, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get the top referrers platform-wide."""
+    leaderboard = await referral_service.get_referral_leaderboard(limit=limit)
+    return {"leaderboard": leaderboard}
+
+
+@api_router.get("/referral/tier-info")
+async def get_referral_tier_info(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get information about referral tiers and commission rates."""
+    from referral_service import COMMISSION_RATES, TIER_THRESHOLDS, MILESTONE_BONUSES, ReferralTier
+    
+    tiers = []
+    for tier in ReferralTier:
+        tiers.append({
+            "tier": tier.value,
+            "commission_rate": COMMISSION_RATES[tier],
+            "min_referrals": TIER_THRESHOLDS[tier]
+        })
+    
+    milestones = [
+        {
+            "threshold": threshold,
+            "bonus": info["bonus"],
+            "title": info["title"],
+            "description": info["description"]
+        }
+        for threshold, info in MILESTONE_BONUSES.items()
+    ]
+    
+    return {
+        "tiers": tiers,
+        "milestones": milestones
+    }
+
+
+# ============== REFERRAL ADMIN ENDPOINTS ==============
+
+@api_router.get("/admin/referral/analytics")
+async def get_referral_analytics(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get platform-wide referral analytics (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    analytics = await referral_service.get_referral_analytics()
+    return analytics
+
+
+@api_router.get("/admin/referral/pending-commissions")
+async def get_pending_commissions(
+    limit: int = Query(default=100, le=500),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all pending commissions awaiting admin approval."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    commissions = await referral_service.get_pending_commissions(limit=limit)
+    return {"commissions": commissions, "total": len(commissions)}
+
+
+@api_router.post("/admin/referral/commissions/{commission_id}/approve")
+async def approve_commission(
+    commission_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Approve a pending commission for payout (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    result = await referral_service.approve_commission(
+        commission_id=commission_id,
+        admin_id=current_user["id"]
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+
+@api_router.post("/admin/referral/commissions/{commission_id}/mark-paid")
+async def mark_commission_paid(
+    commission_id: str,
+    payout_reference: Optional[str] = Query(default=None, description="Payment reference/transaction ID"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Mark an approved commission as paid (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    result = await referral_service.mark_commission_paid(
+        commission_id=commission_id,
+        admin_id=current_user["id"],
+        payout_reference=payout_reference
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+
+@api_router.get("/admin/referral/leaderboard")
+async def get_admin_referral_leaderboard(
+    limit: int = Query(default=50, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get full referral leaderboard with detailed stats (admin only)."""
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    leaderboard = await referral_service.get_referral_leaderboard(limit=limit)
+    return {"leaderboard": leaderboard, "total": len(leaderboard)}
+
+
 @api_router.get("/creators/me/advanced-dashboard")
 async def get_creator_advanced_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
