@@ -38,52 +38,67 @@ export default function ReferralDashboard({ token }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generatingCode, setGeneratingCode] = useState(false);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
-      const [statsRes, tierRes, referralsRes, commissionsRes, leaderboardRes] = await Promise.all([
-        fetch(`${API_URL}/api/referral/my-stats`, { headers }),
-        fetch(`${API_URL}/api/referral/tier-info`, { headers }),
-        fetch(`${API_URL}/api/referral/my-referrals`, { headers }),
-        fetch(`${API_URL}/api/referral/my-commissions`, { headers }),
-        fetch(`${API_URL}/api/referral/leaderboard`, { headers }),
-      ]);
-
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats(data);
-      }
-      if (tierRes.ok) {
-        const data = await tierRes.json();
-        setTierInfo(data);
-      }
-      if (referralsRes.ok) {
-        const data = await referralsRes.json();
-        setReferrals(data.referrals || []);
-      }
-      if (commissionsRes.ok) {
-        const data = await commissionsRes.json();
-        setCommissions(data);
-      }
-      if (leaderboardRes.ok) {
-        const data = await leaderboardRes.json();
-        setLeaderboard(data.leaderboard || []);
-      }
-    } catch (error) {
-      console.error('Failed to load referral data:', error);
-      toast.error('Failed to load referral data');
-    }
-    setLoading(false);
-  }, [token]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    if (token) {
-      loadData();
-    }
-  }, [token, loadData]);
+    if (!token) return;
+    
+    let cancelled = false;
+    
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        const [statsRes, tierRes, referralsRes, commissionsRes, leaderboardRes] = await Promise.all([
+          fetch(`${API_URL}/api/referral/my-stats`, { headers }),
+          fetch(`${API_URL}/api/referral/tier-info`, { headers }),
+          fetch(`${API_URL}/api/referral/my-referrals`, { headers }),
+          fetch(`${API_URL}/api/referral/my-commissions`, { headers }),
+          fetch(`${API_URL}/api/referral/leaderboard`, { headers }),
+        ]);
+
+        if (cancelled) return;
+
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          setStats(data);
+        }
+        if (tierRes.ok) {
+          const data = await tierRes.json();
+          setTierInfo(data);
+        }
+        if (referralsRes.ok) {
+          const data = await referralsRes.json();
+          setReferrals(data.referrals || []);
+        }
+        if (commissionsRes.ok) {
+          const data = await commissionsRes.json();
+          setCommissions(data);
+        }
+        if (leaderboardRes.ok) {
+          const data = await leaderboardRes.json();
+          setLeaderboard(data.leaderboard || []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load referral data:', error);
+          toast.error('Failed to load referral data');
+        }
+      }
+      if (!cancelled) {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+    
+    return () => { cancelled = true; };
+  }, [token, refreshTrigger]);
+
+  const loadData = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   const generateCode = async () => {
     setGeneratingCode(true);
