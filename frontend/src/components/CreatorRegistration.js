@@ -153,6 +153,21 @@ export const CreatorRegistrationForm = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4" data-testid="creator-registration-page">
       <div className="max-w-2xl mx-auto">
+        {/* Referral Banner */}
+        {referralInfo && (
+          <div className="mb-6 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/30 rounded-lg p-4" data-testid="referral-banner">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-xl">🎁</span>
+              </div>
+              <div>
+                <p className="text-white font-medium">You were referred by {referralInfo.referrer_name}!</p>
+                <p className="text-purple-200 text-sm">Complete your registration to help them earn rewards.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Join Creators Hive HQ</h1>
