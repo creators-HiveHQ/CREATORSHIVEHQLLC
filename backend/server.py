@@ -4908,6 +4908,20 @@ async def stripe_webhook(request: Request):
                     source_id=result.get("session_id"),
                     user_id=transaction.get("creator_id")
                 )
+                
+                # REFERRAL: Convert referral and award commission
+                if referral_service and transaction.get("creator_id"):
+                    try:
+                        conversion_result = await referral_service.convert_referral(
+                            referred_creator_id=transaction.get("creator_id"),
+                            subscription_amount=transaction.get("amount", 0),
+                            plan_id=transaction.get("plan_id", "")
+                        )
+                        if conversion_result.get("converted"):
+                            logger.info(f"Referral converted for creator {transaction.get('creator_id')}: commission ${conversion_result.get('commission_amount')}")
+                    except Exception as e:
+                        logger.error(f"Referral conversion error: {e}")
+                        # Don't fail the webhook if referral processing fails
         
         return {"received": True}
         
