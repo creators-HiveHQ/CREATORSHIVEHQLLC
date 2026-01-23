@@ -23,6 +23,7 @@ import { ArrisVoiceInteraction } from "@/components/ArrisVoiceInteraction";
 import { CrossCreatorInsights } from "@/components/CrossCreatorInsights";
 import { SmartOnboardingWizard } from "@/components/SmartOnboardingWizard";
 import { OnboardingProgressTracker } from "@/components/OnboardingProgressTracker";
+import ReferralDashboard from "@/components/ReferralDashboard";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
