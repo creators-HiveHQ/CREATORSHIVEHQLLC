@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -39,13 +39,7 @@ export default function ReferralDashboard({ token }) {
   const [loading, setLoading] = useState(true);
   const [generatingCode, setGeneratingCode] = useState(false);
 
-  useEffect(() => {
-    if (token) {
-      loadData();
-    }
-  }, [token]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const headers = { 'Authorization': `Bearer ${token}` };
