@@ -412,6 +412,7 @@ async def register_creator(registration: CreatorRegistrationCreate):
     """
     Public endpoint - Register a new creator (no auth required)
     Stores in creators collection for admin review
+    Supports referral code tracking for the referral program
     """
     # Check if email already registered
     existing = await db.creators.find_one({"email": registration.email})
@@ -424,9 +425,23 @@ async def register_creator(registration: CreatorRegistrationCreate):
     # Create registration record with hashed password
     registration_data = registration.model_dump()
     password = registration_data.pop("password")  # Remove plain password
+    referral_code = registration_data.pop("referral_code", None)  # Extract referral code
     
     creator = CreatorRegistration(**registration_data)
     creator.hashed_password = get_password_hash(password)  # Store hashed password
+    
+    # Track referral if code provided
+    referral_result = None
+    if referral_code and referral_service:
+        creator.referred_by_code = referral_code
+        referral_result = await referral_service.create_referral(
+            referral_code=referral_code,
+            referred_creator_id=creator.id,
+            referred_email=creator.email
+        )
+        if referral_result.get("success"):
+            creator.referral_id = referral_result.get("referral_id")
+            logger.info(f"Referral tracked for creator {creator.id} via code {referral_code}")
     
     doc = creator.model_dump()
     doc['submitted_at'] = doc['submitted_at'].isoformat()
@@ -458,7 +473,8 @@ async def register_creator(registration: CreatorRegistrationCreate):
             "name": creator.name,
             "email": creator.email,
             "platforms": creator.platforms,
-            "niche": creator.niche
+            "niche": creator.niche,
+            "referred_by": referral_code if referral_result and referral_result.get("success") else None
         },
         source_entity="creator",
         source_id=creator.id,
