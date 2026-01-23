@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,10 @@ const API = `${BACKEND_URL}/api`;
 
 // Public Creator Registration Form
 export const CreatorRegistrationForm = () => {
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get('ref');
+  const [referralInfo, setReferralInfo] = useState(null);
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -22,7 +27,8 @@ export const CreatorRegistrationForm = () => {
     platforms: [],
     niche: "",
     goals: "",
-    arris_intake_question: ""
+    arris_intake_question: "",
+    referral_code: referralCode || ""
   });
   const [formOptions, setFormOptions] = useState({
     platforms: [],
