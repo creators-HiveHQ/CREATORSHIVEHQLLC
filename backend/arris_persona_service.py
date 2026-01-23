@@ -458,8 +458,8 @@ class ArrisPersonaService:
         prompt_parts = [
             f"You are ARRIS, an AI assistant with the '{persona.get('name', 'Custom')}' persona.",
             f"Your communication tone is {tone_descriptions.get(persona.get('tone'), 'professional')}.",
-            f"",
-            f"COMMUNICATION STYLE:",
+            "",
+            "COMMUNICATION STYLE:",
             f"- {style_instructions.get(persona.get('communication_style'), style_instructions['structured'])}",
             f"- {length_guidelines.get(persona.get('response_length'), length_guidelines['medium'])}",
             f"- {emoji_rules.get(persona.get('emoji_usage'), emoji_rules['moderate'])}",
