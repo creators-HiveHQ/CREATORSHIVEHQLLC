@@ -560,9 +560,6 @@ class ArrisPersonaService:
             {"_id": 0, "id": 1, "name": 1, "usage_count": 1, "created_at": 1}
         ).to_list(50)
 
-        # Get activity logs for analytics
-        thirty_days_ago = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-
         # Count activations by persona
         activation_pipeline = [
             {
