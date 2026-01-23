@@ -154,6 +154,9 @@ from onboarding_wizard_service import SmartOnboardingWizard, ONBOARDING_STEPS
 # Import Auto-Approval Service
 from auto_approval_service import AutoApprovalService
 
+# Import Referral Service
+from referral_service import ReferralService, ReferralStatus, CommissionStatus
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
