@@ -2704,8 +2704,8 @@ async def get_all_personas(credentials: HTTPAuthorizationCredentials = Depends(s
     creator = await get_current_creator(credentials, db)
     
     # Check Elite access
-    features = await feature_gating.get_full_feature_access(creator["id"])
-    if not features.get("custom_arris_workflows"):
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
         raise HTTPException(
             status_code=403,
             detail="ARRIS Personas are an Elite feature. Upgrade to access custom personas."
