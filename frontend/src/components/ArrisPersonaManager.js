@@ -48,6 +48,116 @@ const styleDescriptions = {
   socratic: 'Guides through questioning',
 };
 
+const renderPersonaIcon = (iconName, size = 'h-6 w-6') => {
+  const IconComponent = iconMap[iconName] || User;
+  return <IconComponent className={size} />;
+};
+
+// PersonaCard as a separate component
+function PersonaCard({ 
+  persona, 
+  isDefault = false, 
+  activePersonaId, 
+  onActivate, 
+  onEdit, 
+  onTest, 
+  onDelete 
+}) {
+  const isActive = activePersonaId === persona.id;
+  
+  return (
+    <Card 
+      className={`relative transition-all cursor-pointer hover:border-purple-500/50 ${
+        isActive ? 'border-purple-500 bg-purple-500/10' : 'bg-gray-900/50 border-gray-800'
+      }`}
+      onClick={() => !isActive && onActivate(persona.id)}
+      data-testid={`persona-card-${persona.id}`}
+    >
+      {isActive && (
+        <div className="absolute top-2 right-2">
+          <Badge className="bg-purple-600 text-white">
+            <Check className="h-3 w-3 mr-1" /> Active
+          </Badge>
+        </div>
+      )}
+      
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+            isActive ? 'bg-purple-600' : 'bg-gray-800'
+          }`}>
+            {renderPersonaIcon(persona.icon)}
+          </div>
+          <div>
+            <CardTitle className="text-white text-lg">{persona.name}</CardTitle>
+            <div className="flex gap-2 mt-1">
+              <Badge variant="outline" className="text-xs capitalize">
+                {persona.tone}
+              </Badge>
+              {isDefault && (
+                <Badge className="bg-gray-700 text-gray-300 text-xs">Default</Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <p className="text-sm text-gray-400 line-clamp-2">{persona.description}</p>
+        
+        <div className="mt-3 flex flex-wrap gap-1">
+          {persona.primary_focus_areas?.slice(0, 3).map((area, i) => (
+            <Badge key={i} variant="secondary" className="text-xs bg-gray-800 text-gray-300">
+              {area.replace('_', ' ')}
+            </Badge>
+          ))}
+        </div>
+        
+        {!isDefault && (
+          <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onEdit(persona)}
+              data-testid={`edit-persona-${persona.id}`}
+            >
+              <Edit2 className="h-3 w-3 mr-1" /> Edit
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onTest(persona.id)}
+              data-testid={`test-persona-${persona.id}`}
+            >
+              <TestTube className="h-3 w-3 mr-1" /> Test
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => onDelete(persona.id)}
+              data-testid={`delete-persona-${persona.id}`}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+        
+        {isDefault && (
+          <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onTest(persona.id)}
+            >
+              <TestTube className="h-3 w-3 mr-1" /> Test
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ArrisPersonaManager({ token, onPersonaChange }) {
   const [personas, setPersonas] = useState({ default_personas: [], custom_personas: [] });
   const [options, setOptions] = useState(null);
@@ -59,6 +169,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
   const [testMessage, setTestMessage] = useState('');
   const [testResult, setTestResult] = useState(null);
   const [editingPersona, setEditingPersona] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   const [newPersona, setNewPersona] = useState({
     name: '',
@@ -75,40 +186,55 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
     icon: 'user',
   });
 
-  const fetchData = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
-      const [personasRes, optionsRes, activeRes] = await Promise.all([
-        fetch(`${API_URL}/api/elite/personas`, { headers }),
-        fetch(`${API_URL}/api/elite/personas/options`, { headers }),
-        fetch(`${API_URL}/api/elite/personas/active`, { headers }),
-      ]);
-
-      if (personasRes.ok) {
-        const data = await personasRes.json();
-        setPersonas(data);
-      }
-      if (optionsRes.ok) {
-        const data = await optionsRes.json();
-        setOptions(data);
-      }
-      if (activeRes.ok) {
-        const data = await activeRes.json();
-        setActivePersona(data);
-      }
-    } catch (error) {
-      console.error('Failed to load personas:', error);
-      toast.error('Failed to load ARRIS personas');
-    }
-    setLoading(false);
-  }, [token]);
-
   useEffect(() => {
+    if (!token) return;
+    
+    let cancelled = false;
+    
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        const [personasRes, optionsRes, activeRes] = await Promise.all([
+          fetch(`${API_URL}/api/elite/personas`, { headers }),
+          fetch(`${API_URL}/api/elite/personas/options`, { headers }),
+          fetch(`${API_URL}/api/elite/personas/active`, { headers }),
+        ]);
+
+        if (cancelled) return;
+
+        if (personasRes.ok) {
+          const data = await personasRes.json();
+          setPersonas(data);
+        }
+        if (optionsRes.ok) {
+          const data = await optionsRes.json();
+          setOptions(data);
+        }
+        if (activeRes.ok) {
+          const data = await activeRes.json();
+          setActivePersona(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load personas:', error);
+          toast.error('Failed to load ARRIS personas');
+        }
+      }
+      if (!cancelled) {
+        setLoading(false);
+      }
+    };
+    
     fetchData();
-  }, [fetchData]);
+    
+    return () => { cancelled = true; };
+  }, [token, refreshTrigger]);
+
+  const refreshData = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   const activatePersona = async (personaId) => {
     try {
@@ -121,7 +247,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
         const result = await response.json();
         setActivePersona(result.active_persona);
         toast.success(`Switched to ${result.active_persona.name}`);
-        fetchData();
+        refreshData();
         if (onPersonaChange) onPersonaChange(result.active_persona);
       } else {
         toast.error('Failed to activate persona');
@@ -151,36 +277,13 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
         toast.success('Custom persona created!');
         setShowCreateDialog(false);
         resetNewPersona();
-        fetchData();
+        refreshData();
       } else {
         const error = await response.json();
         toast.error(error.detail || 'Failed to create persona');
       }
     } catch (error) {
       toast.error('Failed to create persona');
-    }
-  };
-
-  const updatePersona = async (personaId, updates) => {
-    try {
-      const response = await fetch(`${API_URL}/api/elite/personas/${personaId}`, {
-        method: 'PATCH',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updates),
-      });
-      
-      if (response.ok) {
-        toast.success('Persona updated!');
-        setEditingPersona(null);
-        fetchData();
-      } else {
-        toast.error('Failed to update persona');
-      }
-    } catch (error) {
-      toast.error('Failed to update persona');
     }
   };
 
@@ -195,7 +298,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
       
       if (response.ok) {
         toast.success('Persona deleted');
-        fetchData();
+        refreshData();
       } else {
         toast.error('Failed to delete persona');
       }
@@ -247,111 +350,9 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
     });
   };
 
-  const renderPersonaIcon = (iconName, size = 'h-6 w-6') => {
-    const IconComponent = iconMap[iconName] || User;
-    return <IconComponent className={size} />;
-  };
-
-  const PersonaCard = ({ persona, isDefault = false }) => {
-    const isActive = activePersona?.id === persona.id;
-    
-    return (
-      <Card 
-        className={`relative transition-all cursor-pointer hover:border-purple-500/50 ${
-          isActive ? 'border-purple-500 bg-purple-500/10' : 'bg-gray-900/50 border-gray-800'
-        }`}
-        onClick={() => !isActive && activatePersona(persona.id)}
-        data-testid={`persona-card-${persona.id}`}
-      >
-        {isActive && (
-          <div className="absolute top-2 right-2">
-            <Badge className="bg-purple-600 text-white">
-              <Check className="h-3 w-3 mr-1" /> Active
-            </Badge>
-          </div>
-        )}
-        
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              isActive ? 'bg-purple-600' : 'bg-gray-800'
-            }`}>
-              {renderPersonaIcon(persona.icon)}
-            </div>
-            <div>
-              <CardTitle className="text-white text-lg">{persona.name}</CardTitle>
-              <div className="flex gap-2 mt-1">
-                <Badge variant="outline" className="text-xs capitalize">
-                  {persona.tone}
-                </Badge>
-                {isDefault && (
-                  <Badge className="bg-gray-700 text-gray-300 text-xs">Default</Badge>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <p className="text-sm text-gray-400 line-clamp-2">{persona.description}</p>
-          
-          <div className="mt-3 flex flex-wrap gap-1">
-            {persona.primary_focus_areas?.slice(0, 3).map((area, i) => (
-              <Badge key={i} variant="secondary" className="text-xs bg-gray-800 text-gray-300">
-                {area.replace('_', ' ')}
-              </Badge>
-            ))}
-          </div>
-          
-          {!isDefault && (
-            <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => setEditingPersona(persona)}
-                data-testid={`edit-persona-${persona.id}`}
-              >
-                <Edit2 className="h-3 w-3 mr-1" /> Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setTestPersonaId(persona.id);
-                  setShowTestDialog(true);
-                }}
-                data-testid={`test-persona-${persona.id}`}
-              >
-                <TestTube className="h-3 w-3 mr-1" /> Test
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => deletePersona(persona.id)}
-                data-testid={`delete-persona-${persona.id}`}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-          
-          {isDefault && (
-            <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setTestPersonaId(persona.id);
-                  setShowTestDialog(true);
-                }}
-              >
-                <TestTube className="h-3 w-3 mr-1" /> Test
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
+  const handleTestClick = (personaId) => {
+    setTestPersonaId(personaId);
+    setShowTestDialog(true);
   };
 
   if (loading) {
@@ -610,10 +611,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
               </div>
               <Button
                 variant="outline"
-                onClick={() => {
-                  setTestPersonaId(activePersona.id);
-                  setShowTestDialog(true);
-                }}
+                onClick={() => handleTestClick(activePersona.id)}
               >
                 <Settings2 className="h-4 w-4 mr-2" /> Configure
               </Button>
@@ -636,7 +634,16 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
         <TabsContent value="default" className="mt-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {personas.default_personas?.map((persona) => (
-              <PersonaCard key={persona.id} persona={persona} isDefault />
+              <PersonaCard 
+                key={persona.id} 
+                persona={persona} 
+                isDefault 
+                activePersonaId={activePersona?.id}
+                onActivate={activatePersona}
+                onEdit={setEditingPersona}
+                onTest={handleTestClick}
+                onDelete={deletePersona}
+              />
             ))}
           </div>
         </TabsContent>
@@ -661,7 +668,15 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {personas.custom_personas?.map((persona) => (
-                <PersonaCard key={persona.id} persona={persona} />
+                <PersonaCard 
+                  key={persona.id} 
+                  persona={persona}
+                  activePersonaId={activePersona?.id}
+                  onActivate={activatePersona}
+                  onEdit={setEditingPersona}
+                  onTest={handleTestClick}
+                  onDelete={deletePersona}
+                />
               ))}
             </div>
           )}
