@@ -327,11 +327,18 @@ class TestTierInfo:
         )
         data = response.json()
         
-        milestones = data.get("milestones", {})
-        # Verify milestone thresholds exist
-        assert "5" in milestones or 5 in milestones, "Should have 5-referral milestone"
-        assert "10" in milestones or 10 in milestones, "Should have 10-referral milestone"
-        assert "25" in milestones or 25 in milestones, "Should have 25-referral milestone"
+        milestones = data.get("milestones", [])
+        # Milestones can be a list of objects with threshold field
+        if isinstance(milestones, list):
+            thresholds = [m.get("threshold") for m in milestones]
+            assert 5 in thresholds, "Should have 5-referral milestone"
+            assert 10 in thresholds, "Should have 10-referral milestone"
+            assert 25 in thresholds, "Should have 25-referral milestone"
+        else:
+            # Or a dictionary keyed by threshold
+            assert "5" in milestones or 5 in milestones, "Should have 5-referral milestone"
+            assert "10" in milestones or 10 in milestones, "Should have 10-referral milestone"
+            assert "25" in milestones or 25 in milestones, "Should have 25-referral milestone"
 
 
 class TestLeaderboard:
