@@ -2450,6 +2450,11 @@ export const CreatorDashboard = () => {
               onUpgrade={() => navigate("/creator/subscription")}
             />
           </TabsContent>
+
+          {/* Referrals Tab */}
+          <TabsContent value="referrals" data-testid="referrals-tab-content">
+            <ReferralDashboard token={creatorToken} />
+          </TabsContent>
         </Tabs>
       </main>
 
