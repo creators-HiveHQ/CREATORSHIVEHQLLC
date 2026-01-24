@@ -124,6 +124,30 @@ Full management interface:
 - **UI Components**: Radix UI / shadcn
 - **AI Integration**: OpenAI via Emergent LLM Key
 
+## Test Accounts (Seed Script)
+
+Run `python /app/backend/seed_test_creators.py` to create/update all test accounts.
+
+### Admin Login (`/login`)
+| Email | Password |
+|-------|----------|
+| admin@hivehq.com | admin123 |
+
+### Creator Login (`/creator/login`)
+| Email | Password | Tier |
+|-------|----------|------|
+| freetest@hivehq.com | testpassword | Free |
+| startertest@hivehq.com | testpassword | Starter |
+| protest@hivehq.com | testpassword | Pro |
+| premiumtest@hivehq.com | testpassword | Premium |
+| elitetest@hivehq.com | testpassword123 | Elite |
+
+**Seed Script**: `/app/backend/seed_test_creators.py`
+- Idempotent (safe to run multiple times)
+- Creates creators with proper password hashing
+- Creates matching subscriptions for each tier
+- Cleanup option: `python seed_test_creators.py --cleanup`
+
 ## Data Flow
 
 ```
