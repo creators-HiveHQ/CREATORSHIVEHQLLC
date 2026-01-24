@@ -1187,6 +1187,30 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Routes**: `/landing` (public), `/waitlist` (admin dashboard)
     - **Testing**: 25 backend tests + all frontend UI tests (100% pass rate)
 
+25. **Creator Pattern Insights (Module A3)** - Personalized pattern analysis for Pro+ creators:
+    - **Backend Service** (`/app/backend/creator_pattern_insights_service.py`):
+      - `CreatorPatternInsightsService` class for pattern analysis
+      - Analyzes proposals, projects, and ARRIS interactions
+      - Pattern categories: success, risk, timing, growth, engagement, platform, content
+      - Confidence levels: high (≥80%), medium (≥50%), low (<50%)
+      - Dynamic pattern generation based on creator's data
+      - Feedback system to improve pattern detection
+    - **API Endpoints** (creator auth required, Pro+ tier):
+      - `GET /api/creators/me/pattern-insights` - Get personalized patterns
+      - `GET /api/creators/me/pattern-recommendations` - Actionable recommendations
+      - `GET /api/creators/me/pattern-trends` - Pattern trends over time
+      - `GET /api/creators/me/pattern-detail/{pattern_id}` - Specific pattern detail
+      - `POST /api/creators/me/pattern-feedback` - Submit feedback on patterns
+    - **Frontend Component** (`/app/frontend/src/components/CreatorPatternInsights.js`):
+      - Pattern cards with category-specific styling
+      - Summary stats: Total Patterns, High Confidence, Categories, Actions
+      - Two tabs: Patterns (visual cards) and Recommendations (actionable items)
+      - Pattern detail modal with confidence indicators and data points
+      - Feedback system (helpful/not helpful)
+      - Upgrade prompt for Free/Starter users
+    - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
+    - **Testing**: 21 backend tests + all frontend UI tests (100% pass rate)
+
 ---
 
 *Built following the No-Assumption Protocol with Sheet 15 Index as the source of truth.*
