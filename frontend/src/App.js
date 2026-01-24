@@ -1409,6 +1409,11 @@ function App() {
                 <Layout><WebhooksAdmin /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/waitlist" element={
+              <ProtectedRoute>
+                <Layout><AdminWaitlistDashboardWrapper /></Layout>
+              </ProtectedRoute>
+            } />
             
             {/* Public Creator Registration Form */}
             <Route path="/register" element={<CreatorRegistrationForm />} />
