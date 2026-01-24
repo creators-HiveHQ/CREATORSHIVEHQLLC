@@ -2484,6 +2484,9 @@ export const CreatorDashboard = () => {
                   <TabsTrigger value="api-access" data-testid="elite-api-subtab">
                     🔑 API Access
                   </TabsTrigger>
+                  <TabsTrigger value="brands" data-testid="elite-brands-subtab">
+                    🏢 Multi-Brand
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="personas">
@@ -2501,6 +2504,10 @@ export const CreatorDashboard = () => {
 
                 <TabsContent value="api-access">
                   <ArrisApiManager token={creatorToken} />
+                </TabsContent>
+
+                <TabsContent value="brands">
+                  <MultiBrandManager token={creatorToken} />
                 </TabsContent>
               </Tabs>
             ) : (
