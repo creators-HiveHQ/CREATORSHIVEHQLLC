@@ -698,14 +698,12 @@ Return as JSON array with each suggestion having:
                 
                 chat = LlmChat(
                     api_key=self.arris_service.api_key,
-                    provider="openai",
-                    model="gpt-4o"
-                )
+                    session_id=f"arris-content-{request_id}",
+                    system_message="You are ARRIS, a creative content strategist. Generate engaging content ideas."
+                ).with_model("openai", "gpt-4o")
                 
-                response = await chat.send_async(
-                    message=UserMessage(content=prompt),
-                    system_prompt="You are ARRIS, a creative content strategist. Generate engaging content ideas."
-                )
+                user_message = UserMessage(text=prompt)
+                response = await chat.send_async(message=user_message)
                 
                 try:
                     suggestions = json.loads(response.content)
