@@ -787,14 +787,12 @@ You're having a conversation with a creator. Be helpful, encouraging, and provid
                 
                 chat = LlmChat(
                     api_key=self.arris_service.api_key,
-                    provider="openai",
-                    model="gpt-4o"
-                )
+                    session_id=f"arris-chat-{conversation_id}",
+                    system_message=system_prompt
+                ).with_model("openai", "gpt-4o")
                 
-                response = await chat.send_async(
-                    message=UserMessage(content=message),
-                    system_prompt=system_prompt
-                )
+                user_message = UserMessage(text=message)
+                response = await chat.send_async(message=user_message)
                 
                 arris_response = response.content
             else:
