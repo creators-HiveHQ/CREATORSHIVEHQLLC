@@ -3583,8 +3583,8 @@ async def get_cross_brand_analytics(credentials: HTTPAuthorizationCredentials = 
     return analytics
 
 
-@api_router.get("/elite/brands/{brand_id}")
-async def get_brand(
+@api_router.get("/elite/multi-brand/{brand_id}")
+async def get_multi_brand(
     brand_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
@@ -3602,8 +3602,8 @@ async def get_brand(
     return brand
 
 
-@api_router.put("/elite/brands/{brand_id}")
-async def update_brand(
+@api_router.put("/elite/multi-brand/{brand_id}")
+async def update_multi_brand(
     brand_id: str,
     request: Dict[str, Any],
     credentials: HTTPAuthorizationCredentials = Depends(security)
@@ -3623,8 +3623,8 @@ async def update_brand(
     return result
 
 
-@api_router.delete("/elite/brands/{brand_id}")
-async def delete_brand(
+@api_router.delete("/elite/multi-brand/{brand_id}")
+async def delete_multi_brand(
     brand_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
@@ -3644,7 +3644,7 @@ async def delete_brand(
 
 
 @api_router.post("/elite/multi-brand/{brand_id}/switch")
-async def switch_brand(
+async def switch_multi_brand(
     brand_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
