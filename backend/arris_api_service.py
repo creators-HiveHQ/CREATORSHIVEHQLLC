@@ -558,7 +558,7 @@ Provide your analysis in a structured JSON format with these fields:
                 ).with_model("openai", "gpt-4o")
                 
                 user_message = UserMessage(text=f"Analyze this text:\n\n{text}\n\nContext: {json.dumps(context or {})}")
-                response = await chat.send_message(message=user_message)
+                response = await chat.send_message(user_message)
                 
                 # Parse response
                 try:
@@ -703,7 +703,7 @@ Return as JSON array with each suggestion having:
                 ).with_model("openai", "gpt-4o")
                 
                 user_message = UserMessage(text=prompt)
-                response = await chat.send_message(message=user_message)
+                response = await chat.send_message(user_message)
                 
                 try:
                     suggestions = json.loads(response.content)
@@ -792,7 +792,7 @@ You're having a conversation with a creator. Be helpful, encouraging, and provid
                 ).with_model("openai", "gpt-4o")
                 
                 user_message = UserMessage(text=message)
-                response = await chat.send_message(message=user_message)
+                response = await chat.send_message(user_message)
                 
                 arris_response = response.content
             else:
