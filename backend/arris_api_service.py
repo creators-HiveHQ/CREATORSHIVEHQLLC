@@ -553,14 +553,12 @@ Provide your analysis in a structured JSON format with these fields:
                 
                 chat = LlmChat(
                     api_key=self.arris_service.api_key,
-                    provider="openai",
-                    model="gpt-4o"
-                )
+                    session_id=f"arris-api-{request_id}",
+                    system_message=system_prompt
+                ).with_model("openai", "gpt-4o")
                 
-                response = await chat.send_async(
-                    message=UserMessage(content=f"Analyze this text:\n\n{text}\n\nContext: {json.dumps(context or {})}"),
-                    system_prompt=system_prompt
-                )
+                user_message = UserMessage(text=f"Analyze this text:\n\n{text}\n\nContext: {json.dumps(context or {})}")
+                response = await chat.send_async(message=user_message)
                 
                 # Parse response
                 try:
