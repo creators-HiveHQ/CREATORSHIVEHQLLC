@@ -275,6 +275,7 @@ scheduled_reports_service = None
 arris_api_service = None
 multi_brand_service = None
 waitlist_service_instance = None
+creator_pattern_insights_service = None
 
 @app.on_event("startup")
 async def startup_db():
