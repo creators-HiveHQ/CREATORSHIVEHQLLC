@@ -1073,6 +1073,12 @@ const AdminMemoryDashboardPage = () => {
   return <AdminMemoryDashboard token={token} />;
 };
 
+// Admin Waitlist Dashboard Wrapper
+const AdminWaitlistDashboardWrapper = () => {
+  const token = localStorage.getItem("hivehq_token");
+  return <AdminWaitlistDashboard token={token} />;
+};
+
 // Patterns Page
 const PatternsPage = () => {
   const [patterns, setPatterns] = useState(null);
