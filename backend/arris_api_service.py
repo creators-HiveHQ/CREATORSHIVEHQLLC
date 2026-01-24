@@ -794,7 +794,7 @@ You're having a conversation with a creator. Be helpful, encouraging, and provid
                 user_message = UserMessage(text=message)
                 response = await chat.send_message(user_message)
                 
-                arris_response = response.content
+                arris_response = response if isinstance(response, str) else str(response)
             else:
                 arris_response = f"Thank you for your message about '{message[:50]}...'. As ARRIS, I'm here to help you succeed as a creator. How can I assist you further?"
             
