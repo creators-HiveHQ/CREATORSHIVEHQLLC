@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 class CreatorsHiveAPITester:
-    def __init__(self, base_url="https://arris-brain.preview.emergentagent.com"):
+    def __init__(self, base_url="https://creatorshivehq.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
