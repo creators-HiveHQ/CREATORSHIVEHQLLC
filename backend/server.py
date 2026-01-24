@@ -366,6 +366,10 @@ async def startup_db():
     waitlist_service_instance = WaitlistService(db, email_service=email_service)
     logger.info("Waitlist Service initialized - Priority waitlist with referral system active")
     
+    # Initialize Creator Pattern Insights Service
+    creator_pattern_insights_service = CreatorPatternInsightsService(db, feature_gating=feature_gating)
+    logger.info("Creator Pattern Insights Service initialized - Personalized pattern analysis for Pro+ creators")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
