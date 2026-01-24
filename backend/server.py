@@ -2933,6 +2933,193 @@ async def get_persona_analytics(credentials: HTTPAuthorizationCredentials = Depe
     return analytics
 
 
+# ============== SCHEDULED REPORTS ENDPOINTS (Elite) ==============
+
+@api_router.get("/elite/reports/settings")
+async def get_report_settings(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get the creator's scheduled report preferences.
+    Returns default settings if none configured.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(
+            status_code=403,
+            detail="Scheduled Reports are an Elite feature. Upgrade to access AI-powered summaries."
+        )
+    
+    settings = await scheduled_reports_service.get_report_settings(creator["id"])
+    return settings
+
+
+@api_router.put("/elite/reports/settings")
+async def update_report_settings(
+    settings: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update scheduled report preferences.
+    
+    Configurable options:
+    - enabled: bool - Enable/disable scheduled reports
+    - frequency: "daily", "weekly", "both", "none"
+    - daily_time: "HH:MM" (UTC) - Time for daily reports
+    - weekly_day: Day of week for weekly reports
+    - weekly_time: "HH:MM" (UTC) - Time for weekly reports
+    - topics: List of report topics to include
+    - include_charts: bool - Include visual charts
+    - email_format: "html" or "text"
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    result = await scheduled_reports_service.update_report_settings(creator["id"], settings)
+    return result
+
+
+@api_router.get("/elite/reports/topics")
+async def get_report_topics(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get available report topics and frequencies."""
+    return {
+        "topics": [
+            {"id": t, "label": t.replace("_", " ").title()}
+            for t in AVAILABLE_TOPICS
+        ],
+        "frequencies": AVAILABLE_FREQUENCIES,
+        "days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+        "times": [f"{h:02d}:00" for h in range(24)]
+    }
+
+
+@api_router.post("/elite/reports/generate")
+async def generate_report(
+    report_type: str = Query(default="weekly", description="daily or weekly"),
+    send_email: bool = Query(default=False, description="Send report via email"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Generate a report on-demand.
+    Useful for previewing reports or getting immediate summaries.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    if report_type not in ["daily", "weekly"]:
+        raise HTTPException(status_code=400, detail="report_type must be 'daily' or 'weekly'")
+    
+    result = await scheduled_reports_service.generate_report(
+        creator_id=creator["id"],
+        report_type=report_type,
+        send_email=send_email
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Report generation failed"))
+    
+    return result
+
+
+@api_router.get("/elite/reports/history")
+async def get_report_history(
+    limit: int = Query(default=20, le=50),
+    report_type: Optional[str] = Query(default=None, description="Filter by daily or weekly"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get the creator's report history."""
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    reports = await scheduled_reports_service.get_report_history(
+        creator_id=creator["id"],
+        limit=limit,
+        report_type=report_type
+    )
+    
+    return {"reports": reports, "total": len(reports)}
+
+
+@api_router.get("/elite/reports/{report_id}")
+async def get_report(
+    report_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific report with full content."""
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    report = await scheduled_reports_service.get_report(creator["id"], report_id)
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return report
+
+
+@api_router.delete("/elite/reports/{report_id}")
+async def delete_report(
+    report_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a report from history."""
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    success = await scheduled_reports_service.delete_report(creator["id"], report_id)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return {"success": True, "message": "Report deleted"}
+
+
+@api_router.post("/elite/reports/{report_id}/send")
+async def send_report(
+    report_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Send a generated report via email."""
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    report = await scheduled_reports_service.get_report(creator["id"], report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    success = await scheduled_reports_service._send_report_email(report_id)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send email. Check email configuration.")
+    
+    return {"success": True, "message": "Report sent to email"}
+
+
 # ============== ARRIS MEMORY & LEARNING ENDPOINTS ==============
 
 @api_router.get("/arris/memory/summary")
