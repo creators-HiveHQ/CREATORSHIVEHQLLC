@@ -73,10 +73,10 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
         const headers = { 'Authorization': `Bearer ${token}` };
         
         const [brandsRes, activeRes, templatesRes, analyticsRes] = await Promise.all([
-          fetch(`${API_URL}/api/elite/brands`, { headers }),
-          fetch(`${API_URL}/api/elite/brands/active`, { headers }),
-          fetch(`${API_URL}/api/elite/brands/templates`, { headers }),
-          fetch(`${API_URL}/api/elite/brands/analytics`, { headers })
+          fetch(`${API_URL}/api/elite/multi-brand`, { headers }),
+          fetch(`${API_URL}/api/elite/multi-brand/active`, { headers }),
+          fetch(`${API_URL}/api/elite/multi-brand/templates`, { headers }),
+          fetch(`${API_URL}/api/elite/multi-brand/analytics`, { headers })
         ]);
 
         if (cancelled) return;
@@ -128,7 +128,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/elite/brands`, {
+      const response = await fetch(`${API_URL}/api/elite/multi-brand`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -156,7 +156,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
     if (!selectedBrand) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/elite/brands/${selectedBrand.id}`, {
+      const response = await fetch(`${API_URL}/api/elite/multi-brand/${selectedBrand.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -182,7 +182,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
     if (!selectedBrand) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/elite/brands/${selectedBrand.id}`, {
+      const response = await fetch(`${API_URL}/api/elite/multi-brand/${selectedBrand.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -203,7 +203,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
 
   const switchBrand = async (brandId) => {
     try {
-      const response = await fetch(`${API_URL}/api/elite/brands/${brandId}/switch`, {
+      const response = await fetch(`${API_URL}/api/elite/multi-brand/${brandId}/switch`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
