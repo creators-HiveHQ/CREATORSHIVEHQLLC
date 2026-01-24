@@ -187,6 +187,9 @@ from waitlist_service import WaitlistService, AVAILABLE_CREATOR_TYPES, WaitlistS
 # Import Creator Pattern Insights Service
 from creator_pattern_insights_service import CreatorPatternInsightsService
 
+# Import Predictive Alerts Service
+from predictive_alerts_service import PredictiveAlertsService, AlertType, AlertPriority
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
