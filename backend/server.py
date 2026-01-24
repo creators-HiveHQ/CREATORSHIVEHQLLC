@@ -3488,7 +3488,7 @@ async def api_batch_analyze(
 
 # ============== MULTI-BRAND MANAGEMENT ENDPOINTS (Phase 4 Module E - E4) ==============
 
-@api_router.get("/elite/brands/templates")
+@api_router.get("/elite/multi-brand/templates")
 async def get_brand_templates(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get available brand templates."""
     creator = await get_current_creator(credentials, db)
@@ -3527,7 +3527,7 @@ async def list_brands(
     return {"brands": brands, "limit": limit}
 
 
-@api_router.get("/elite/brands/active")
+@api_router.get("/elite/multi-brand/active")
 async def get_active_brand(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get the currently active brand."""
     creator = await get_current_creator(credentials, db)
@@ -3570,7 +3570,7 @@ async def create_brand(
     return result
 
 
-@api_router.get("/elite/brands/analytics")
+@api_router.get("/elite/multi-brand/analytics")
 async def get_cross_brand_analytics(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get aggregated analytics across all brands."""
     creator = await get_current_creator(credentials, db)
@@ -3643,7 +3643,7 @@ async def delete_brand(
     return result
 
 
-@api_router.post("/elite/brands/{brand_id}/switch")
+@api_router.post("/elite/multi-brand/{brand_id}/switch")
 async def switch_brand(
     brand_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
@@ -3663,7 +3663,7 @@ async def switch_brand(
     return result
 
 
-@api_router.patch("/elite/brands/{brand_id}/status")
+@api_router.patch("/elite/multi-brand/{brand_id}/status")
 async def update_brand_status(
     brand_id: str,
     request: Dict[str, Any],
@@ -3688,7 +3688,7 @@ async def update_brand_status(
     return result
 
 
-@api_router.get("/elite/brands/{brand_id}/analytics")
+@api_router.get("/elite/multi-brand/{brand_id}/analytics")
 async def get_brand_analytics(
     brand_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
@@ -3708,7 +3708,7 @@ async def get_brand_analytics(
     return analytics
 
 
-@api_router.post("/elite/brands/{brand_id}/arris-persona")
+@api_router.post("/elite/multi-brand/{brand_id}/arris-persona")
 async def set_brand_arris_persona(
     brand_id: str,
     request: Dict[str, Any],
@@ -3733,7 +3733,7 @@ async def set_brand_arris_persona(
     return result
 
 
-@api_router.get("/elite/brands/{brand_id}/arris-context")
+@api_router.get("/elite/multi-brand/{brand_id}/arris-context")
 async def get_brand_arris_context(
     brand_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
