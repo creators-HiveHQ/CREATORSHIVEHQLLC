@@ -175,6 +175,12 @@ from arris_api_service import (
     ApiKeyType, ApiKeyStatus
 )
 
+# Import Multi-Brand Service
+from multi_brand_service import (
+    MultiBrandService, BRAND_TEMPLATES, BRAND_LIMITS,
+    BrandStatus, BrandCategory
+)
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
