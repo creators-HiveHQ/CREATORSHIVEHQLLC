@@ -103,21 +103,21 @@ TEST_CREATORS = [
 # Subscription plan details for each tier
 SUBSCRIPTION_PLANS = {
     "free": {
-        "plan_id": "plan_free",
+        "plan_id": "free",
         "plan_name": "Free",
         "monthly_price": 0,
         "billing_cycle": "monthly",
         "features": ["basic_dashboard", "1_proposal_per_month"]
     },
     "starter": {
-        "plan_id": "plan_starter_monthly",
+        "plan_id": "starter_monthly",
         "plan_name": "Starter",
         "monthly_price": 9.99,
         "billing_cycle": "monthly",
         "features": ["basic_dashboard", "3_proposals_per_month", "email_support"]
     },
     "pro": {
-        "plan_id": "plan_pro_monthly",
+        "plan_id": "pro_monthly",
         "plan_name": "Pro",
         "monthly_price": 29.99,
         "billing_cycle": "monthly",
