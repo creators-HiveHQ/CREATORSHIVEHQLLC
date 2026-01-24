@@ -627,7 +627,7 @@ export default function ArrisApiManager({ token }) {
               API Key Created
             </DialogTitle>
             <DialogDescription>
-              Save this key now - it won't be shown again!
+              Save this key now - it will not be shown again!
             </DialogDescription>
           </DialogHeader>
           
@@ -683,7 +683,7 @@ export default function ArrisApiManager({ token }) {
               onClick={() => setShowKeyDialog(false)}
               className="bg-purple-600 hover:bg-purple-700"
             >
-              I've Saved My Key
+              I&apos;ve Saved My Key
             </Button>
           </DialogFooter>
         </DialogContent>
