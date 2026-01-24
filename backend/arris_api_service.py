@@ -560,13 +560,13 @@ Provide your analysis in a structured JSON format with these fields:
                 user_message = UserMessage(text=f"Analyze this text:\n\n{text}\n\nContext: {json.dumps(context or {})}")
                 response = await chat.send_message(user_message)
                 
-                # Parse response
+                # Parse response (response is a string)
                 try:
-                    analysis = json.loads(response.content)
+                    analysis = json.loads(response)
                 except json.JSONDecodeError:
                     analysis = {
-                        "summary": response.content[:500],
-                        "raw_response": response.content
+                        "summary": response[:500] if isinstance(response, str) else str(response)[:500],
+                        "raw_response": response if isinstance(response, str) else str(response)
                     }
             else:
                 # Fallback analysis
