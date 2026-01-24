@@ -167,10 +167,17 @@ class MultiBrandService:
         now = datetime.now(timezone.utc)
         brand_id = f"BRAND-{secrets.token_hex(6).upper()}"
         
-        # Use template colors if not specified
-        if not colors and template:
-            colors = template.get("default_colors", {})
-        elif not colors:
+        # Use template defaults if not specified
+        if template:
+            if not colors:
+                colors = template.get("default_colors", {})
+            # Use template category if category wasn't explicitly specified (still default)
+            if category == BrandCategory.PERSONAL.value and template.get("category"):
+                category = template.get("category")
+            if not platforms:
+                platforms = template.get("suggested_platforms", [])
+        
+        if not colors:
             colors = {"primary": "#7C3AED", "secondary": "#A78BFA", "accent": "#DDD6FE"}
 
         brand = {
