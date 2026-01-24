@@ -253,6 +253,7 @@ onboarding_wizard = None
 auto_approval_service = None
 referral_service = None
 persona_service = None
+scheduled_reports_service = None
 
 @app.on_event("startup")
 async def startup_db():
