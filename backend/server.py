@@ -181,6 +181,9 @@ from multi_brand_service import (
     BrandStatus, BrandCategory
 )
 
+# Import Waitlist Service
+from waitlist_service import WaitlistService, AVAILABLE_CREATOR_TYPES, WaitlistStatus
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
@@ -268,6 +271,7 @@ persona_service = None
 scheduled_reports_service = None
 arris_api_service = None
 multi_brand_service = None
+waitlist_service_instance = None
 
 @app.on_event("startup")
 async def startup_db():
