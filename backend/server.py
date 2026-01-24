@@ -3131,6 +3131,350 @@ async def send_report(
     return {"success": True, "message": "Report sent to email"}
 
 
+# ============== ARRIS API ACCESS ENDPOINTS (Phase 4 Module E - E3) ==============
+
+@api_router.get("/elite/arris-api/capabilities")
+async def get_api_capabilities(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get available ARRIS API capabilities and documentation.
+    Elite feature - provides programmatic access to ARRIS.
+    """
+    creator = await get_current_creator(credentials, db)
+    
+    # Check Elite access
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_gated",
+                "message": "ARRIS API Access requires Elite plan",
+                "required_tier": "elite",
+                "upgrade_url": "/creator/subscription"
+            }
+        )
+    
+    caps = await arris_api_service.get_capabilities()
+    return caps
+
+
+@api_router.get("/elite/arris-api/docs")
+async def get_api_docs(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get full API documentation."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    docs = await arris_api_service.get_api_docs()
+    return docs
+
+
+@api_router.get("/elite/arris-api/keys")
+async def list_api_keys(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """List all API keys for the creator."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    keys = await arris_api_service.list_api_keys(creator["id"])
+    return {"keys": keys}
+
+
+@api_router.post("/elite/arris-api/keys")
+async def create_api_key(
+    request: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new API key."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    result = await arris_api_service.generate_api_key(
+        creator_id=creator["id"],
+        key_type=request.get("key_type", "live"),
+        name=request.get("name", "API Key")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@api_router.get("/elite/arris-api/keys/{key_id}")
+async def get_api_key(
+    key_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get details for a specific API key."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    key = await arris_api_service.get_api_key(creator["id"], key_id)
+    if not key:
+        raise HTTPException(status_code=404, detail="API key not found")
+    
+    return key
+
+
+@api_router.delete("/elite/arris-api/keys/{key_id}")
+async def revoke_api_key(
+    key_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Revoke an API key."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    result = await arris_api_service.revoke_api_key(creator["id"], key_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@api_router.post("/elite/arris-api/keys/{key_id}/regenerate")
+async def regenerate_api_key(
+    key_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Regenerate an API key."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    result = await arris_api_service.regenerate_api_key(creator["id"], key_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@api_router.get("/elite/arris-api/usage")
+async def get_api_usage(
+    days: int = Query(default=30, le=90, description="Days of history"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get API usage statistics."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    stats = await arris_api_service.get_usage_stats(creator["id"], days)
+    return stats
+
+
+@api_router.get("/elite/arris-api/history")
+async def get_api_history(
+    limit: int = Query(default=50, le=200),
+    endpoint: Optional[str] = Query(default=None),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get API request history."""
+    creator = await get_current_creator(credentials, db)
+    
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    history = await arris_api_service.get_request_history(creator["id"], limit, endpoint)
+    return {"history": history}
+
+
+# ============== ARRIS API - Direct Endpoints (API Key Auth) ==============
+
+async def validate_arris_api_key(request: Request) -> Dict[str, Any]:
+    """Validate ARRIS API key from header."""
+    api_key = request.headers.get("X-ARRIS-API-Key")
+    if not api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing API key. Include X-ARRIS-API-Key header."
+        )
+    
+    result = await arris_api_service.validate_api_key(api_key)
+    
+    if not result.get("valid"):
+        status_code = 429 if result.get("rate_limited") else 401
+        raise HTTPException(
+            status_code=status_code,
+            detail=result.get("error"),
+            headers={"Retry-After": str(result.get("retry_after", 60))} if result.get("rate_limited") else None
+        )
+    
+    return result
+
+
+@api_router.post("/elite/arris-api/analyze")
+async def api_analyze_text(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Analyze text content using ARRIS.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    text = body.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="'text' field is required")
+    
+    result = await arris_api_service.analyze_text(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        text=text,
+        analysis_type=body.get("analysis_type", "general"),
+        context=body.get("context")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@api_router.post("/elite/arris-api/insights")
+async def api_generate_insights(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Generate proposal insights using ARRIS.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    title = body.get("title")
+    description = body.get("description")
+    
+    if not title or not description:
+        raise HTTPException(status_code=400, detail="'title' and 'description' fields are required")
+    
+    result = await arris_api_service.generate_insights(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        title=title,
+        description=description,
+        goals=body.get("goals"),
+        platforms=body.get("platforms")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@api_router.post("/elite/arris-api/content")
+async def api_content_suggestions(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Generate content suggestions using ARRIS.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    topic = body.get("topic")
+    if not topic:
+        raise HTTPException(status_code=400, detail="'topic' field is required")
+    
+    result = await arris_api_service.generate_content_suggestions(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        topic=topic,
+        platform=body.get("platform"),
+        content_type=body.get("content_type"),
+        count=body.get("count", 5)
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@api_router.post("/elite/arris-api/chat")
+async def api_chat(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Chat with ARRIS using creator's persona.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    message = body.get("message")
+    if not message:
+        raise HTTPException(status_code=400, detail="'message' field is required")
+    
+    result = await arris_api_service.chat_with_arris(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        message=message,
+        conversation_id=body.get("conversation_id"),
+        persona_id=body.get("persona_id")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@api_router.post("/elite/arris-api/batch")
+async def api_batch_analyze(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Process multiple items in batch.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    items = body.get("items")
+    if not items or not isinstance(items, list):
+        raise HTTPException(status_code=400, detail="'items' array is required")
+    
+    if len(items) > RATE_LIMITS["max_batch_size"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Batch size exceeds maximum ({RATE_LIMITS['max_batch_size']} items)"
+        )
+    
+    result = await arris_api_service.batch_analyze(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        items=items,
+        analysis_type=body.get("analysis_type", "general")
+    )
+    
+    return result
+
+
 # ============== ARRIS MEMORY & LEARNING ENDPOINTS ==============
 
 @api_router.get("/arris/memory/summary")
