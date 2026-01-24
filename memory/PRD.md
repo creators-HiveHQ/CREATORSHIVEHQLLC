@@ -457,12 +457,72 @@ Dashboard Updates → Memory Palace Synthesizes
 
 ## Upcoming Tasks
 
-**Phase 4 Modules A-E (E1) Complete** - Pattern Engine, Smart Automation, Memory Palace, Onboarding Wizard, Auto-Approval, Referral System, Custom ARRIS Personas
+**Phase 4 Modules A-E (E2) Complete** - Pattern Engine, Smart Automation, Memory Palace, Onboarding Wizard, Auto-Approval, Referral System, Custom ARRIS Personas, Scheduled ARRIS Reports
 
 **Remaining Phase 4 Tasks:**
-- **Module E (E2-E4)**: Scheduled ARRIS Reports, ARRIS API Access, Multi-Brand Management
+- **Module E (E3-E4)**: ARRIS API Access, Multi-Brand Management
 
 ## Completed Features - Phase 4
+
+34. **Scheduled ARRIS Reports (Phase 4 Module E - E2)** - Elite-only AI-powered report automation:
+    - **Report Frequencies**:
+      - **Daily**: Delivered at configurable UTC time
+      - **Weekly**: Delivered on configurable day and time
+      - **Both**: Receive daily AND weekly reports
+      - **None**: Disabled but settings preserved
+    - **8 Report Topics**:
+      - **Activity Summary**: Proposals created, tasks completed, memories created
+      - **Metrics Overview**: Revenue, expenses, net margin, transactions
+      - **ARRIS Usage**: Total interactions, top categories, most used features
+      - **Pattern Insights**: Detected patterns with confidence scores and recommendations
+      - **Recommendations**: AI-powered suggestions with priority levels (high/medium/low)
+      - **Upcoming Tasks**: Tasks due in next 7 days with priorities
+      - **Financial Summary**: Revenue breakdown by category
+      - **Engagement Trends**: Daily activity trends with direction indicator
+    - **On-Demand Generation**:
+      - Generate daily or weekly reports instantly
+      - Preview reports before email delivery
+      - View generated reports in history
+    - **AI-Powered Summaries**:
+      - Template-based executive summary when LLM unavailable
+      - Personalized greeting with creator name
+      - Highlights key metrics and achievements
+      - Encouraging closing message
+    - **Email Delivery**:
+      - Beautiful HTML email template with Creators Hive HQ branding
+      - Purple gradient header with creator greeting
+      - Section cards with highlights
+      - Footer with dashboard link
+      - SendGrid integration (MOCKED - emails logged but not sent without API key)
+    - **Backend Service** (`/app/backend/scheduled_reports_service.py`):
+      - `get_report_settings()` - Get creator preferences
+      - `update_report_settings()` - Save preferences with validation
+      - `generate_report()` - Generate full report with all sections
+      - `get_report_history()` - List generated reports
+      - `get_report()` - Get specific report details
+      - `delete_report()` - Remove report from history
+      - `get_creators_for_daily_reports()` - Scheduler support
+      - `get_creators_for_weekly_reports()` - Scheduler support
+    - **API Endpoints**:
+      - `GET /api/elite/reports/settings` - Get report preferences
+      - `PUT /api/elite/reports/settings` - Update preferences
+      - `GET /api/elite/reports/topics` - Get available topics, days, times
+      - `POST /api/elite/reports/generate` - Generate on-demand report
+      - `GET /api/elite/reports/history` - Get report history
+      - `GET /api/elite/reports/{id}` - Get full report with sections
+      - `DELETE /api/elite/reports/{id}` - Delete report
+      - `POST /api/elite/reports/{id}/send` - Send report via email
+    - **Frontend Component** (`/app/frontend/src/components/ScheduledReportsManager.js`):
+      - Enable/disable toggle with status indicator
+      - Frequency selector (daily/weekly/both/none)
+      - Time and day configuration selects
+      - Topic selection grid with icons and descriptions
+      - Generate Daily/Weekly buttons
+      - Report history list with view/delete actions
+      - Report detail modal with all sections
+    - **Feature Gating**: Elite tier only (checks `custom_arris_workflows`)
+    - **Collections**: report_settings, arris_reports, report_activity_log
+    - **Testing**: 28 pytest tests passed (100% success rate)
 
 33. **Custom ARRIS Personas (Phase 4 Module E - E1)** - Elite-only feature for AI personalization:
     - **5 Default Personas**:
