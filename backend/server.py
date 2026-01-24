@@ -374,6 +374,15 @@ async def startup_db():
     creator_pattern_insights_service = CreatorPatternInsightsService(db, feature_gating=feature_gating)
     logger.info("Creator Pattern Insights Service initialized - Personalized pattern analysis for Pro+ creators")
     
+    # Initialize Predictive Alerts Service
+    predictive_alerts_service = PredictiveAlertsService(
+        db, 
+        ws_manager=ws_manager, 
+        notification_service=notification_service, 
+        feature_gating=feature_gating
+    )
+    logger.info("Predictive Alerts Service initialized - Real-time predictive alerts for Pro+ creators")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
