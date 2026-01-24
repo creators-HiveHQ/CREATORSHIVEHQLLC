@@ -29,6 +29,7 @@ import ScheduledReportsManager from "@/components/ScheduledReportsManager";
 import ArrisApiManager from "@/components/ArrisApiManager";
 import MultiBrandManager from "@/components/MultiBrandManager";
 import { CreatorPatternInsights } from "@/components/CreatorPatternInsights";
+import { PredictiveAlerts } from "@/components/PredictiveAlerts";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
