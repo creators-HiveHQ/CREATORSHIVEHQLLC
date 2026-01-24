@@ -2480,6 +2480,9 @@ export const CreatorDashboard = () => {
                   <TabsTrigger value="reports" data-testid="elite-reports-subtab">
                     📊 Scheduled Reports
                   </TabsTrigger>
+                  <TabsTrigger value="api-access" data-testid="elite-api-subtab">
+                    🔑 API Access
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="personas">
@@ -2493,6 +2496,10 @@ export const CreatorDashboard = () => {
 
                 <TabsContent value="reports">
                   <ScheduledReportsManager token={creatorToken} />
+                </TabsContent>
+
+                <TabsContent value="api-access">
+                  <ArrisApiManager token={creatorToken} />
                 </TabsContent>
               </Tabs>
             ) : (
