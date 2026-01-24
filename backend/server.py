@@ -2116,6 +2116,115 @@ async def export_premium_analytics(
             "exported_at": datetime.now(timezone.utc).isoformat()
         }
 
+
+# ============== CREATOR PATTERN INSIGHTS ENDPOINTS (Pro+) ==============
+
+@api_router.get("/creators/me/pattern-insights")
+async def get_creator_pattern_insights(
+    limit: int = Query(default=10, le=20),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get personalized pattern insights for the authenticated creator.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_pattern_insights_service:
+        raise HTTPException(status_code=503, detail="Pattern insights service not available")
+    
+    result = await creator_pattern_insights_service.get_creator_patterns(creator_id, limit=limit)
+    return result
+
+
+@api_router.get("/creators/me/pattern-recommendations")
+async def get_pattern_recommendations(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get actionable recommendations based on pattern analysis.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_pattern_insights_service:
+        raise HTTPException(status_code=503, detail="Pattern insights service not available")
+    
+    result = await creator_pattern_insights_service.get_pattern_recommendations(creator_id)
+    return result
+
+
+@api_router.get("/creators/me/pattern-trends")
+async def get_pattern_trends(
+    days: int = Query(default=30, le=90),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get pattern trends over time.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_pattern_insights_service:
+        raise HTTPException(status_code=503, detail="Pattern insights service not available")
+    
+    result = await creator_pattern_insights_service.get_pattern_trends(creator_id, days=days)
+    return result
+
+
+@api_router.get("/creators/me/pattern-detail/{pattern_id}")
+async def get_pattern_detail(
+    pattern_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get detailed information about a specific pattern.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_pattern_insights_service:
+        raise HTTPException(status_code=503, detail="Pattern insights service not available")
+    
+    result = await creator_pattern_insights_service.get_pattern_detail(creator_id, pattern_id)
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Pattern not found")
+    
+    return result
+
+
+@api_router.post("/creators/me/pattern-feedback")
+async def submit_pattern_feedback(
+    data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Submit feedback on a pattern (helpful/not helpful).
+    Used to improve pattern detection accuracy.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_pattern_insights_service:
+        raise HTTPException(status_code=503, detail="Pattern insights service not available")
+    
+    pattern_id = data.get("pattern_id")
+    if not pattern_id:
+        raise HTTPException(status_code=400, detail="pattern_id is required")
+    
+    result = await creator_pattern_insights_service.save_pattern_feedback(
+        creator_id=creator_id,
+        pattern_id=pattern_id,
+        feedback=data
+    )
+    return result
+
+
 # ============== EXPORT ENDPOINTS (Pro/Premium) ==============
 
 @api_router.get("/export/proposals")
