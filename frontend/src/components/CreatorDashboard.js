@@ -1879,6 +1879,14 @@ export const CreatorDashboard = () => {
             )}
           </TabsContent>
 
+          {/* Pattern Insights Tab (Pro+) */}
+          <TabsContent value="pattern-insights" data-testid="pattern-insights-tab-content">
+            <CreatorPatternInsights 
+              token={creatorToken}
+              onUpgrade={() => navigate("/creator/subscription")}
+            />
+          </TabsContent>
+
           {/* Premium Analytics Tab (Premium/Elite only) */}
           <TabsContent value="premium-analytics" data-testid="premium-analytics-tab-content">
             {!hasPremiumAnalytics ? (
