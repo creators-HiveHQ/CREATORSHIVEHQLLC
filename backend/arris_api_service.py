@@ -523,7 +523,7 @@ class ArrisApiService:
             if self.persona_service:
                 active_persona = await self.persona_service.get_active_persona(creator_id)
                 if active_persona:
-                    persona_prompt = await self.persona_service.generate_persona_system_prompt(active_persona)
+                    persona_prompt = self.persona_service.generate_persona_system_prompt(active_persona)
             
             # Build analysis prompt based on type
             analysis_prompts = {
