@@ -1898,6 +1898,14 @@ export const CreatorDashboard = () => {
             />
           </TabsContent>
 
+          {/* Predictive Alerts Tab (Pro+) */}
+          <TabsContent value="alerts" data-testid="alerts-tab-content">
+            <PredictiveAlerts 
+              token={creatorToken}
+              onUpgrade={() => navigate("/creator/subscription")}
+            />
+          </TabsContent>
+
           {/* Premium Analytics Tab (Premium/Elite only) */}
           <TabsContent value="premium-analytics" data-testid="premium-analytics-tab-content">
             {!hasPremiumAnalytics ? (
