@@ -2238,6 +2238,113 @@ async def submit_pattern_feedback(
     return result
 
 
+# ============== PREDICTIVE ALERTS ENDPOINTS (Pro+) ==============
+
+@api_router.get("/creators/me/predictive-alerts")
+async def get_predictive_alerts(
+    include_dismissed: bool = Query(default=False),
+    limit: int = Query(default=20, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get predictive alerts for the authenticated creator.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not predictive_alerts_service:
+        raise HTTPException(status_code=503, detail="Predictive alerts service not available")
+    
+    result = await predictive_alerts_service.get_creator_alerts(
+        creator_id, 
+        include_dismissed=include_dismissed, 
+        limit=limit
+    )
+    return result
+
+
+@api_router.post("/creators/me/trigger-alerts")
+async def trigger_alert_check(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Manually trigger an alert check for the creator.
+    Returns any new alerts generated.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not predictive_alerts_service:
+        raise HTTPException(status_code=503, detail="Predictive alerts service not available")
+    
+    result = await predictive_alerts_service.trigger_alert_check(creator_id)
+    return result
+
+
+@api_router.post("/creators/me/alerts/{alert_id}/read")
+async def mark_alert_read(
+    alert_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Mark a specific alert as read."""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not predictive_alerts_service:
+        raise HTTPException(status_code=503, detail="Predictive alerts service not available")
+    
+    result = await predictive_alerts_service.mark_alert_read(creator_id, alert_id)
+    return result
+
+
+@api_router.post("/creators/me/alerts/{alert_id}/dismiss")
+async def dismiss_alert(
+    alert_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Dismiss an alert (won't show again)."""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not predictive_alerts_service:
+        raise HTTPException(status_code=503, detail="Predictive alerts service not available")
+    
+    result = await predictive_alerts_service.dismiss_alert(creator_id, alert_id)
+    return result
+
+
+@api_router.get("/creators/me/alert-preferences")
+async def get_alert_preferences(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get alert notification preferences."""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not predictive_alerts_service:
+        raise HTTPException(status_code=503, detail="Predictive alerts service not available")
+    
+    result = await predictive_alerts_service.get_alert_preferences(creator_id)
+    return result
+
+
+@api_router.put("/creators/me/alert-preferences")
+async def update_alert_preferences(
+    preferences: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update alert notification preferences."""
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not predictive_alerts_service:
+        raise HTTPException(status_code=503, detail="Predictive alerts service not available")
+    
+    result = await predictive_alerts_service.update_alert_preferences(creator_id, preferences)
+    return result
+
+
 # ============== EXPORT ENDPOINTS (Pro/Premium) ==============
 
 @api_router.get("/export/proposals")
