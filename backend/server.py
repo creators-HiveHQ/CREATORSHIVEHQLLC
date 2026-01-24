@@ -350,6 +350,10 @@ async def startup_db():
     arris_api_service = ArrisApiService(db, arris_service=arris_service, persona_service=persona_service)
     logger.info("ARRIS API Service initialized - Direct API access available for Elite creators")
     
+    # Initialize Multi-Brand Service
+    multi_brand_service = MultiBrandService(db, feature_gating=feature_gating)
+    logger.info("Multi-Brand Service initialized - Multiple brand management available for Elite creators")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
