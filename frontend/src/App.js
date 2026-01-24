@@ -1327,6 +1327,9 @@ function App() {
       <CreatorAuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Public Landing Page - Main entry point */}
+            <Route path="/landing" element={<LandingPage />} />
+            
             {/* Public route - Admin Login */}
             <Route path="/login" element={<LoginPage />} />
             
