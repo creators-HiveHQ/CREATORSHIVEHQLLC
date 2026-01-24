@@ -169,6 +169,12 @@ from scheduled_reports_service import (
     ReportFrequency, ReportTopic
 )
 
+# Import ARRIS API Service
+from arris_api_service import (
+    ArrisApiService, API_CAPABILITIES, RATE_LIMITS,
+    ApiKeyType, ApiKeyStatus
+)
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
