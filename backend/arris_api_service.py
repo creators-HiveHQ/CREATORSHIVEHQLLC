@@ -706,9 +706,9 @@ Return as JSON array with each suggestion having:
                 response = await chat.send_message(user_message)
                 
                 try:
-                    suggestions = json.loads(response.content)
+                    suggestions = json.loads(response)
                 except json.JSONDecodeError:
-                    suggestions = [{"raw_response": response.content}]
+                    suggestions = [{"raw_response": response if isinstance(response, str) else str(response)}]
             else:
                 suggestions = self._generate_fallback_content(topic, count)
             
