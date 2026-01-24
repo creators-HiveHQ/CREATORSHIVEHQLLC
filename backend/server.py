@@ -328,6 +328,10 @@ async def startup_db():
     persona_service = ArrisPersonaService(db)
     logger.info("ARRIS Persona Service initialized - Custom personas available for Elite creators")
     
+    # Initialize Scheduled Reports Service
+    scheduled_reports_service = ScheduledReportsService(db, llm_client=arris_service, email_service=None)
+    logger.info("Scheduled Reports Service initialized - Daily/Weekly AI summaries available for Elite creators")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
