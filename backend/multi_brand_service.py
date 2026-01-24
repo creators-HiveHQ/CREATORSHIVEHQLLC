@@ -43,13 +43,13 @@ class BrandCategory(str, Enum):
     SERVICE = "service"
 
 
-# Brand limits by tier
+# Brand limits by tier (using lowercase tier values)
 BRAND_LIMITS = {
-    "Free": 1,
-    "Starter": 1,
-    "Pro": 2,
-    "Premium": 3,
-    "Elite": 5
+    "free": 1,
+    "starter": 1,
+    "pro": 2,
+    "premium": 3,
+    "elite": 5
 }
 
 # Default brand templates
