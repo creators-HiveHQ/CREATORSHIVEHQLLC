@@ -8304,6 +8304,255 @@ async def broadcast_notification(
         "connections": ws_manager.get_connection_stats()
     }
 
+
+# ============== WAITLIST ENDPOINTS (PUBLIC LANDING PAGE) ==============
+
+@api_router.post("/waitlist/signup")
+async def waitlist_signup(signup_data: Dict[str, Any]):
+    """
+    Public endpoint - Sign up for the priority waitlist.
+    No authentication required.
+    """
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    email = signup_data.get("email", "").strip()
+    name = signup_data.get("name", "").strip()
+    creator_type = signup_data.get("creator_type", "").strip()
+    niche = signup_data.get("niche", "").strip()
+    referral_code = signup_data.get("referral_code")
+    source = signup_data.get("source", "landing_page")
+    
+    if not email or not name or not creator_type:
+        raise HTTPException(status_code=400, detail="Email, name, and creator type are required")
+    
+    result = await waitlist_service_instance.signup(
+        email=email,
+        name=name,
+        creator_type=creator_type,
+        niche=niche,
+        referral_code=referral_code,
+        source=source
+    )
+    
+    return result
+
+
+@api_router.get("/waitlist/position")
+async def get_waitlist_position(email: str = Query(..., description="Email address")):
+    """
+    Public endpoint - Get current waitlist position by email.
+    """
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    result = await waitlist_service_instance.get_position(email)
+    
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    
+    return result
+
+
+@api_router.get("/waitlist/stats")
+async def get_public_waitlist_stats():
+    """
+    Public endpoint - Get basic waitlist statistics for landing page.
+    Only returns non-sensitive aggregate data.
+    """
+    if not waitlist_service_instance:
+        return {"total": 0}
+    
+    total = await db.waitlist.count_documents({})
+    return {"total": total}
+
+
+@api_router.get("/waitlist/leaderboard")
+async def get_public_leaderboard(limit: int = Query(default=10, le=20)):
+    """
+    Public endpoint - Get top referrers leaderboard.
+    Names are partially masked for privacy.
+    """
+    if not waitlist_service_instance:
+        return []
+    
+    leaders = await waitlist_service_instance.get_leaderboard(limit=limit)
+    return {"leaderboard": leaders}
+
+
+@api_router.post("/waitlist/track-share")
+async def track_social_share(data: Dict[str, Any]):
+    """
+    Public endpoint - Track when a user shares on social media.
+    Awards bonus priority points.
+    """
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    email = data.get("email", "").strip()
+    platform = data.get("platform", "").strip()
+    
+    if not email or not platform:
+        raise HTTPException(status_code=400, detail="Email and platform are required")
+    
+    result = await waitlist_service_instance.track_social_share(email, platform)
+    return result
+
+
+@api_router.get("/waitlist/referral-stats")
+async def get_referral_stats(email: str = Query(..., description="Email address")):
+    """
+    Public endpoint - Get referral statistics for a waitlist signup.
+    """
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    result = await waitlist_service_instance.get_referral_stats(email)
+    
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    
+    return result
+
+
+@api_router.get("/waitlist/creator-types")
+async def get_creator_types():
+    """
+    Public endpoint - Get available creator types for the waitlist form.
+    """
+    return {"creator_types": AVAILABLE_CREATOR_TYPES}
+
+
+# ============== ADMIN WAITLIST MANAGEMENT ==============
+
+@api_router.get("/admin/waitlist/stats")
+async def get_admin_waitlist_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get comprehensive waitlist statistics (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    stats = await waitlist_service_instance.get_waitlist_stats()
+    return stats
+
+
+@api_router.get("/admin/waitlist/signups")
+async def get_waitlist_signups(
+    status: Optional[str] = Query(default=None),
+    creator_type: Optional[str] = Query(default=None),
+    search: Optional[str] = Query(default=None),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, le=200),
+    sort_by: str = Query(default="created_at"),
+    sort_order: int = Query(default=-1),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all waitlist signups with filtering (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    # Build query
+    query = {}
+    if status:
+        query["status"] = status
+    if creator_type:
+        query["creator_type"] = creator_type
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}}
+        ]
+    
+    total = await db.waitlist.count_documents(query)
+    signups = await db.waitlist.find(
+        query,
+        {"_id": 0}
+    ).sort(sort_by, sort_order).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "signups": signups,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+
+@api_router.post("/admin/waitlist/invite")
+async def invite_waitlist_users(
+    data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Send invitations to selected waitlist users (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    signup_ids = data.get("signup_ids", [])
+    if not signup_ids:
+        raise HTTPException(status_code=400, detail="No signup IDs provided")
+    
+    result = await waitlist_service_instance.invite_users(signup_ids)
+    return result
+
+
+@api_router.delete("/admin/waitlist/{signup_id}")
+async def delete_waitlist_signup(
+    signup_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Delete a waitlist signup (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    result = await waitlist_service_instance.delete_signup(signup_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Signup not found"))
+    
+    return result
+
+
+@api_router.get("/admin/waitlist/export")
+async def export_waitlist(
+    status: Optional[str] = Query(default=None),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export waitlist data (admin only).
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not waitlist_service_instance:
+        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
+    
+    data = await waitlist_service_instance.export_waitlist(status=status)
+    return data
+
+
 # Include the router
 app.include_router(api_router)
 
