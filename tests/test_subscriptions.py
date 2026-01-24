@@ -8,7 +8,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://arris-hq.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://arris-brain.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_CREATOR_EMAIL = "testcreator@example.com"
@@ -298,7 +298,7 @@ class TestCheckoutEndpoint:
             f"{BASE_URL}/api/subscriptions/checkout",
             json={
                 "plan_id": "starter_monthly",
-                "origin_url": "https://arris-hq.preview.emergentagent.com"
+                "origin_url": "https://arris-brain.preview.emergentagent.com"
             }
         )
         assert response.status_code == 200
@@ -315,7 +315,7 @@ class TestCheckoutEndpoint:
             f"{BASE_URL}/api/subscriptions/checkout",
             json={
                 "plan_id": "pro_monthly",
-                "origin_url": "https://arris-hq.preview.emergentagent.com"
+                "origin_url": "https://arris-brain.preview.emergentagent.com"
             }
         )
         assert response.status_code == 200
@@ -331,7 +331,7 @@ class TestCheckoutEndpoint:
             f"{BASE_URL}/api/subscriptions/checkout",
             json={
                 "plan_id": "premium_monthly",
-                "origin_url": "https://arris-hq.preview.emergentagent.com"
+                "origin_url": "https://arris-brain.preview.emergentagent.com"
             }
         )
         assert response.status_code == 200
