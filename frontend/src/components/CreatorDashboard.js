@@ -27,6 +27,7 @@ import ReferralDashboard from "@/components/ReferralDashboard";
 import ArrisPersonaManager from "@/components/ArrisPersonaManager";
 import ScheduledReportsManager from "@/components/ScheduledReportsManager";
 import ArrisApiManager from "@/components/ArrisApiManager";
+import MultiBrandManager from "@/components/MultiBrandManager";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
