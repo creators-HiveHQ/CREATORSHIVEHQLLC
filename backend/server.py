@@ -339,6 +339,10 @@ async def startup_db():
     scheduled_reports_service = ScheduledReportsService(db, llm_client=arris_service, email_service=None)
     logger.info("Scheduled Reports Service initialized - Daily/Weekly AI summaries available for Elite creators")
     
+    # Initialize ARRIS API Service
+    arris_api_service = ArrisApiService(db, arris_service=arris_service, persona_service=persona_service)
+    logger.info("ARRIS API Service initialized - Direct API access available for Elite creators")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
