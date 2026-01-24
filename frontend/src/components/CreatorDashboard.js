@@ -2468,15 +2468,32 @@ export const CreatorDashboard = () => {
             <ReferralDashboard token={creatorToken} />
           </TabsContent>
 
-          {/* Elite Tab - ARRIS Personas & Elite Features */}
+          {/* Elite Tab - ARRIS Personas & Scheduled Reports */}
           <TabsContent value="elite" data-testid="elite-tab-content">
             {featureAccess?.tier === "elite" ? (
-              <ArrisPersonaManager 
-                token={creatorToken}
-                onPersonaChange={(persona) => {
-                  console.log('Persona changed:', persona.name);
-                }}
-              />
+              <Tabs defaultValue="personas" className="w-full">
+                <TabsList className="bg-gray-900/50 border border-gray-800 mb-6">
+                  <TabsTrigger value="personas" data-testid="elite-personas-subtab">
+                    🎭 ARRIS Personas
+                  </TabsTrigger>
+                  <TabsTrigger value="reports" data-testid="elite-reports-subtab">
+                    📊 Scheduled Reports
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="personas">
+                  <ArrisPersonaManager 
+                    token={creatorToken}
+                    onPersonaChange={(persona) => {
+                      console.log('Persona changed:', persona.name);
+                    }}
+                  />
+                </TabsContent>
+
+                <TabsContent value="reports">
+                  <ScheduledReportsManager token={creatorToken} />
+                </TabsContent>
+              </Tabs>
             ) : (
               <Card className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 border-amber-700/30">
                 <CardContent className="py-12 text-center">
@@ -2485,7 +2502,7 @@ export const CreatorDashboard = () => {
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Elite Features</h3>
                   <p className="text-gray-300 mb-6 max-w-md mx-auto">
-                    Unlock Custom ARRIS Personas, Brand Integrations, Adaptive Intelligence, 
+                    Unlock Custom ARRIS Personas, Scheduled Reports, Brand Integrations, 
                     and more with Elite tier.
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
@@ -2494,16 +2511,16 @@ export const CreatorDashboard = () => {
                       <p className="text-sm text-gray-400 mt-1">Custom Personas</p>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg p-3">
+                      <span className="text-2xl">📊</span>
+                      <p className="text-sm text-gray-400 mt-1">AI Reports</p>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg p-3">
                       <span className="text-2xl">🤝</span>
                       <p className="text-sm text-gray-400 mt-1">Brand Integrations</p>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg p-3">
                       <span className="text-2xl">🧠</span>
                       <p className="text-sm text-gray-400 mt-1">Adaptive AI</p>
-                    </div>
-                    <div className="bg-gray-900/50 rounded-lg p-3">
-                      <span className="text-2xl">📊</span>
-                      <p className="text-sm text-gray-400 mt-1">Advanced Reports</p>
                     </div>
                   </div>
                   <Button 
