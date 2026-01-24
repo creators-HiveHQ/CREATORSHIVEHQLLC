@@ -163,6 +163,12 @@ from arris_persona_service import (
     AVAILABLE_TONES, AVAILABLE_STYLES, AVAILABLE_FOCUS_AREAS, AVAILABLE_RESPONSE_LENGTHS
 )
 
+# Import Scheduled Reports Service
+from scheduled_reports_service import (
+    ScheduledReportsService, AVAILABLE_TOPICS, AVAILABLE_FREQUENCIES,
+    ReportFrequency, ReportTopic
+)
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
