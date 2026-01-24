@@ -124,14 +124,14 @@ SUBSCRIPTION_PLANS = {
         "features": ["advanced_dashboard", "unlimited_proposals", "priority_support", "arris_full_insights"]
     },
     "premium": {
-        "plan_id": "plan_premium_monthly",
+        "plan_id": "premium_monthly",
         "plan_name": "Premium",
         "monthly_price": 99.99,
         "billing_cycle": "monthly",
         "features": ["advanced_dashboard", "unlimited_proposals", "priority_review", "arris_full_insights", "voice_interaction", "activity_feed", "learning_history"]
     },
     "elite": {
-        "plan_id": "plan_elite_custom",
+        "plan_id": "elite_monthly",
         "plan_name": "Elite",
         "monthly_price": 199.99,
         "billing_cycle": "monthly",
