@@ -25,6 +25,7 @@ import { SmartOnboardingWizard } from "@/components/SmartOnboardingWizard";
 import { OnboardingProgressTracker } from "@/components/OnboardingProgressTracker";
 import ReferralDashboard from "@/components/ReferralDashboard";
 import ArrisPersonaManager from "@/components/ArrisPersonaManager";
+import ScheduledReportsManager from "@/components/ScheduledReportsManager";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
