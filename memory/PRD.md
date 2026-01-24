@@ -1112,6 +1112,57 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Feature Gating**: Full access for Premium/Elite, upgrade prompt for other tiers
     - **Testing**: 17 pytest tests covering all endpoints and feature gating (100% pass rate)
 
+24. **Landing Page + Priority Waitlist System** - Public-facing pre-launch acquisition:
+    - **Backend Service** (`/app/backend/waitlist_service.py`):
+      - `WaitlistService` class for waitlist management
+      - Email, name, creator type, and niche collection
+      - Unique referral code generation (NAME_PREFIX + random hex)
+      - Priority scoring system: signup=10, referral=+25 to referrer, referred=+5 bonus
+      - Social share tracking (+5 points per platform)
+      - Queue position calculation based on priority score
+      - Admin management: invite users, delete signups, export data
+      - Statistics and analytics: daily signups, creator type breakdown, source tracking
+      - Leaderboard for top referrers (names partially masked for privacy)
+    - **Public API Endpoints** (no auth required):
+      - `POST /api/waitlist/signup` - Create waitlist entry with referral code support
+      - `GET /api/waitlist/stats` - Public stats (total count only)
+      - `GET /api/waitlist/position?email=` - Get position and referral stats by email
+      - `GET /api/waitlist/creator-types` - Get 11 available creator types with icons
+      - `GET /api/waitlist/leaderboard` - Top referrers (privacy-masked)
+      - `GET /api/waitlist/referral-stats?email=` - Referral statistics
+      - `POST /api/waitlist/track-share` - Track social media shares
+    - **Admin API Endpoints** (admin auth required):
+      - `GET /api/admin/waitlist/stats` - Comprehensive statistics
+      - `GET /api/admin/waitlist/signups` - List with filtering/pagination
+      - `POST /api/admin/waitlist/invite` - Send invitations to selected users
+      - `DELETE /api/admin/waitlist/{signup_id}` - Delete signup
+      - `GET /api/admin/waitlist/export` - Export waitlist data
+    - **Frontend Landing Page** (`/app/frontend/src/components/LandingPage.js`):
+      - Hero section with "Join Waitlist" CTA (3 buttons total)
+      - Features grid (6 features: ARRIS AI, Smart Analytics, Proposal Generator, etc.)
+      - Meet ARRIS section with demo chat preview
+      - Pricing preview (4 tiers: Starter, Pro, Premium, Elite)
+      - Testimonials carousel
+      - FAQ accordion
+      - Footer with navigation
+      - Waitlist signup modal with form validation
+      - Success modal with referral code and social share buttons (Twitter, LinkedIn, Copy)
+      - Live waitlist count display
+      - Referral code support via URL param (?ref=CODE)
+    - **Admin Waitlist Dashboard** (`/app/frontend/src/components/AdminWaitlistDashboard.js`):
+      - Stats cards: Total, Pending, Invited, Converted, Conversion Rate
+      - Three tabs: All Signups, Analytics, Top Referrers
+      - Signups table with select-all, filtering, pagination
+      - Bulk invite functionality
+      - Analytics charts: Signups by Creator Type, Signups by Source, Daily Signups
+      - Top Referrers leaderboard with rank, referrals, points
+      - Signup detail modal
+      - Refresh and Export buttons
+    - **Creator Types**: YouTuber, Instagram, TikTok, Podcaster, Blogger, Streamer, Musician, Artist, Educator, Business, Other
+    - **Waitlist Statuses**: pending, invited, converted, unsubscribed
+    - **Routes**: `/landing` (public), `/waitlist` (admin dashboard)
+    - **Testing**: 25 backend tests + all frontend UI tests (100% pass rate)
+
 ---
 
 *Built following the No-Assumption Protocol with Sheet 15 Index as the source of truth.*
