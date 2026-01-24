@@ -184,6 +184,9 @@ from multi_brand_service import (
 # Import Waitlist Service
 from waitlist_service import WaitlistService, AVAILABLE_CREATOR_TYPES, WaitlistStatus
 
+# Import Creator Pattern Insights Service
+from creator_pattern_insights_service import CreatorPatternInsightsService
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
