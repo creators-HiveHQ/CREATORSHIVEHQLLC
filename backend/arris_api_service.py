@@ -767,7 +767,7 @@ Return as JSON array with each suggestion having:
                     persona = await self.persona_service.get_active_persona(creator_id)
                 
                 if persona:
-                    persona_prompt = await self.persona_service.generate_persona_system_prompt(persona)
+                    persona_prompt = self.persona_service.generate_persona_system_prompt(persona)
             
             # Get conversation history
             history = await self.db.arris_api_conversations.find(
