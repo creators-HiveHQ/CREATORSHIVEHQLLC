@@ -3509,8 +3509,8 @@ async def get_brand_templates(credentials: HTTPAuthorizationCredentials = Depend
     return {"templates": templates}
 
 
-@api_router.get("/elite/brands")
-async def list_brands(
+@api_router.get("/elite/multi-brand")
+async def list_multi_brands(
     include_archived: bool = Query(default=False),
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
@@ -3540,8 +3540,8 @@ async def get_active_brand(credentials: HTTPAuthorizationCredentials = Depends(s
     return {"brand": brand}
 
 
-@api_router.post("/elite/brands")
-async def create_brand(
+@api_router.post("/elite/multi-brand")
+async def create_multi_brand(
     request: Dict[str, Any],
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
