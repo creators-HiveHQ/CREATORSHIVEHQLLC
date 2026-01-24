@@ -358,6 +358,10 @@ async def startup_db():
     multi_brand_service = MultiBrandService(db, feature_gating=feature_gating)
     logger.info("Multi-Brand Service initialized - Multiple brand management available for Elite creators")
     
+    # Initialize Waitlist Service
+    waitlist_service_instance = WaitlistService(db, email_service=email_service)
+    logger.info("Waitlist Service initialized - Priority waitlist with referral system active")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
