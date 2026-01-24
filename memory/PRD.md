@@ -1211,6 +1211,36 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
     - **Testing**: 21 backend tests + all frontend UI tests (100% pass rate)
 
+26. **Predictive Alerts (Module A4)** - Real-time WebSocket notifications for Pro+ creators:
+    - **Backend Service** (`/app/backend/predictive_alerts_service.py`):
+      - `PredictiveAlertsService` class for alert generation and management
+      - Alert types by category:
+        - **Timing**: optimal_submission_time, deadline_approaching, momentum_opportunity
+        - **Performance**: success_streak, approval_rate_change, milestone_reached
+        - **Risk**: declining_performance, inactivity_warning, proposal_at_risk
+        - **Platform**: platform_trend, best_platform_insight
+        - **ARRIS**: arris_recommendation, new_pattern_discovered, insight_available
+      - Alert priorities: urgent, high, medium, low
+      - Dynamic alert generation from creator's proposals
+      - Alert preferences: enabled toggle, category toggles, priority toggles, quiet hours, channels
+      - WebSocket integration via ws_manager for real-time delivery
+    - **API Endpoints** (creator auth required, Pro+ tier):
+      - `GET /api/creators/me/predictive-alerts` - Get alerts with priority counts
+      - `POST /api/creators/me/trigger-alerts` - Trigger alert generation
+      - `POST /api/creators/me/alerts/{alert_id}/read` - Mark as read
+      - `POST /api/creators/me/alerts/{alert_id}/dismiss` - Dismiss alert
+      - `GET /api/creators/me/alert-preferences` - Get preferences
+      - `PUT /api/creators/me/alert-preferences` - Update preferences
+    - **Frontend Component** (`/app/frontend/src/components/PredictiveAlerts.js`):
+      - Priority summary cards (Urgent, High, Medium, Low, Total)
+      - Alert cards with title, message, priority badge, category badge, action buttons
+      - Tabs: All, Unread, Urgent, High
+      - Preferences modal with category/priority toggles and quiet hours
+      - Refresh and Preferences buttons
+      - Upgrade prompt for Free/Starter users
+    - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
+    - **Testing**: 19 backend tests + all frontend UI tests (95%+ pass rate)
+
 ---
 
 *Built following the No-Assumption Protocol with Sheet 15 Index as the source of truth.*
