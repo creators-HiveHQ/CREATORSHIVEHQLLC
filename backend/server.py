@@ -2797,7 +2797,7 @@ async def get_escalation_dashboard(
     """
     # Verify admin
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -2818,7 +2818,7 @@ async def get_stalled_proposals(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -2842,7 +2842,7 @@ async def get_escalation_history(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -2868,7 +2868,7 @@ async def get_escalation_analytics(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -2890,7 +2890,7 @@ async def check_proposal_escalation(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -2914,7 +2914,7 @@ async def escalate_proposal(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
         admin_id = admin.get("user_id", "admin")
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -2947,7 +2947,7 @@ async def resolve_escalation(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
         admin_id = admin.get("user_id", "admin")
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -2977,7 +2977,7 @@ async def run_escalation_scan(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -2997,7 +2997,7 @@ async def get_escalation_config(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -3018,7 +3018,7 @@ async def update_escalation_config(
     Admin only endpoint.
     """
     try:
-        admin = await get_current_admin(credentials)
+        _admin = await get_current_admin(credentials)
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
     
