@@ -481,8 +481,10 @@ async def startup_db():
         websocket_manager=ws_manager,
         stripe=stripe_service,
         elite=elite_service,
+        arris=arris_service,
         arris_memory=arris_memory_service,
         arris_historical=arris_historical_service,
+        arris_activity=arris_activity_service,
         calculator=calculator_service,
         export=export_service,
         pattern_engine=pattern_engine,
@@ -504,6 +506,8 @@ async def startup_db():
         pattern_export=pattern_export_service,
         auto_escalation=auto_escalation_service,
         webhook=webhook_service,
+        email=email_service,
+        notification=notification_service,
     )
     logger.info("Route dependencies initialized for modular route handlers")
     
