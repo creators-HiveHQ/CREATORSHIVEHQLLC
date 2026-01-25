@@ -30,13 +30,14 @@ export function AdminAutomationDashboard({ token }) {
   const headers = { Authorization: `Bearer ${token}` };
 
   const fetchData = useCallback(async () => {
+    const authHeaders = { Authorization: `Bearer ${token}` };
     setLoading(true);
     setError(null);
     
     try {
       const [rulesRes, logsRes] = await Promise.all([
-        fetch(`${API}/admin/automation/rules`, { headers }),
-        fetch(`${API}/admin/automation/log?limit=50`, { headers })
+        fetch(`${API}/admin/automation/rules`, { headers: authHeaders }),
+        fetch(`${API}/admin/automation/log?limit=50`, { headers: authHeaders })
       ]);
       
       if (!rulesRes.ok) throw new Error("Failed to fetch automation rules");
