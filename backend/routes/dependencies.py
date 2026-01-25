@@ -68,6 +68,9 @@ def init_dependencies(
     notification_service = notification_svc
     ws_manager = websocket_manager
     
+    # Also add feature_gating to services dict for get_service() calls
+    services["feature_gating"] = feature_gating_service
+    
     # Set service references
     for key, value in service_kwargs.items():
         if key in services:
