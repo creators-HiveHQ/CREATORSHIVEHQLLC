@@ -106,7 +106,8 @@ const EscalationSummaryCard = ({ summary }) => {
 const EscalationItem = ({ escalation, onResolve, onViewProposal }) => {
   const levelStyle = LEVEL_STYLES[escalation.level] || LEVEL_STYLES.standard;
   const createdDate = new Date(escalation.created_at);
-  const hoursAgo = Math.round((Date.now() - createdDate.getTime()) / 3600000);
+  // Calculate hours ago using the created_at timestamp
+  const hoursAgo = Math.round((new Date().getTime() - createdDate.getTime()) / 3600000);
   
   return (
     <div
