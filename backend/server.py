@@ -3254,74 +3254,7 @@ async def send_test_email(
 
 # NOTE: Elite contact and inquiries routes migrated to /app/backend/routes/elite.py
 # NOTE: Subscription routes (plans, checkout, status) migrated to /app/backend/routes/subscriptions.py
-
-# Stripe Webhook endpoint (public - called by Stripe)
-@app.post("/api/webhook/stripe")
-async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events"""
-    body = await request.body()
-    signature = request.headers.get("Stripe-Signature", "")
-    
-    host_url = str(request.base_url).rstrip('/')
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    
-    try:
-        result = await stripe_service.handle_webhook(body, signature, webhook_url)
-        
-        # If payment succeeded, trigger revenue webhook
-        if result.get("event_type") == "checkout.session.completed" and result.get("payment_status") == "paid":
-            # Get transaction details
-            transaction = await db.payment_transactions.find_one(
-                {"stripe_session_id": result.get("session_id")},
-                {"_id": 0}
-            )
-            
-            if transaction:
-                # Emit subscription created event
-                await webhook_service.emit(
-                    event_type=WebhookEventType.SUBSCRIPTION_CREATED,
-                    payload={
-                        "plan_id": transaction.get("plan_id"),
-                        "amount": transaction.get("amount"),
-                        "billing_cycle": transaction.get("billing_cycle")
-                    },
-                    source_entity="subscription",
-                    source_id=result.get("session_id"),
-                    user_id=transaction.get("creator_id")
-                )
-                
-                # Emit revenue recorded event
-                await webhook_service.emit(
-                    event_type=WebhookEventType.REVENUE_RECORDED,
-                    payload={
-                        "amount": transaction.get("amount"),
-                        "source": "stripe_subscription",
-                        "plan_id": transaction.get("plan_id")
-                    },
-                    source_entity="payment",
-                    source_id=result.get("session_id"),
-                    user_id=transaction.get("creator_id")
-                )
-                
-                # REFERRAL: Convert referral and award commission
-                if referral_service and transaction.get("creator_id"):
-                    try:
-                        conversion_result = await referral_service.convert_referral(
-                            referred_creator_id=transaction.get("creator_id"),
-                            subscription_amount=transaction.get("amount", 0),
-                            plan_id=transaction.get("plan_id", "")
-                        )
-                        if conversion_result.get("converted"):
-                            logger.info(f"Referral converted for creator {transaction.get('creator_id')}: commission ${conversion_result.get('commission_amount')}")
-                    except Exception as e:
-                        logger.error(f"Referral conversion error: {e}")
-                        # Don't fail the webhook if referral processing fails
-        
-        return {"received": True}
-        
-    except Exception as e:
-        logger.error(f"Webhook processing error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+# NOTE: Stripe webhook migrated to /app/backend/routes/webhooks.py
 
 # NOTE: Admin subscription endpoints migrated to /app/backend/routes/subscriptions.py
 
