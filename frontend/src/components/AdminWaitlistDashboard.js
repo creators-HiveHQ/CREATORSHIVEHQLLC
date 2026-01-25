@@ -104,6 +104,8 @@ export default function AdminWaitlistDashboard({ token }) {
       toast.error('Failed to load waitlist');
     }
     setLoading(false);
+    // refreshTrigger is intentionally included to allow manual refresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, pagination.skip, pagination.limit, filters, refreshTrigger]);
 
   useEffect(() => {
