@@ -1241,6 +1241,37 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
     - **Testing**: 19 backend tests + all frontend UI tests (95%+ pass rate)
 
+27. **Subscription Lifecycle Automation (Module B3)** - At-risk detection and retention automation:
+    - **Backend Service** (`/app/backend/subscription_lifecycle_service.py`):
+      - `SubscriptionLifecycleService` class for subscription health management
+      - **Health Scoring** (0-100): Based on 5 weighted risk factors:
+        - Inactivity days (25 weight): critical ≥30d, high ≥14d, medium ≥7d
+        - Proposal decline rate (20 weight): critical ≥70%, high ≥50%, medium ≥30%
+        - Engagement drop (20 weight): critical ≥80%, high ≥50%, medium ≥30%
+        - Support tickets (15 weight): critical ≥5, high ≥3, medium ≥1
+        - Payment failures (20 weight): critical ≥3, high ≥2, medium ≥1
+      - **Risk Levels**: critical (≤30), high (≤50), medium (≤70), low (>70)
+      - **Lifecycle Stages**: onboarding (0-7d), activation (7-30d), engaged, at_risk, churning, churned, reactivated
+      - **9 Retention Actions**: welcome_email, onboarding_reminder, feature_highlight, engagement_nudge, success_celebration, at_risk_outreach, discount_offer, personal_call, win_back_campaign
+      - Automation rules with delay and condition triggers
+    - **Admin API Endpoints** (admin auth required):
+      - `GET /api/admin/subscription-lifecycle/metrics` - Platform-wide metrics
+      - `GET /api/admin/subscription-lifecycle/at-risk` - At-risk list with filtering
+      - `GET /api/admin/subscription-lifecycle/health/{creator_id}` - Detailed health analysis
+      - `POST /api/admin/subscription-lifecycle/retention-action` - Trigger retention action
+      - `GET /api/admin/subscription-lifecycle/retention-history` - Action history
+      - `POST /api/admin/subscription-lifecycle/update-stage` - Update lifecycle stage
+    - **Frontend Dashboard** (`/app/frontend/src/components/SubscriptionLifecycleDashboard.js`):
+      - Metrics cards: Active, Healthy, At Risk, Critical, 30d Churn Rate
+      - Three tabs: Overview (stages + tiers), At Risk (subscription cards), Action History
+      - Health score ring visualization with color coding
+      - At-risk cards with risk badges, lifecycle stage, tier, top risk factors, days remaining
+      - Quick actions: Nudge, Outreach, View Details
+      - Retention action modal with action selection and custom message
+      - Risk threshold filter (Critical, High, Medium, All)
+    - **Route**: `/lifecycle` in admin sidebar
+    - **Testing**: 50 backend tests + all frontend UI tests (100% pass rate)
+
 ---
 
 *Built following the No-Assumption Protocol with Sheet 15 Index as the source of truth.*
