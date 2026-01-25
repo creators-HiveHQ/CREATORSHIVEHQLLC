@@ -697,3 +697,10 @@ async def get_health_leaderboard(
 async def test_debug():
     """Test route to verify routing works"""
     return {"status": "ok", "message": "creator_dashboard.py is working"}
+
+
+# DEBUG: Test route without security
+@router.get("/test-no-auth")
+async def test_no_auth():
+    """Test route without authentication"""
+    return {"status": "ok", "message": "No auth required"}
