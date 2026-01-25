@@ -628,7 +628,7 @@ const NewProposalModal = ({ isOpen, onClose, onSuccess }) => {
             {createdProposal.arris_insights?.summary && (
               <div className="bg-purple-50 p-4 rounded-lg text-left border border-purple-200">
                 <p className="text-xs text-purple-600 font-medium mb-1">🧠 ARRIS Summary</p>
-                <p className="text-sm text-purple-700 italic">"{createdProposal.arris_insights.summary}"</p>
+                <p className="text-sm text-purple-700 italic">&ldquo;{createdProposal.arris_insights.summary}&rdquo;</p>
               </div>
             )}
             <Button
