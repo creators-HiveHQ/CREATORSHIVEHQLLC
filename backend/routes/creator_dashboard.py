@@ -46,15 +46,9 @@ async def get_current_creator_profile(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Get current logged-in creator's profile"""
-    
     db = get_db()
-    try:
-        creator = await get_current_creator(credentials, db)
-        
-        return creator
-    except Exception as e:
-        
-        raise
+    creator = await get_current_creator(credentials, db)
+    return creator
 
 
 @router.get("/me/proposals")
