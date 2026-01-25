@@ -190,6 +190,9 @@ from creator_pattern_insights_service import CreatorPatternInsightsService
 # Import Predictive Alerts Service
 from predictive_alerts_service import PredictiveAlertsService, AlertType, AlertPriority
 
+# Import Subscription Lifecycle Service
+from subscription_lifecycle_service import SubscriptionLifecycleService, RiskLevel, LifecycleStage, RetentionAction
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
