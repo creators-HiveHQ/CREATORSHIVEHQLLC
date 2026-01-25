@@ -4662,17 +4662,7 @@ async def log_arris_usage(log: ArrisUsageLogCreate):
     await db.arris_usage_log.insert_one(doc)
     return {"id": log_obj.id, "message": "ARRIS usage logged"}
 
-@api_router.get("/arris/performance")
-async def get_arris_performance(limit: int = Query(default=100, le=1000)):
-    """Get ARRIS performance reviews"""
-    reviews = await db.arris_performance.find({}, {"_id": 0}).to_list(limit)
-    return reviews
-
-@api_router.get("/arris/training")
-async def get_arris_training_data(limit: int = Query(default=100, le=1000)):
-    """Get ARRIS training data sources"""
-    data = await db.arris_training_data.find({}, {"_id": 0}).to_list(limit)
-    return data
+# NOTE: ARRIS performance and training routes migrated to /app/backend/routes/arris.py
 
 # ============== PATTERN ENGINE - Core Analytics ==============
 
