@@ -386,7 +386,7 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
       ]);
       setCreators(creatorsRes.data);
       setStats(statsRes.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching creators:", error);
     } finally {
       setLoading(false);
@@ -405,7 +405,7 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
       await axios.patch(`${API}/creators/${creatorId}`, updateData);
       fetchCreators();
       setSelectedCreator(null);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error updating creator:", error);
     }
   };

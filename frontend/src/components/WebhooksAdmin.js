@@ -60,7 +60,7 @@ const WebhooksAdmin = () => {
       setEvents(eventsRes.data);
       setRules(rulesRes.data);
       setStats(statsRes.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching webhook data:", error);
     } finally {
       setLoading(false);
@@ -82,7 +82,7 @@ const WebhooksAdmin = () => {
       // Refresh rules
       const rulesRes = await axios.get(`${API}/webhooks/rules`, { headers });
       setRules(rulesRes.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error toggling rule:", error);
     }
   };
@@ -93,7 +93,7 @@ const WebhooksAdmin = () => {
       await axios.post(`${API}/webhooks/test?event_type=${eventType}`, {}, { headers });
       // Refresh events after test
       setTimeout(fetchData, 1000);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error testing webhook:", error);
     }
   };

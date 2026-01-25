@@ -80,7 +80,7 @@ export default function ReferralDashboard({ token }) {
           const data = await leaderboardRes.json();
           setLeaderboard(data.leaderboard || []);
         }
-      } catch (error) {
+      } catch (_error) {
         if (!cancelled) {
           console.error('Failed to load referral data:', error);
           toast.error('Failed to load referral data');
@@ -113,7 +113,7 @@ export default function ReferralDashboard({ token }) {
         toast.success('Referral code generated!');
         loadData();
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to generate code');
     }
     setGeneratingCode(false);

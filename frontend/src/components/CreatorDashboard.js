@@ -65,7 +65,7 @@ export const CreatorAuthProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCreator(response.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Creator token verification failed:", error);
       logout();
     } finally {
@@ -87,7 +87,7 @@ export const CreatorAuthProvider = ({ children }) => {
       setCreator(creatorData);
       
       return { success: true };
-    } catch (error) {
+    } catch (_error) {
       const message = error.response?.data?.detail || "Login failed";
       return { success: false, error: message };
     }
@@ -691,7 +691,7 @@ export const CreatorDashboard = () => {
           setShowOnboarding(true);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error("Error checking onboarding:", error);
     } finally {
       setOnboardingChecked(true);
@@ -722,7 +722,7 @@ export const CreatorDashboard = () => {
       setDashboard(dashboardRes.data);
       setProposals(proposalsRes.data);
       setFeatureAccess(featuresRes.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching dashboard:", error);
     } finally {
       setLoading(false);
@@ -737,7 +737,7 @@ export const CreatorDashboard = () => {
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/creators/me/advanced-dashboard`, { headers });
       setAdvancedData(response.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching advanced dashboard:", error);
       // Feature might be gated - that's okay
     } finally {
@@ -751,7 +751,7 @@ export const CreatorDashboard = () => {
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/creators/me/premium-analytics?date_range=${dateRange}`, { headers });
       setPremiumData(response.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching premium analytics:", error);
       // Feature might be gated
     } finally {
@@ -882,7 +882,7 @@ export const CreatorDashboard = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-    } catch (error) {
+    } catch (_error) {
       console.error("Export failed:", error);
       const errorMessage = error.response?.data?.detail?.message || 
                           error.response?.data?.detail || 

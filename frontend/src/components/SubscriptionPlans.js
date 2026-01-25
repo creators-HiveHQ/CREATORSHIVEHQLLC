@@ -73,7 +73,7 @@ export const SubscriptionPlans = () => {
         const statusRes = await axios.get(`${API}/subscriptions/my-status`, { headers });
         setCurrentStatus(statusRes.data);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching subscription data:", error);
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ export const SubscriptionPlans = () => {
       // Redirect to Stripe Checkout
       window.location.href = response.data.checkout_url;
       
-    } catch (error) {
+    } catch (_error) {
       console.error("Checkout error:", error);
       alert(error.response?.data?.detail || "Failed to start checkout");
     } finally {
@@ -167,7 +167,7 @@ export const SubscriptionPlans = () => {
         setContactSuccess(false);
       }, 3000);
       
-    } catch (error) {
+    } catch (_error) {
       console.error("Contact form error:", error);
       setContactError(error.response?.data?.detail || "Failed to submit inquiry. Please try again.");
     } finally {
@@ -605,7 +605,7 @@ export const SubscriptionSuccess = () => {
             setStatus("pending");
           }
         }
-      } catch (error) {
+      } catch (_error) {
         console.error("Status check error:", error);
         setStatus("error");
       }

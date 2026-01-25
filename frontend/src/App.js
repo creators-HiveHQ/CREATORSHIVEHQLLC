@@ -286,7 +286,7 @@ const Dashboard = () => {
     try {
       const response = await axios.get(`${API}/dashboard`);
       setDashboard(response.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching dashboard:", error);
     } finally {
       setLoading(false);
@@ -473,7 +473,7 @@ const UsersPage = () => {
       if (filter.tier) params.append("tier", filter.tier);
       const response = await axios.get(`${API}/users?${params.toString()}`);
       setUsers(response.data);
-    } catch (error) {
+    } catch (_error) {
       console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
@@ -588,7 +588,7 @@ const ProjectsPage = () => {
       try {
         const response = await axios.get(`${API}/projects`);
         setProjects(response.data);
-      } catch (error) {
+      } catch (_error) {
         console.error("Error fetching projects:", error);
       } finally {
         setLoading(false);
@@ -669,7 +669,7 @@ const CalculatorPage = () => {
         ]);
         setEntries(entriesRes.data);
         setSummary(summaryRes.data);
-      } catch (error) {
+      } catch (_error) {
         console.error("Error fetching calculator data:", error);
       } finally {
         setLoading(false);
@@ -783,7 +783,7 @@ const SubscriptionsPage = () => {
         ]);
         setSubscriptions(subsRes.data);
         setRevenue(revenueRes.data);
-      } catch (error) {
+      } catch (_error) {
         console.error("Error fetching subscriptions:", error);
       } finally {
         setLoading(false);
@@ -898,7 +898,7 @@ const ArrisPage = () => {
         setUsage(usageRes.data);
         setPerformance(perfRes.data);
         setTraining(trainRes.data);
-      } catch (error) {
+      } catch (_error) {
         console.error("Error fetching ARRIS data:", error);
       } finally {
         setLoading(false);
@@ -1113,7 +1113,7 @@ const PatternsPage = () => {
         ]);
         setPatterns(patternsRes.data);
         setMemoryPalace(memoryRes.data);
-      } catch (error) {
+      } catch (_error) {
         console.error("Error fetching patterns:", error);
       } finally {
         setLoading(false);
@@ -1274,7 +1274,7 @@ const SchemaPage = () => {
       try {
         const response = await axios.get(`${API}/schema`);
         setSchema(response.data.schema_index || []);
-      } catch (error) {
+      } catch (_error) {
         console.error("Error fetching schema:", error);
       } finally {
         setLoading(false);

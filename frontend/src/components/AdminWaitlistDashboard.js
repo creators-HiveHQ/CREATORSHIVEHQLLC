@@ -71,7 +71,7 @@ export default function AdminWaitlistDashboard({ token }) {
         const data = await response.json();
         setStats(data);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to fetch stats:', error);
     }
   }, [token]);
@@ -99,7 +99,7 @@ export default function AdminWaitlistDashboard({ token }) {
         setSignups(data.signups || []);
         setPagination(prev => ({ ...prev, total: data.total }));
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to fetch signups:', error);
       toast.error('Failed to load waitlist');
     }
@@ -143,7 +143,7 @@ export default function AdminWaitlistDashboard({ token }) {
       } else {
         toast.error('Failed to send invitations');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to send invitations');
     }
   };
@@ -163,7 +163,7 @@ export default function AdminWaitlistDashboard({ token }) {
       } else {
         toast.error('Failed to delete signup');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to delete signup');
     }
   };
@@ -185,7 +185,7 @@ export default function AdminWaitlistDashboard({ token }) {
         a.click();
         toast.success('Waitlist exported');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to export');
     }
   };

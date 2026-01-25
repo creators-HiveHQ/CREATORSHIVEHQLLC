@@ -68,7 +68,7 @@ export default function ArrisApiManager({ token }) {
           const data = await capsRes.json();
           setCapabilities(data);
         }
-      } catch (error) {
+      } catch (_error) {
         if (!cancelled) {
           console.error('Failed to load API data:', error);
           toast.error('Failed to load API settings');
@@ -119,7 +119,7 @@ export default function ArrisApiManager({ token }) {
         const error = await response.json();
         toast.error(error.detail || 'Failed to create API key');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to create API key');
     }
   };
@@ -141,7 +141,7 @@ export default function ArrisApiManager({ token }) {
       } else {
         toast.error('Failed to revoke API key');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to revoke API key');
     }
   };
@@ -166,7 +166,7 @@ export default function ArrisApiManager({ token }) {
       } else {
         toast.error('Failed to regenerate API key');
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to regenerate API key');
     }
   };
@@ -187,7 +187,7 @@ export default function ArrisApiManager({ token }) {
         setDocs(data);
         setShowDocsDialog(true);
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to load documentation');
     }
   };

@@ -182,7 +182,7 @@ export default function LandingPage() {
           const data = await response.json();
           setStats(data);
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to fetch stats:', error);
       }
     };
@@ -224,7 +224,7 @@ export default function LandingPage() {
           setShowSuccessModal(true);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Something went wrong. Please try again.');
     }
     setLoading(false);

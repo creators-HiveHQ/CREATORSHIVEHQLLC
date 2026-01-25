@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(response.data.user);
-    } catch (error) {
+    } catch (_error) {
       console.error('Token verification failed:', error);
       logout();
     } finally {
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       
       return { success: true };
-    } catch (error) {
+    } catch (_error) {
       const message = error.response?.data?.detail || 'Login failed';
       return { success: false, error: message };
     }
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       await axios.post(`${API}/auth/register`, { name, email, password });
       // Auto-login after registration
       return await login(email, password);
-    } catch (error) {
+    } catch (_error) {
       const message = error.response?.data?.detail || 'Registration failed';
       return { success: false, error: message };
     }
