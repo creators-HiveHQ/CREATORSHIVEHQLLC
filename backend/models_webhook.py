@@ -39,6 +39,10 @@ class WebhookEventType(str, Enum):
     
     # Financial Events
     SUBSCRIPTION_CREATED = "subscription.created"
+    SUBSCRIPTION_CANCELLED = "subscription.cancelled"
+    SUBSCRIPTION_EXPIRING = "subscription.expiring"
+    SUBSCRIPTION_RENEWED = "subscription.renewed"
+    PAYMENT_FAILED = "payment.failed"
     REVENUE_RECORDED = "revenue.recorded"
     
     # ARRIS Events
