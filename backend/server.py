@@ -2526,6 +2526,87 @@ async def update_lifecycle_stage(
     return result
 
 
+# ============== CREATOR HEALTH SCORE ENDPOINTS (Pro+) ==============
+
+@api_router.get("/creators/me/health-score")
+async def get_creator_health_score(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get comprehensive health score for the authenticated creator.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_health_score_service:
+        raise HTTPException(status_code=503, detail="Health score service not available")
+    
+    result = await creator_health_score_service.get_health_score(creator_id)
+    return result
+
+
+@api_router.get("/creators/me/health-score/history")
+async def get_health_score_history(
+    days: int = Query(default=30, le=90),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get historical health scores for trend analysis.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_health_score_service:
+        raise HTTPException(status_code=503, detail="Health score service not available")
+    
+    result = await creator_health_score_service.get_health_history(creator_id, days=days)
+    return result
+
+
+@api_router.get("/creators/me/health-score/component/{component}")
+async def get_health_component_details(
+    component: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get detailed breakdown of a specific health component.
+    Feature-gated: Requires Pro tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not creator_health_score_service:
+        raise HTTPException(status_code=503, detail="Health score service not available")
+    
+    result = await creator_health_score_service.get_component_details(creator_id, component)
+    
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+
+@api_router.get("/creators/health-leaderboard")
+async def get_health_leaderboard(
+    limit: int = Query(default=10, le=20),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get top creators by health score.
+    Names are partially masked for privacy.
+    """
+    # Verify creator is authenticated
+    await get_current_creator(credentials, db)
+    
+    if not creator_health_score_service:
+        raise HTTPException(status_code=503, detail="Health score service not available")
+    
+    result = await creator_health_score_service.get_leaderboard(limit=limit)
+    return result
+
+
 # ============== EXPORT ENDPOINTS (Pro/Premium) ==============
 
 @api_router.get("/export/proposals")
