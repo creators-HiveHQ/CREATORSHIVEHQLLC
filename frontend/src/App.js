@@ -1090,6 +1090,12 @@ const AdminLifecycleDashboardWrapper = () => {
   return <SubscriptionLifecycleDashboard token={token} />;
 };
 
+// Admin Auto-Escalation Dashboard Wrapper
+const AdminEscalationDashboardWrapper = () => {
+  const token = localStorage.getItem("hivehq_token");
+  return <AutoEscalationDashboard token={token} />;
+};
+
 // Patterns Page
 const PatternsPage = () => {
   const [patterns, setPatterns] = useState(null);
