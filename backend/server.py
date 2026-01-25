@@ -7443,7 +7443,7 @@ async def create_subscription(sub: SubscriptionCreate):
     }
 
 @api_router.get("/subscriptions/revenue")
-async def get_subscription_revenue():
+async def get_subscription_revenue_public():
     """Get total subscription revenue - Self-Funding Loop Report"""
     pipeline = [
         {"$match": {"source": {"$regex": "Subscription", "$options": "i"}}},
