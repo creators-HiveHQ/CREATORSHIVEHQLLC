@@ -288,7 +288,7 @@ subscription_lifecycle_service = None
 @app.on_event("startup")
 async def startup_db():
     """Initialize database with indexes and seed data"""
-    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service, pattern_engine, smart_automation_engine, proposal_recommendation_service, enhanced_memory_palace, onboarding_wizard, auto_approval_service, referral_service, persona_service, scheduled_reports_service, arris_api_service, multi_brand_service, waitlist_service_instance, creator_pattern_insights_service, predictive_alerts_service
+    global stripe_service, feature_gating, elite_service, arris_memory_service, arris_historical_service, calculator_service, export_service, pattern_engine, smart_automation_engine, proposal_recommendation_service, enhanced_memory_palace, onboarding_wizard, auto_approval_service, referral_service, persona_service, scheduled_reports_service, arris_api_service, multi_brand_service, waitlist_service_instance, creator_pattern_insights_service, predictive_alerts_service, subscription_lifecycle_service
     logger.info("Initializing Creators Hive HQ Database...")
     await create_indexes(db)
     await seed_schema_index(db)
