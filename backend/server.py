@@ -387,6 +387,15 @@ async def startup_db():
     )
     logger.info("Predictive Alerts Service initialized - Real-time predictive alerts for Pro+ creators")
     
+    # Initialize Subscription Lifecycle Service
+    subscription_lifecycle_service = SubscriptionLifecycleService(
+        db,
+        email_service=email_service,
+        ws_manager=ws_manager,
+        notification_service=notification_service
+    )
+    logger.info("Subscription Lifecycle Service initialized - At-risk detection and retention automation active")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
