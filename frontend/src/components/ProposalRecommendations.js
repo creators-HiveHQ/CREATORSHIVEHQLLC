@@ -49,7 +49,6 @@ export function ProposalRecommendations({ proposalId, token, onResubmit }) {
       fetchRecommendations();
     }
   }, [proposalId, token, fetchRecommendations]);
-  };
 
   const generateRecommendations = async () => {
     setGenerating(true);
