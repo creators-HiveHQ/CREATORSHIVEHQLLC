@@ -27,13 +27,14 @@ export function AdminMemoryDashboard({ token }) {
   const headers = { Authorization: `Bearer ${token}` };
 
   const fetchData = useCallback(async () => {
+    const authHeaders = { Authorization: `Bearer ${token}` };
     setLoading(true);
     setError(null);
     
     try {
       const [healthRes, historyRes] = await Promise.all([
-        fetch(`${API}/admin/memory/health`, { headers }),
-        fetch(`${API}/admin/memory/consolidation-history?limit=10`, { headers })
+        fetch(`${API}/admin/memory/health`, { headers: authHeaders }),
+        fetch(`${API}/admin/memory/consolidation-history?limit=10`, { headers: authHeaders })
       ]);
       
       if (healthRes.ok) {
