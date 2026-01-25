@@ -23,32 +23,31 @@ router = APIRouter(prefix="/proposals", tags=["Proposals"])
 
 async def get_any_authenticated_user(credentials: HTTPAuthorizationCredentials, db):
     """Get any authenticated user (admin or creator)."""
-    import jwt
-    from auth import get_current_user
+    from auth import get_current_user, get_current_creator, decode_token
     
-    token = credentials.credentials
+    token_data = decode_token(credentials.credentials)
+    
+    if token_data is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    role = getattr(token_data, 'role', 'admin')
+    
+    if role == "creator":
+        try:
+            creator = await get_current_creator(credentials, db)
+            return {"user_type": "creator", "user_id": creator["id"], "user": creator}
+        except Exception:
+            pass
+    
+    # Try admin
     try:
-        payload = jwt.decode(token, "secret-key-change-in-production", algorithms=["HS256"])
-        user_id = payload.get("user_id")
-        role = payload.get("role", "")
-        
-        if role == "creator" or "CREATOR" in user_id:
-            creator = await db.creators.find_one({"id": user_id}, {"_id": 0})
-            if creator:
-                return {"user_type": "creator", "user_id": user_id, "user": creator}
-        
-        # Try admin
         admin = await get_current_user(credentials, db)
         if admin:
-            return {"user_type": "admin", "user_id": admin.get("user_id"), "user": admin}
-        
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+            return {"user_type": "admin", "user_id": admin.get("user_id", admin.get("id")), "user": admin}
     except Exception:
-        raise HTTPException(status_code=401, detail="Authentication failed")
+        pass
+    
+    raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 
 @router.get("/form-options")
