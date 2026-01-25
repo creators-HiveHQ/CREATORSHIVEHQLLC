@@ -87,10 +87,10 @@ def get_db():
     return db
 
 
-def get_service(name: str):
-    """Get a service by name."""
+def get_service(name: str, required: bool = False):
+    """Get a service by name. Returns None if not available unless required=True."""
     service = services.get(name)
-    if service is None:
+    if service is None and required:
         raise HTTPException(status_code=503, detail=f"Service '{name}' not available")
     return service
 
