@@ -13,11 +13,18 @@ import uuid
 class ProjectProposal(BaseModel):
     """Project proposal from creators"""
     id: str = Field(default_factory=lambda: f"PP-{str(uuid.uuid4())[:8]}")
+    proposal_id: Optional[str] = None  # Alias for id, auto-populated for backward compatibility
     
     # Creator Info
     user_id: str  # Link to 01_Users or creators collection
     creator_name: str = ""
     creator_email: str = ""
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Ensure proposal_id is always set to match id
+        if not self.proposal_id:
+            object.__setattr__(self, 'proposal_id', self.id)
     
     # Project Details
     title: str
