@@ -46,14 +46,14 @@ async def get_current_creator_profile(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Get current logged-in creator's profile"""
-    logger.info(f"GET /creators/me called with credentials: {credentials.credentials[:20]}...")
+    
     db = get_db()
     try:
         creator = await get_current_creator(credentials, db)
-        logger.info(f"GET /creators/me returning creator: {creator.get('id')}")
+        
         return creator
     except Exception as e:
-        logger.error(f"GET /creators/me error: {e}")
+        
         raise
 
 
@@ -685,22 +685,3 @@ async def get_health_leaderboard(
     ).sort("score", -1).limit(limit).to_list(limit)
     
     # Anonymize
-    for i, entry in enumerate(leaderboard):
-        entry["rank"] = i + 1
-        entry["creator"] = f"Creator #{i + 1}"
-    
-    return {"leaderboard": leaderboard}
-
-
-# DEBUG: Test route
-@router.get("/test-debug")
-async def test_debug():
-    """Test route to verify routing works"""
-    return {"status": "ok", "message": "creator_dashboard.py is working"}
-
-
-# DEBUG: Test route without security
-@router.get("/test-no-auth")
-async def test_no_auth():
-    """Test route without authentication"""
-    return {"status": "ok", "message": "No auth required"}
