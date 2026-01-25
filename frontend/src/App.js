@@ -1442,6 +1442,11 @@ function App() {
                 <Layout><AdminLifecycleDashboardWrapper /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/escalation" element={
+              <ProtectedRoute>
+                <Layout><AdminEscalationDashboardWrapper /></Layout>
+              </ProtectedRoute>
+            } />
             
             {/* Public Creator Registration Form */}
             <Route path="/register" element={<CreatorRegistrationForm />} />
