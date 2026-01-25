@@ -313,7 +313,7 @@ export const CreatorRegistrationForm = () => {
                   </Label>
                 </div>
                 <p className="text-sm text-slate-600 italic mb-2">
-                  "{formOptions.arris_question || "What's the biggest challenge you're facing in your creator journey right now?"}"
+                  &ldquo;{formOptions.arris_question || "What's the biggest challenge you're facing in your creator journey right now?"}&rdquo;
                 </p>
                 <Textarea
                   id="arris_question"
