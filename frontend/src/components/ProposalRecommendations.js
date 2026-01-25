@@ -22,13 +22,7 @@ export function ProposalRecommendations({ proposalId, token, onResubmit }) {
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(true);
 
-  useEffect(() => {
-    if (proposalId && token) {
-      fetchRecommendations();
-    }
-  }, [proposalId, token]);
-
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -48,6 +42,13 @@ export function ProposalRecommendations({ proposalId, token, onResubmit }) {
     } finally {
       setLoading(false);
     }
+  }, [proposalId, token]);
+
+  useEffect(() => {
+    if (proposalId && token) {
+      fetchRecommendations();
+    }
+  }, [proposalId, token, fetchRecommendations]);
   };
 
   const generateRecommendations = async () => {
