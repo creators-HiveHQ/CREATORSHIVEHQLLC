@@ -202,6 +202,7 @@ const Sidebar = () => {
     { path: "/admin/automation", label: "Automation", icon: "⚡" },
     { path: "/admin/memory", label: "Memory Palace", icon: "🏛️" },
     { path: "/waitlist", label: "Waitlist", icon: "📝" },
+    { path: "/lifecycle", label: "Lifecycle", icon: "🔄" },
     { path: "/creators", label: "Creators", icon: "✨" },
     { path: "/proposals", label: "Proposals", icon: "📋" },
     { path: "/webhooks", label: "Webhooks", icon: "🔗" },
