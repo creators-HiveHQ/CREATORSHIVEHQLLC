@@ -1428,6 +1428,11 @@ function App() {
                 <Layout><AdminWaitlistDashboardWrapper /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/lifecycle" element={
+              <ProtectedRoute>
+                <Layout><AdminLifecycleDashboardWrapper /></Layout>
+              </ProtectedRoute>
+            } />
             
             {/* Public Creator Registration Form */}
             <Route path="/register" element={<CreatorRegistrationForm />} />
