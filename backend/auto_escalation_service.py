@@ -360,13 +360,14 @@ class AutoEscalationService:
         # Find all proposals in monitored statuses
         proposals = await self.db.proposals.find(
             {"status": {"$in": list(self.thresholds.keys())}},
-            {"proposal_id": 1, "_id": 0}
+            {"proposal_id": 1, "id": 1, "_id": 0}
         ).to_list(1000)
         
         results["scanned"] = len(proposals)
         
         for proposal in proposals:
-            proposal_id = proposal.get("proposal_id")
+            # Support both 'id' and 'proposal_id' field names
+            proposal_id = proposal.get("proposal_id") or proposal.get("id")
             if not proposal_id:
                 continue
             
