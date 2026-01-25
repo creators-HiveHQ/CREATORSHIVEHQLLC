@@ -400,6 +400,10 @@ async def startup_db():
     )
     logger.info("Subscription Lifecycle Service initialized - At-risk detection and retention automation active")
     
+    # Initialize Creator Health Score Service
+    creator_health_score_service = CreatorHealthScoreService(db, feature_gating=feature_gating)
+    logger.info("Creator Health Score Service initialized - Personal health scoring for Pro+ creators")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
