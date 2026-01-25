@@ -31,6 +31,7 @@ import MultiBrandManager from "@/components/MultiBrandManager";
 import { CreatorPatternInsights } from "@/components/CreatorPatternInsights";
 import { PredictiveAlerts } from "@/components/PredictiveAlerts";
 import { CreatorHealthScore } from "@/components/CreatorHealthScore";
+import PatternExport from "@/components/PatternExport";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
