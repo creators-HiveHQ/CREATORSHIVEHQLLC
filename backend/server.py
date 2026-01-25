@@ -420,6 +420,15 @@ async def startup_db():
     )
     logger.info("Pattern Export Service initialized - Pattern data export for Premium+ creators")
     
+    # Initialize Auto-Escalation Service
+    auto_escalation_service = AutoEscalationService(
+        db,
+        ws_manager=ws_manager,
+        notification_service=notification_service
+    )
+    await auto_escalation_service.initialize()
+    logger.info("Auto-Escalation Service initialized - Automatic proposal escalation system active")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
