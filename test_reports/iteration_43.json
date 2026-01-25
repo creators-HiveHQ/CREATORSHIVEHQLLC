@@ -1,0 +1,134 @@
+{
+  "summary": "Tested Module B5: Auto-Escalation System. Backend: 33/33 tests passed (100%). Frontend: All UI components working correctly. Fixed a bug where proposal_id was null in stalled proposals list (service was looking for 'proposal_id' field but proposals use 'id' field).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "GET /api/admin/escalation/dashboard - Requires authentication (401/403 without token)",
+    "GET /api/admin/escalation/stalled - Requires authentication",
+    "GET /api/admin/escalation/history - Requires authentication",
+    "GET /api/admin/escalation/analytics - Requires authentication",
+    "GET /api/admin/escalation/config - Requires authentication",
+    "POST /api/admin/escalation/scan - Requires authentication",
+    "Non-admin users (creators) receive 403 'Admin access required' error",
+    "GET /api/admin/escalation/dashboard - Returns summary stats (total_active, by_level, resolved_24h, avg_resolution_hours)",
+    "GET /api/admin/escalation/dashboard - Returns active_escalations list",
+    "GET /api/admin/escalation/dashboard - Returns health_status (healthy/fair/needs_attention/poor/critical)",
+    "GET /api/admin/escalation/stalled - Returns list of stalled proposals with threshold",
+    "GET /api/admin/escalation/stalled - Accepts threshold_hours parameter (24, 48, 72, 96)",
+    "GET /api/admin/escalation/stalled - Proposal structure includes proposal_id, title, status, hours_stalled, escalation_level",
+    "GET /api/admin/escalation/history - Returns escalation history list",
+    "GET /api/admin/escalation/history - Accepts include_resolved filter",
+    "GET /api/admin/escalation/history - Accepts level filter (elevated, urgent, critical)",
+    "GET /api/admin/escalation/history - Returns filters_applied in response",
+    "GET /api/admin/escalation/analytics - Returns analytics data (period_days, total_escalations, by_level, by_reason, resolution_rate)",
+    "GET /api/admin/escalation/analytics - Accepts days parameter",
+    "GET /api/admin/escalation/analytics - by_level has correct structure",
+    "GET /api/admin/escalation/analytics - resolution_rate is 0-100 percentage",
+    "GET /api/admin/escalation/config - Returns thresholds for monitored statuses",
+    "GET /api/admin/escalation/config - Returns escalation actions for each level",
+    "GET /api/admin/escalation/config - Returns monitored_statuses list (submitted, under_review, approved, in_progress, needs_revision)",
+    "POST /api/admin/escalation/scan - Runs full escalation scan successfully",
+    "POST /api/admin/escalation/scan - Returns scanned, needs_escalation, escalated, errors, escalations",
+    "POST /api/admin/escalation/check/{proposal_id} - Returns error for non-existent proposal",
+    "POST /api/admin/escalation/check/{proposal_id} - Returns escalation status for valid proposal",
+    "POST /api/admin/escalation/escalate/{proposal_id} - Returns 400 for non-existent proposal",
+    "POST /api/admin/escalation/escalate/{proposal_id} - Accepts level, reason, notes parameters",
+    "POST /api/admin/escalation/resolve/{escalation_id} - Returns 400 for non-existent escalation",
+    "POST /api/admin/escalation/resolve/{escalation_id} - Accepts resolution_notes parameter",
+    "Frontend: Escalation sidebar link visible in admin dashboard with ⚡ icon",
+    "Frontend: Escalation dashboard shows 5 summary cards (Active, Critical, Urgent, Elevated, Health Status)",
+    "Frontend: Overview tab shows active escalations with Resolve and View Proposal buttons",
+    "Frontend: Stalled tab shows proposals with threshold selector and Escalate buttons",
+    "Frontend: History tab shows escalation history with level filter and include_resolved checkbox",
+    "Frontend: Analytics tab shows charts/data for escalation metrics (by level, by reason, avg time)",
+    "Frontend: Manual escalation dialog with level dropdown, reason input, and notes textarea",
+    "Frontend: Resolve escalation dialog with resolution notes textarea",
+    "Frontend: Run Scan button triggers full escalation scan"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_auto_escalation.py",
+    "/app/test_reports/pytest/auto_escalation_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auto_escalation_service.py - Fixed bug where proposal_id was null (service was looking for 'proposal_id' but proposals use 'id' field)",
+    "Fixed check_proposal() to use $or query for both 'proposal_id' and 'id' fields",
+    "Fixed get_stalled_proposals() to extract proposal_id from either field",
+    "Fixed scan_all_proposals() to handle both field names",
+    "Escalation levels: elevated (48h), urgent (96h), critical (168h) for submitted status",
+    "Monitored statuses: submitted, under_review, approved, in_progress, needs_revision",
+    "Health status calculation based on critical/urgent/elevated counts",
+    "AutoEscalationDashboard.js - Clean React component with proper data-testid attributes",
+    "All admin endpoints correctly require admin authentication (403 for creators)"
+  ],
+  "updated_files": [
+    "/app/backend/auto_escalation_service.py",
+    "/app/backend/tests/test_auto_escalation.py"
+  ],
+  "success_rate": {
+    "backend": "100% (33/33 passed)",
+    "frontend": "100% (All UI tests passed)"
+  },
+  "test_credentials": {
+    "admin": {"email": "admin@hivehq.com", "password": "admin123"},
+    "free_creator": {"email": "freetest@hivehq.com", "password": "testpassword"}
+  },
+  "seed_data_creation": "No new seed data created - using existing proposals in database",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Module B5 Auto-Escalation System fully tested. Key points: 1) All 9 endpoints tested and working. 2) Admin authentication required for all endpoints - creators get 403. 3) Fixed bug where proposal_id was null in stalled proposals (proposals use 'id' field, not 'proposal_id'). 4) Dashboard shows summary cards, active escalations, health status. 5) Stalled tab shows proposals with threshold filter (24/48/72/96 hours). 6) History tab shows escalation history with level and resolved filters. 7) Analytics tab shows metrics by level, reason, and avg time to escalation. 8) Manual escalation dialog has level dropdown (elevated/urgent/critical), reason input, notes textarea. 9) Resolve dialog has resolution notes textarea. 10) Run Scan button triggers full escalation scan.",
+  "feature_summary": {
+    "endpoints_tested": [
+      "GET /api/admin/escalation/dashboard - Summary stats and active escalations",
+      "GET /api/admin/escalation/stalled - Stalled proposals list with threshold",
+      "GET /api/admin/escalation/history - Escalation history with filters",
+      "GET /api/admin/escalation/analytics - Analytics for specified period",
+      "GET /api/admin/escalation/config - Current thresholds and actions",
+      "POST /api/admin/escalation/check/{proposal_id} - Check if proposal needs escalation",
+      "POST /api/admin/escalation/escalate/{proposal_id} - Manually escalate proposal",
+      "POST /api/admin/escalation/resolve/{escalation_id} - Resolve escalation",
+      "POST /api/admin/escalation/scan - Run full escalation scan"
+    ],
+    "escalation_levels": {
+      "elevated": {"color": "yellow", "icon": "🟡"},
+      "urgent": {"color": "orange", "icon": "🟠"},
+      "critical": {"color": "red", "icon": "🔴"}
+    },
+    "thresholds_hours": {
+      "submitted": {"elevated": 48, "urgent": 96, "critical": 168},
+      "under_review": {"elevated": 72, "urgent": 120, "critical": 168},
+      "approved": {"elevated": 168, "urgent": 336, "critical": 504},
+      "in_progress": {"elevated": 336, "urgent": 504, "critical": 720},
+      "needs_revision": {"elevated": 120, "urgent": 168, "critical": 336}
+    },
+    "frontend_components": {
+      "main_component": "AutoEscalationDashboard.js",
+      "route": "/escalation",
+      "sidebar_testid": "nav-escalation",
+      "dashboard_testid": "auto-escalation-dashboard",
+      "tabs": ["tab-overview", "tab-stalled", "tab-history", "tab-analytics"],
+      "buttons": ["run-scan-button", "confirm-resolve", "confirm-escalate"],
+      "inputs": ["resolution-notes-input", "escalation-level-select", "escalation-reason-input", "escalation-notes-input"],
+      "filters": ["threshold-select", "history-level-filter", "include-resolved-checkbox"]
+    }
+  },
+  "bugs_fixed": [
+    {
+      "file": "/app/backend/auto_escalation_service.py",
+      "issue": "proposal_id was null in stalled proposals list",
+      "root_cause": "Service was looking for 'proposal_id' field but proposals use 'id' field",
+      "fix": "Updated check_proposal(), get_stalled_proposals(), and scan_all_proposals() to support both 'id' and 'proposal_id' field names"
+    }
+  ],
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}
