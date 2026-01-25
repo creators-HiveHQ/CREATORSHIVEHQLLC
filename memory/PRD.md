@@ -1428,15 +1428,16 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
     - **Testing**: 30 backend tests + all frontend UI tests (100% pass rate)
 
-40. **Server.py Route Migration (Phase 2 & 3)** - Continued refactoring of modular routes:
+40. **Server.py Route Migration (Phase 2, 3 & 4)** - Continued refactoring of modular routes:
     - **New Modular Route Files Created**:
       - `/app/backend/routes/arris.py` - ARRIS memory, patterns, learning, activity, historical (ALL routes)
       - `/app/backend/routes/subscriptions.py` - Subscription plans, checkout, user subscription, usage, admin (ALL routes)
+      - `/app/backend/routes/proposals.py` - Proposal CRUD, ARRIS integration, recommendations (ALL routes)
       - `/app/backend/routes/elite.py` - Elite tier features (ALL routes now migrated)
       - `/app/backend/routes/referral.py` - Referral system (codes, stats, commissions, admin routes)
     - **Authentication Fixed**: Updated all route modules to use proper JWT decoding from `auth.py`
-    - **Dependency Injection Fixed**: Added `feature_gating`, `arris_activity`, `email` to services dict
-    - **Duplicate Routes Removed from server.py** (~2596 lines total):
+    - **Dependency Injection Fixed**: Added `feature_gating`, `arris`, `arris_activity`, `email`, `notification` to services dict
+    - **Duplicate Routes Removed from server.py** (~3300+ lines total):
       - ✅ Referral routes (~214 lines) - Now served from `/routes/referral.py`
       - ✅ Elite ALL routes (~1581 lines) - Now served from `/routes/elite.py`
       - ✅ ARRIS memory/patterns/learning (~260 lines) - Now served from `/routes/arris.py`
@@ -1444,18 +1445,29 @@ Dashboard Updates → Memory Palace Synthesizes
       - ✅ ARRIS historical learning (~53 lines) - Now served from `/routes/arris.py`
       - ✅ ARRIS performance/training (~8 lines) - Now served from `/routes/arris.py`
       - ✅ Subscription routes (~300 lines) - Now served from `/routes/subscriptions.py` (Jan 25, 2026)
+      - ✅ Proposal CRUD/submit/insights (~550 lines) - Now served from `/routes/proposals.py` (Jan 25, 2026)
+      - ✅ Proposal recommendations (~120 lines) - Now served from `/routes/proposals.py` (Jan 25, 2026)
     - **Subscription Routes Migrated (20 endpoints)**:
       - Public: `/api/subscriptions/plans`, `/api/subscriptions/revenue`, `/api/subscriptions` CRUD
       - Creator: `/api/subscriptions/my-status`, `/feature-access`, `/can-create-proposal`, `/me`, `/me/features`, `/me/usage`, `/me/billing-history`, `/my-transactions`, `/checkout`, `/checkout/status/{session_id}`, `/me/upgrade`, `/me/cancel`
       - Admin: `/api/admin/subscriptions`, `/api/admin/subscriptions/stats`, `/api/admin/subscriptions/revenue`
       - Stripe webhook remains in server.py (app-level route with service integrations)
+    - **Proposal Routes Migrated (12 endpoints)**:
+      - Public: `/api/proposals/form-options`
+      - Admin: `/api/proposals/stats/summary`, `/api/proposals` (list), `PATCH /api/proposals/{id}`
+      - Creator: `POST /api/proposals`, `GET /api/proposals/{id}`, `DELETE /api/proposals/{id}`
+      - ARRIS Integration: `/api/proposals/{id}/submit`, `/api/proposals/{id}/regenerate-insights`
+      - Recommendations: `/api/proposals/{id}/generate-recommendations`, `/api/proposals/{id}/recommendations`
     - **Routes Still in server.py**:
       - Stripe webhook `/api/webhook/stripe` (app-level)
-      - Proposals routes (conflict resolution pending)
+      - Creator dashboard routes (`/api/creators/me/*`)
       - Admin and pattern engine routes
+      - Export routes, webhook automations
       - Various utility routes
-    - **Server.py Size**: Reduced from ~8957 to ~6361 lines (~29% reduction)
-    - **Testing**: All 90+ migrated routes verified working with 100% pass rate (45/45 subscription tests passed)
+    - **Server.py Size**: Reduced from ~8957 to ~5615 lines (~37% reduction)
+    - **Testing**: All 130+ migrated routes verified working with 100% pass rate
+      - iteration_45.json: 45/45 subscription tests passed
+      - iteration_46.json: 37/37 proposal tests passed
 
 ---
 
