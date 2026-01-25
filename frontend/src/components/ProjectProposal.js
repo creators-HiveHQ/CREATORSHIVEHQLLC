@@ -237,7 +237,7 @@ export const ProjectProposalForm = ({ userId, onSuccess, onCancel }) => {
               <Label className="text-purple-700 font-medium">ARRIS wants to know...</Label>
             </div>
             <p className="text-sm text-purple-600 italic mb-2">
-              "{formOptions.arris_question || "What's the main outcome you want from this project?"}"
+              &ldquo;{formOptions.arris_question || "What's the main outcome you want from this project?"}&rdquo;
             </p>
             <Textarea
               placeholder="Share your thoughts... This helps ARRIS provide better insights"
