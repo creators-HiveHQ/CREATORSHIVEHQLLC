@@ -8885,6 +8885,12 @@ api_router.include_router(creator_auth_router)
 api_router.include_router(admin_routes_router)
 api_router.include_router(creator_routes_router)
 api_router.include_router(waitlist_routes_router)
+api_router.include_router(proposals_router)
+api_router.include_router(arris_routes_router)
+api_router.include_router(subscriptions_router)
+api_router.include_router(elite_routes_router)
+api_router.include_router(referral_router)
+api_router.include_router(referral_admin_router)
 
 # Include the router into the app
 app.include_router(api_router)
