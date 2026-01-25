@@ -203,6 +203,13 @@ from pattern_export_service import PatternExportService
 # Import Auto-Escalation Service
 from auto_escalation_service import AutoEscalationService
 
+# Import route modules
+from routes import dependencies as route_deps
+from routes.auth import router as auth_router, creator_auth_router
+from routes.admin import router as admin_routes_router
+from routes.creator import router as creator_routes_router
+from routes.waitlist import router as waitlist_routes_router
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
