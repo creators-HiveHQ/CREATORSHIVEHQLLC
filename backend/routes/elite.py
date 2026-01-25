@@ -1484,26 +1484,30 @@ async def submit_elite_inquiry(
     confirmation_email_sent = False
     
     email_service = get_service("email")
-    if email_service and hasattr(email_service, 'is_configured') and email_service.is_configured():
+    if email_service:
         try:
-            sales_email_sent = await email_service.send_elite_inquiry_to_sales(
-                creator_name=creator_name,
-                creator_email=creator_email,
-                company_name=company_name,
-                team_size=team_size,
-                message=message.strip(),
-                creator_id=creator_id
-            )
+            if hasattr(email_service, 'is_configured') and email_service.is_configured():
+                try:
+                    sales_email_sent = await email_service.send_elite_inquiry_to_sales(
+                        creator_name=creator_name,
+                        creator_email=creator_email,
+                        company_name=company_name,
+                        team_size=team_size,
+                        message=message.strip(),
+                        creator_id=creator_id
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send Elite inquiry to sales: {str(e)}")
+                
+                try:
+                    confirmation_email_sent = await email_service.send_elite_inquiry_confirmation(
+                        creator_email=creator_email,
+                        creator_name=creator_name
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send Elite inquiry confirmation: {str(e)}")
         except Exception as e:
-            logger.error(f"Failed to send Elite inquiry to sales: {str(e)}")
-        
-        try:
-            confirmation_email_sent = await email_service.send_elite_inquiry_confirmation(
-                creator_email=creator_email,
-                creator_name=creator_name
-            )
-        except Exception as e:
-            logger.error(f"Failed to send Elite inquiry confirmation: {str(e)}")
+            logger.warning(f"Email service not fully configured: {str(e)}")
     
     return {
         "message": "Thank you for your interest in Elite! Our team will be in touch within 24 hours.",
