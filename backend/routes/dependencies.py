@@ -25,6 +25,7 @@ services = {
     "elite": None,
     "arris_memory": None,
     "arris_historical": None,
+    "arris_activity": None,
     "calculator": None,
     "export": None,
     "pattern_engine": None,
