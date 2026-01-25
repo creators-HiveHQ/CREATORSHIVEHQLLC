@@ -2784,6 +2784,251 @@ async def get_health_leaderboard(
     return result
 
 
+# ============== AUTO-ESCALATION ENDPOINTS (Admin) ==============
+
+@api_router.get("/admin/escalation/dashboard")
+async def get_escalation_dashboard(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get escalation dashboard with summary stats and active escalations.
+    Admin only endpoint.
+    """
+    # Verify admin
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.get_escalation_dashboard()
+    return result
+
+
+@api_router.get("/admin/escalation/stalled")
+async def get_stalled_proposals(
+    threshold_hours: int = Query(default=48, description="Minimum hours to consider stalled"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all proposals that are stalled and nearing escalation.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.get_stalled_proposals(threshold_hours=threshold_hours)
+    return result
+
+
+@api_router.get("/admin/escalation/history")
+async def get_escalation_history(
+    limit: int = Query(default=50, le=100),
+    include_resolved: bool = Query(default=True),
+    level: str = Query(default=None, description="Filter by level: elevated, urgent, critical"),
+    proposal_id: str = Query(default=None),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get escalation history with optional filters.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.get_escalation_history(
+        limit=limit,
+        include_resolved=include_resolved,
+        level_filter=level,
+        proposal_id=proposal_id
+    )
+    return result
+
+
+@api_router.get("/admin/escalation/analytics")
+async def get_escalation_analytics(
+    days: int = Query(default=30, le=90),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get escalation analytics and performance metrics.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.get_escalation_analytics(days=days)
+    return result
+
+
+@api_router.post("/admin/escalation/check/{proposal_id}")
+async def check_proposal_escalation(
+    proposal_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Check if a specific proposal needs escalation.
+    Returns escalation status and recommended actions.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.check_proposal(proposal_id)
+    return result
+
+
+@api_router.post("/admin/escalation/escalate/{proposal_id}")
+async def escalate_proposal(
+    proposal_id: str,
+    level: str = Query(default=None, description="Escalation level: elevated, urgent, critical"),
+    reason: str = Query(default=None, description="Reason for escalation"),
+    notes: str = Query(default=None),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Manually escalate a proposal.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+        admin_id = admin.get("user_id", "admin")
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.escalate_proposal(
+        proposal_id=proposal_id,
+        level=level,
+        reason=reason,
+        notes=notes,
+        escalated_by=admin_id
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Escalation failed"))
+    
+    return result
+
+
+@api_router.post("/admin/escalation/resolve/{escalation_id}")
+async def resolve_escalation(
+    escalation_id: str,
+    resolution_notes: str = Query(default=None),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Resolve an escalation.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+        admin_id = admin.get("user_id", "admin")
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.resolve_escalation(
+        escalation_id=escalation_id,
+        resolved_by=admin_id,
+        resolution_notes=resolution_notes
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Resolution failed"))
+    
+    return result
+
+
+@api_router.post("/admin/escalation/scan")
+async def run_escalation_scan(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Manually trigger a full escalation scan.
+    Scans all proposals for escalation needs and auto-escalates as needed.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.scan_all_proposals()
+    return result
+
+
+@api_router.get("/admin/escalation/config")
+async def get_escalation_config(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get current escalation configuration including thresholds.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    result = await auto_escalation_service.get_config()
+    return result
+
+
+@api_router.put("/admin/escalation/config")
+async def update_escalation_config(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update escalation configuration including thresholds.
+    Admin only endpoint.
+    """
+    try:
+        admin = await get_current_admin(credentials, db)
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not auto_escalation_service:
+        raise HTTPException(status_code=503, detail="Auto-escalation service not available")
+    
+    data = await request.json()
+    result = await auto_escalation_service.update_config(data)
+    return result
+
+
 # ============== EXPORT ENDPOINTS (Pro/Premium) ==============
 
 @api_router.get("/export/proposals")
