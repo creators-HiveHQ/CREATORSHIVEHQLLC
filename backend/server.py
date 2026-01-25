@@ -295,6 +295,7 @@ predictive_alerts_service = None
 subscription_lifecycle_service = None
 creator_health_score_service = None
 pattern_export_service = None
+auto_escalation_service = None
 
 @app.on_event("startup")
 async def startup_db():
