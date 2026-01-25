@@ -20,24 +20,8 @@ admin_router = APIRouter(prefix="/admin/referral", tags=["Referral Admin"])
 
 async def get_current_creator(credentials: HTTPAuthorizationCredentials, db):
     """Get current authenticated creator."""
-    import jwt
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, "secret-key-change-in-production", algorithms=["HS256"])
-        creator_id = payload.get("user_id")
-        
-        if not creator_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        creator = await db.creators.find_one({"id": creator_id}, {"_id": 0})
-        if not creator:
-            raise HTTPException(status_code=401, detail="Creator not found")
-        
-        return creator
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    from auth import get_current_creator as auth_get_current_creator
+    return await auth_get_current_creator(credentials, db)
 
 
 # ============== CREATOR REFERRAL ENDPOINTS ==============
