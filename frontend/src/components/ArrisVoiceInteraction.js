@@ -32,13 +32,7 @@ export function ArrisVoiceInteraction({ token, creatorTier, onUpgrade }) {
   const hasPremiumAccess = ["premium", "elite"].includes(creatorTier?.toLowerCase());
 
   // Fetch voice service status on mount
-  useEffect(() => {
-    if (hasPremiumAccess && token) {
-      fetchVoiceStatus();
-    }
-  }, [hasPremiumAccess, token]);
-
-  const fetchVoiceStatus = async () => {
+  const fetchVoiceStatus = useCallback(async () => {
     try {
       const response = await fetch(`${API}/arris/voice/status`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -51,7 +45,13 @@ export function ArrisVoiceInteraction({ token, creatorTier, onUpgrade }) {
     } catch (err) {
       console.error("Failed to fetch voice status:", err);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (hasPremiumAccess && token) {
+      fetchVoiceStatus();
+    }
+  }, [hasPremiumAccess, token, fetchVoiceStatus]);
 
   const startRecording = async () => {
     setError(null);
