@@ -193,6 +193,9 @@ from predictive_alerts_service import PredictiveAlertsService, AlertType, AlertP
 # Import Subscription Lifecycle Service
 from subscription_lifecycle_service import SubscriptionLifecycleService, RiskLevel, LifecycleStage, RetentionAction
 
+# Import Creator Health Score Service
+from creator_health_score_service import CreatorHealthScoreService
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
