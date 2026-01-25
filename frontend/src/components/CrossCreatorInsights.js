@@ -183,7 +183,7 @@ export function CrossCreatorInsights({ token, creatorTier, onUpgrade }) {
             <Sparkles className="w-12 h-12 mx-auto text-slate-300 mb-4" />
             <h3 className="text-lg font-medium text-slate-700">Building Your Insights</h3>
             <p className="text-slate-500 max-w-md mx-auto">
-              As more similar creators join and submit proposals, we'll generate 
+              As more similar creators join and submit proposals, we&apos;ll generate 
               personalized insights for you. Keep submitting proposals!
             </p>
           </CardContent>
