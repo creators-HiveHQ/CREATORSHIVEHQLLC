@@ -106,7 +106,7 @@ export function AdminPatternDashboard({ token }) {
   }, [token, fetchData]);
 
   // Refresh rankings when filters change
-  const refreshRankings = async () => {
+  const refreshRankings = useCallback(async () => {
     const headers = { Authorization: `Bearer ${token}` };
     try {
       const res = await fetch(
@@ -119,13 +119,14 @@ export function AdminPatternDashboard({ token }) {
     } catch (err) {
       console.error("Failed to refresh rankings:", err);
     }
-  };
+  }, [token, rankingSort, rankingTier]);
 
   useEffect(() => {
     if (token && !loading) {
       refreshRankings();
     }
-  }, [rankingSort, rankingTier]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rankingSort, rankingTier, refreshRankings]);
 
   const TrendIndicator = ({ value, suffix = "%" }) => {
     if (value > 0) {
