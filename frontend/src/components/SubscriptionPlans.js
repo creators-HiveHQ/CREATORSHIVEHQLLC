@@ -512,7 +512,7 @@ export const SubscriptionPlans = () => {
                 </Label>
                 <Textarea
                   id="message"
-                  placeholder="Tell us about your goals, content type, team needs, and any specific features you're looking for..."
+                  placeholder="Tell us about your goals, content type, team needs, and any specific features you are looking for..."
                   value={contactForm.message}
                   onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                   className="min-h-[120px]"
