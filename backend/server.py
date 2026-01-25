@@ -2358,6 +2358,166 @@ async def update_alert_preferences(
     return result
 
 
+# ============== SUBSCRIPTION LIFECYCLE ENDPOINTS (Admin) ==============
+
+@api_router.get("/admin/subscription-lifecycle/metrics")
+async def get_lifecycle_metrics(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get platform-wide subscription lifecycle metrics.
+    Admin only.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not subscription_lifecycle_service:
+        raise HTTPException(status_code=503, detail="Subscription lifecycle service not available")
+    
+    result = await subscription_lifecycle_service.get_lifecycle_metrics()
+    return result
+
+
+@api_router.get("/admin/subscription-lifecycle/at-risk")
+async def get_at_risk_subscriptions(
+    threshold: str = Query(default="medium", description="Risk threshold: critical, high, medium, low"),
+    limit: int = Query(default=50, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get subscriptions at or above a given risk level.
+    Admin only.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not subscription_lifecycle_service:
+        raise HTTPException(status_code=503, detail="Subscription lifecycle service not available")
+    
+    result = await subscription_lifecycle_service.get_at_risk_subscriptions(
+        risk_threshold=threshold,
+        limit=limit
+    )
+    return result
+
+
+@api_router.get("/admin/subscription-lifecycle/health/{creator_id}")
+async def get_subscription_health(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get detailed health analysis for a specific subscription.
+    Admin only.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not subscription_lifecycle_service:
+        raise HTTPException(status_code=503, detail="Subscription lifecycle service not available")
+    
+    result = await subscription_lifecycle_service.get_subscription_health(creator_id)
+    
+    if result.get("error"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    
+    return result
+
+
+@api_router.post("/admin/subscription-lifecycle/retention-action")
+async def trigger_retention_action(
+    data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Trigger a retention action for a subscription.
+    Admin only.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not subscription_lifecycle_service:
+        raise HTTPException(status_code=503, detail="Subscription lifecycle service not available")
+    
+    creator_id = data.get("creator_id")
+    action = data.get("action")
+    custom_message = data.get("custom_message")
+    
+    if not creator_id or not action:
+        raise HTTPException(status_code=400, detail="creator_id and action are required")
+    
+    result = await subscription_lifecycle_service.trigger_retention_action(
+        creator_id=creator_id,
+        action=action,
+        admin_id=current_user.get("email"),
+        custom_message=custom_message
+    )
+    return result
+
+
+@api_router.get("/admin/subscription-lifecycle/retention-history")
+async def get_retention_history(
+    creator_id: Optional[str] = Query(default=None),
+    limit: int = Query(default=50, le=100),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get retention action history.
+    Admin only.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not subscription_lifecycle_service:
+        raise HTTPException(status_code=503, detail="Subscription lifecycle service not available")
+    
+    result = await subscription_lifecycle_service.get_retention_history(
+        creator_id=creator_id,
+        limit=limit
+    )
+    return result
+
+
+@api_router.post("/admin/subscription-lifecycle/update-stage")
+async def update_lifecycle_stage(
+    data: Dict[str, Any],
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Manually update a subscription's lifecycle stage.
+    Admin only.
+    """
+    current_user = await get_current_user(credentials, db)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    if not subscription_lifecycle_service:
+        raise HTTPException(status_code=503, detail="Subscription lifecycle service not available")
+    
+    creator_id = data.get("creator_id")
+    new_stage = data.get("stage")
+    reason = data.get("reason")
+    
+    if not creator_id or not new_stage:
+        raise HTTPException(status_code=400, detail="creator_id and stage are required")
+    
+    result = await subscription_lifecycle_service.update_lifecycle_stage(
+        creator_id=creator_id,
+        new_stage=new_stage,
+        reason=reason
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to update stage"))
+    
+    return result
+
+
 # ============== EXPORT ENDPOINTS (Pro/Premium) ==============
 
 @api_router.get("/export/proposals")
