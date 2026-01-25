@@ -9519,15 +9519,13 @@ async def export_waitlist(
 # Include the router
 app.include_router(api_router)
 
-# Include modular route handlers (these will eventually replace routes in api_router)
-# The modular routes are prefixed and tagged appropriately
-# Note: These are added but currently duplicate some functionality in api_router
-# Uncomment below when ready to migrate completely to modular routes:
-# api_router.include_router(auth_router)
-# api_router.include_router(creator_auth_router) 
-# api_router.include_router(admin_routes_router)
-# api_router.include_router(creator_routes_router)
-# api_router.include_router(waitlist_routes_router)
+# Include modular route handlers
+# These routes are now handled by modular route modules
+api_router.include_router(auth_router)
+api_router.include_router(creator_auth_router) 
+api_router.include_router(admin_routes_router)
+api_router.include_router(creator_routes_router)
+api_router.include_router(waitlist_routes_router)
 
 # ============== WEBSOCKET ENDPOINTS ==============
 
