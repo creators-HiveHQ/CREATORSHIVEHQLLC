@@ -36,9 +36,10 @@ async def get_arris_memory(
     creator_id = creator["id"]
     
     arris_memory_service = get_service("arris_memory")
-    memory = await arris_memory_service.get_creator_memory(creator_id)
+    # Use recall_memories instead of get_creator_memory
+    memories = await arris_memory_service.recall_memories(creator_id)
     
-    return memory
+    return {"memories": memories, "total": len(memories)}
 
 
 @router.post("/memory")
@@ -54,13 +55,14 @@ async def add_arris_memory(
     data = await request.json()
     memory_type = data.get("type", "preference")
     content = data.get("content")
-    context = data.get("context")
+    context = data.get("context", {})
     
     if not content:
         raise HTTPException(status_code=400, detail="Content is required")
     
     arris_memory_service = get_service("arris_memory")
-    result = await arris_memory_service.add_memory(
+    # Use store_memory instead of add_memory
+    result = await arris_memory_service.store_memory(
         creator_id=creator_id,
         memory_type=memory_type,
         content=content,
