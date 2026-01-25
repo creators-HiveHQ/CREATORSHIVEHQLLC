@@ -82,13 +82,16 @@ async def delete_arris_memory(
     creator = await get_current_creator(credentials, db)
     creator_id = creator["id"]
     
-    arris_memory_service = get_service("arris_memory")
-    result = await arris_memory_service.delete_memory(creator_id, memory_id)
+    # Delete directly from the arris_memory collection
+    result = await db.arris_memory.delete_one({
+        "id": memory_id,
+        "creator_id": creator_id
+    })
     
-    if not result.get("success"):
+    if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Memory entry not found")
     
-    return result
+    return {"success": True, "message": "Memory entry deleted"}
 
 
 @router.get("/memory/summary")
