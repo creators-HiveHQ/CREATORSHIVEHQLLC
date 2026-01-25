@@ -1081,6 +1081,12 @@ const AdminWaitlistDashboardWrapper = () => {
   return <AdminWaitlistDashboard token={token} />;
 };
 
+// Admin Subscription Lifecycle Dashboard Wrapper
+const AdminLifecycleDashboardWrapper = () => {
+  const token = localStorage.getItem("hivehq_token");
+  return <SubscriptionLifecycleDashboard token={token} />;
+};
+
 // Patterns Page
 const PatternsPage = () => {
   const [patterns, setPatterns] = useState(null);
