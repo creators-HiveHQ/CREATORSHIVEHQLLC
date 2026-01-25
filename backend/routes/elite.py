@@ -978,3 +978,187 @@ async def get_api_history(
     arris_api_service = get_service("arris_api")
     history = await arris_api_service.get_request_history(creator["id"], limit, endpoint)
     return {"history": history}
+
+
+# ============== ARRIS API SPECIAL AUTH ENDPOINTS ==============
+# These endpoints use X-ARRIS-API-Key header authentication instead of Bearer token
+
+async def validate_arris_api_key(request: Request) -> Dict[str, Any]:
+    """Validate ARRIS API key from header."""
+    api_key = request.headers.get("X-ARRIS-API-Key")
+    if not api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing API key. Include X-ARRIS-API-Key header."
+        )
+    
+    arris_api_service = get_service("arris_api")
+    result = await arris_api_service.validate_api_key(api_key)
+    
+    if not result.get("valid"):
+        status_code = 429 if result.get("rate_limited") else 401
+        raise HTTPException(
+            status_code=status_code,
+            detail=result.get("error"),
+            headers={"Retry-After": str(result.get("retry_after", 60))} if result.get("rate_limited") else None
+        )
+    
+    return result
+
+
+@router.post("/arris-api/analyze")
+async def api_analyze_text(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Analyze text content using ARRIS.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    text = body.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="'text' field is required")
+    
+    arris_api_service = get_service("arris_api")
+    result = await arris_api_service.analyze_text(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        text=text,
+        analysis_type=body.get("analysis_type", "general"),
+        context=body.get("context")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@router.post("/arris-api/insights")
+async def api_generate_insights(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Generate proposal insights using ARRIS.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    title = body.get("title")
+    description = body.get("description")
+    
+    if not title or not description:
+        raise HTTPException(status_code=400, detail="'title' and 'description' fields are required")
+    
+    arris_api_service = get_service("arris_api")
+    result = await arris_api_service.generate_insights(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        title=title,
+        description=description,
+        goals=body.get("goals"),
+        platforms=body.get("platforms")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@router.post("/arris-api/content")
+async def api_content_suggestions(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Generate content suggestions using ARRIS.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    topic = body.get("topic")
+    if not topic:
+        raise HTTPException(status_code=400, detail="'topic' field is required")
+    
+    arris_api_service = get_service("arris_api")
+    result = await arris_api_service.generate_content_suggestions(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        topic=topic,
+        platform=body.get("platform"),
+        content_type=body.get("content_type"),
+        count=body.get("count", 5)
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@router.post("/arris-api/chat")
+async def api_chat(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Chat with ARRIS using creator's persona.
+    Requires X-ARRIS-API-Key header.
+    """
+    auth = await validate_arris_api_key(request)
+    
+    message = body.get("message")
+    if not message:
+        raise HTTPException(status_code=400, detail="'message' field is required")
+    
+    arris_api_service = get_service("arris_api")
+    result = await arris_api_service.chat_with_arris(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        message=message,
+        conversation_id=body.get("conversation_id"),
+        persona_id=body.get("persona_id")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return result
+
+
+@router.post("/arris-api/batch")
+async def api_batch_analyze(
+    request: Request,
+    body: Dict[str, Any]
+):
+    """
+    Process multiple items in batch.
+    Requires X-ARRIS-API-Key header.
+    """
+    from arris_api_service import RATE_LIMITS
+    
+    auth = await validate_arris_api_key(request)
+    
+    items = body.get("items")
+    if not items or not isinstance(items, list):
+        raise HTTPException(status_code=400, detail="'items' array is required")
+    
+    if len(items) > RATE_LIMITS["max_batch_size"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Batch size exceeds maximum ({RATE_LIMITS['max_batch_size']} items)"
+        )
+    
+    arris_api_service = get_service("arris_api")
+    result = await arris_api_service.batch_analyze(
+        creator_id=auth["creator_id"],
+        key_id=auth["key_id"],
+        items=items,
+        analysis_type=body.get("analysis_type", "general")
+    )
+    
+    return result
