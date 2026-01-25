@@ -775,7 +775,7 @@ export const AdminProposalsPage = () => {
                       <div className="bg-purple-50 p-4 rounded-lg">
                         <Label className="text-purple-700">ARRIS Intake Response</Label>
                         <p className="mt-1 text-slate-700 italic">
-                          "{selectedProposal.arris_intake_question}"
+                          &ldquo;{selectedProposal.arris_intake_question}&rdquo;
                         </p>
                       </div>
                     )}
