@@ -8874,16 +8874,15 @@ async def export_waitlist(
     return data
 
 
-# Include the router
-app.include_router(api_router)
-
-# Include modular route handlers
-# These routes are now handled by modular route modules
+# Include modular route handlers into api_router first
 api_router.include_router(auth_router)
 api_router.include_router(creator_auth_router) 
 api_router.include_router(admin_routes_router)
 api_router.include_router(creator_routes_router)
 api_router.include_router(waitlist_routes_router)
+
+# Include the router into the app
+app.include_router(api_router)
 
 # ============== WEBSOCKET ENDPOINTS ==============
 
