@@ -6348,7 +6348,7 @@ async def get_webhook_event(
     return event
 
 @api_router.get("/webhooks/rules")
-async def get_automation_rules(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_webhook_automation_rules(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get all automation rules"""
     await get_current_user(credentials, db)
     
@@ -6356,7 +6356,7 @@ async def get_automation_rules(credentials: HTTPAuthorizationCredentials = Depen
     return rules
 
 @api_router.patch("/webhooks/rules/{rule_id}")
-async def update_automation_rule(
+async def update_webhook_automation_rule(
     rule_id: str,
     is_active: bool,
     credentials: HTTPAuthorizationCredentials = Depends(security)
