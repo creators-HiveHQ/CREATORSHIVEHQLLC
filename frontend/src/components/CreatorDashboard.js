@@ -1917,6 +1917,14 @@ export const CreatorDashboard = () => {
             />
           </TabsContent>
 
+          {/* Health Score Tab (Pro+) */}
+          <TabsContent value="health" data-testid="health-tab-content">
+            <CreatorHealthScore 
+              token={creatorToken}
+              onUpgrade={() => navigate("/creator/subscription")}
+            />
+          </TabsContent>
+
           {/* Premium Analytics Tab (Premium/Elite only) */}
           <TabsContent value="premium-analytics" data-testid="premium-analytics-tab-content">
             {!hasPremiumAnalytics ? (
