@@ -208,13 +208,14 @@ from routes import dependencies as route_deps
 from routes.auth import router as auth_router, creator_auth_router
 from routes.admin import router as admin_routes_router
 from routes.creator import router as creator_routes_router
+from routes.creator_dashboard import router as creator_dashboard_router
 from routes.waitlist import router as waitlist_routes_router
-# Note: proposals routes remain in server.py to avoid conflicts - will migrate later
 from routes.proposals import router as proposals_router
 from routes.arris import router as arris_routes_router
 from routes.subscriptions import router as subscriptions_router, admin_router as subscriptions_admin_router
 from routes.elite import router as elite_routes_router
 from routes.referral import router as referral_router, admin_router as referral_admin_router
+from routes.webhooks import router as webhooks_router
 
 # Import Email service
 from email_service import email_service, EmailDeliveryError
