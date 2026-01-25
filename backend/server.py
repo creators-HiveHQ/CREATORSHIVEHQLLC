@@ -8691,79 +8691,15 @@ async def broadcast_notification(
 
 
 # ============== WAITLIST ENDPOINTS (PUBLIC LANDING PAGE) ==============
-
-@api_router.post("/waitlist/signup")
-async def waitlist_signup(signup_data: Dict[str, Any]):
-    """
-    Public endpoint - Sign up for the priority waitlist.
-    No authentication required.
-    """
-    if not waitlist_service_instance:
-        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
-    
-    email = signup_data.get("email", "").strip()
-    name = signup_data.get("name", "").strip()
-    creator_type = signup_data.get("creator_type", "").strip()
-    niche = signup_data.get("niche", "").strip()
-    referral_code = signup_data.get("referral_code")
-    source = signup_data.get("source", "landing_page")
-    
-    if not email or not name or not creator_type:
-        raise HTTPException(status_code=400, detail="Email, name, and creator type are required")
-    
-    result = await waitlist_service_instance.signup(
-        email=email,
-        name=name,
-        creator_type=creator_type,
-        niche=niche,
-        referral_code=referral_code,
-        source=source
-    )
-    
-    return result
-
-
-@api_router.get("/waitlist/position")
-async def get_waitlist_position(email: str = Query(..., description="Email address")):
-    """
-    Public endpoint - Get current waitlist position by email.
-    """
-    if not waitlist_service_instance:
-        raise HTTPException(status_code=503, detail="Waitlist service not initialized")
-    
-    result = await waitlist_service_instance.get_position(email)
-    
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-    
-    return result
-
-
-@api_router.get("/waitlist/stats")
-async def get_public_waitlist_stats():
-    """
-    Public endpoint - Get basic waitlist statistics for landing page.
-    Only returns non-sensitive aggregate data.
-    """
-    if not waitlist_service_instance:
-        return {"total": 0}
-    
-    total = await db.waitlist.count_documents({})
-    return {"total": total}
-
-
-@api_router.get("/waitlist/leaderboard")
-async def get_public_leaderboard(limit: int = Query(default=10, le=20)):
-    """
-    Public endpoint - Get top referrers leaderboard.
-    Names are partially masked for privacy.
-    """
-    if not waitlist_service_instance:
-        return []
-    
-    leaders = await waitlist_service_instance.get_leaderboard(limit=limit)
-    return {"leaderboard": leaders}
-
+# NOTE: Core waitlist routes are also available in routes/waitlist.py module
+# The following endpoints are handled by waitlist_routes_router:
+# - POST /waitlist/signup
+# - GET /waitlist/position
+# - GET /waitlist/stats
+# - GET /waitlist/leaderboard
+# - POST /waitlist/verify
+# - GET /waitlist/referral/{code}
+# Additional endpoints (NOT in modular routes):
 
 @api_router.post("/waitlist/track-share")
 async def track_social_share(data: Dict[str, Any]):
