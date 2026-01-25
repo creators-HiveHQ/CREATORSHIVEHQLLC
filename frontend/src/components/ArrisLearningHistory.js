@@ -320,7 +320,7 @@ export const ArrisLearningHistory = ({ creatorId, hasPremiumAccess = false }) =>
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/arris/learning-snapshot`, { headers });
       setSnapshot(response.data);
-    } catch (err) {
+    } catch (_err) {
       console.error("Error fetching snapshot:", err);
       if (err.response?.status !== 403) {
         setError("Failed to load learning snapshot");
@@ -338,7 +338,7 @@ export const ArrisLearningHistory = ({ creatorId, hasPremiumAccess = false }) =>
         { headers }
       );
       setComparison(response.data);
-    } catch (err) {
+    } catch (_err) {
       console.error("Error fetching comparison:", err);
     }
   }, [hasPremiumAccess, comparisonPeriod]);
@@ -353,7 +353,7 @@ export const ArrisLearningHistory = ({ creatorId, hasPremiumAccess = false }) =>
         { headers }
       );
       setChartData(response.data);
-    } catch (err) {
+    } catch (_err) {
       console.error("Error fetching chart data:", err);
     }
   }, [hasPremiumAccess, chartMetric, chartGranularity]);
@@ -364,7 +364,7 @@ export const ArrisLearningHistory = ({ creatorId, hasPremiumAccess = false }) =>
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/arris/milestones`, { headers });
       setMilestones(response.data.milestones);
-    } catch (err) {
+    } catch (_err) {
       console.error("Error fetching milestones:", err);
     }
   }, []);

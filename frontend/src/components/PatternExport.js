@@ -183,7 +183,7 @@ export const PatternExport = ({ token, onUpgrade }) => {
       
       setOptions(response.data);
       setAccessDenied(false);
-    } catch (err) {
+    } catch (_err) {
       console.error("Error fetching export options:", err);
       if (err.response?.status === 403) {
         setAccessDenied(true);
@@ -211,7 +211,7 @@ export const PatternExport = ({ token, onUpgrade }) => {
       if (!response.data.access_denied) {
         setPreview(response.data.preview);
       }
-    } catch (err) {
+    } catch (_err) {
       console.error("Error fetching preview:", err);
     }
   }, [getAuthHeaders, selectedCategories, confidenceLevel, dateRange]);
@@ -224,7 +224,7 @@ export const PatternExport = ({ token, onUpgrade }) => {
       if (!response.data.access_denied) {
         setHistory(response.data.exports || []);
       }
-    } catch (err) {
+    } catch (_err) {
       console.error("Error fetching history:", err);
     }
   }, [getAuthHeaders]);
@@ -301,7 +301,7 @@ export const PatternExport = ({ token, onUpgrade }) => {
       } else {
         setError(response.data.error || "Export failed");
       }
-    } catch (err) {
+    } catch (_err) {
       console.error("Export error:", err);
       if (err.response?.status === 403) {
         setAccessDenied(true);

@@ -46,7 +46,7 @@ export const CreatorRegistrationForm = () => {
       try {
         const response = await axios.get(`${API}/creators/form-options`);
         setFormOptions(response.data);
-      } catch (err) {
+      } catch (_err) {
         console.error("Error fetching form options:", err);
       }
     };
@@ -64,7 +64,7 @@ export const CreatorRegistrationForm = () => {
             // Track the click
             axios.post(`${API}/referral/track-click/${referralCode}`).catch(() => {});
           }
-        } catch (err) {
+        } catch (_err) {
           console.error("Invalid referral code:", err);
         }
       }
@@ -103,7 +103,7 @@ export const CreatorRegistrationForm = () => {
       const response = await axios.post(`${API}/creators/register`, submitData);
       setSubmissionResult(response.data);
       setSubmitted(true);
-    } catch (err) {
+    } catch (_err) {
       setError(err.response?.data?.detail || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);

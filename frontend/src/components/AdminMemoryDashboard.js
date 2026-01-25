@@ -43,7 +43,7 @@ export function AdminMemoryDashboard({ token }) {
       if (historyRes.ok) {
         setHistory(await historyRes.json());
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to load memory data");
       console.error("Memory dashboard error:", err);
     } finally {
@@ -73,7 +73,7 @@ export function AdminMemoryDashboard({ token }) {
         // Refresh data after consolidation
         await fetchData();
       }
-    } catch (err) {
+    } catch (_err) {
       console.error("Consolidation failed:", err);
     } finally {
       setConsolidating(false);

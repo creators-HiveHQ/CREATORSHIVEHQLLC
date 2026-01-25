@@ -267,7 +267,7 @@ const NewProposalModal = ({ isOpen, onClose, onSuccess }) => {
         if (response.data.arris_question) {
           setFormData(prev => ({ ...prev, arris_intake_question: "" }));
         }
-      } catch (err) {
+      } catch (_err) {
         console.error("Error fetching form options:", err);
       }
     };
@@ -294,7 +294,7 @@ const NewProposalModal = ({ isOpen, onClose, onSuccess }) => {
       const response = await axios.post(`${API}/proposals`, formData, { headers });
       setCreatedProposal(response.data);
       setStep(2);
-    } catch (err) {
+    } catch (_err) {
       // Handle error - detail can be string or object (for proposal limit errors)
       const detail = err.response?.data?.detail;
       if (typeof detail === 'object' && detail !== null) {
@@ -329,7 +329,7 @@ const NewProposalModal = ({ isOpen, onClose, onSuccess }) => {
       setCreatedProposal(submitResponse.data);
       setStep(4);
       
-    } catch (err) {
+    } catch (_err) {
       // Handle error - detail can be string or object (for proposal limit errors)
       const detail = err.response?.data?.detail;
       if (typeof detail === 'object' && detail !== null) {
@@ -2433,7 +2433,7 @@ export const CreatorDashboard = () => {
                             a.href = url;
                             a.download = response.data.filename;
                             a.click();
-                          } catch (err) {
+                          } catch (_err) {
                             console.error("Export failed:", err);
                           }
                         }}
@@ -2457,7 +2457,7 @@ export const CreatorDashboard = () => {
                             a.href = url;
                             a.download = response.data.filename;
                             a.click();
-                          } catch (err) {
+                          } catch (_err) {
                             console.error("Export failed:", err);
                           }
                         }}

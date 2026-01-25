@@ -37,7 +37,7 @@ export function ProposalRecommendations({ proposalId, token, onResubmit }) {
       } else {
         setRecommendations(null);
       }
-    } catch (err) {
+    } catch (_err) {
       console.error("Failed to fetch recommendations:", err);
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ export function ProposalRecommendations({ proposalId, token, onResubmit }) {
       } else {
         setError("Failed to generate recommendations");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to generate recommendations");
     } finally {
       setGenerating(false);

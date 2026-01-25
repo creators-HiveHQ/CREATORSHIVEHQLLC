@@ -68,7 +68,7 @@ export function CrossCreatorInsights({ token, creatorTier, onUpgrade }) {
       } else {
         setError("Failed to load insights");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to load insights");
       console.error("Cross-creator insights error:", err);
     } finally {
