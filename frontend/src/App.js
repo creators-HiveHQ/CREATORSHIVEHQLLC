@@ -26,6 +26,7 @@ import { AdminAutomationDashboard } from "@/components/AdminAutomationDashboard"
 import { AdminMemoryDashboard } from "@/components/AdminMemoryDashboard";
 import LandingPage from "@/components/LandingPage";
 import AdminWaitlistDashboard from "@/components/AdminWaitlistDashboard";
+import { SubscriptionLifecycleDashboard } from "@/components/SubscriptionLifecycleDashboard";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
