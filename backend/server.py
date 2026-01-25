@@ -2189,22 +2189,7 @@ async def trigger_alert_check(
     result = await predictive_alerts_service.trigger_alert_check(creator_id)
     return result
 
-
-@api_router.post("/creators/me/alerts/{alert_id}/read")
-async def mark_alert_read(
-    alert_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """Mark a specific alert as read."""
-    creator = await get_current_creator(credentials, db)
-    creator_id = creator["id"]
-    
-    if not predictive_alerts_service:
-        raise HTTPException(status_code=503, detail="Predictive alerts service not available")
-    
-    result = await predictive_alerts_service.mark_alert_read(creator_id, alert_id)
-    return result
-
+# NOTE: /creators/me/alerts/{alert_id}/read is now handled by routes/creator.py
 
 @api_router.post("/creators/me/alerts/{alert_id}/dismiss")
 async def dismiss_alert(
