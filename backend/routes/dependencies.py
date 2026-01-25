@@ -100,23 +100,5 @@ async def verify_admin(credentials: HTTPAuthorizationCredentials = Depends(secur
 
 async def verify_creator(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     """Verify creator authentication and return creator data."""
-    from auth import verify_creator_token
-    import jwt
-    
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, "secret-key-change-in-production", algorithms=["HS256"])
-        creator_id = payload.get("user_id")
-        
-        if not creator_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        creator = await get_db().creators.find_one({"id": creator_id}, {"_id": 0})
-        if not creator:
-            raise HTTPException(status_code=401, detail="Creator not found")
-        
-        return creator
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    from auth import get_current_creator
+    return await get_current_creator(credentials, get_db())
