@@ -1034,6 +1034,16 @@ export const CreatorDashboard = () => {
               )}
             </TabsTrigger>
             <TabsTrigger 
+              value="pattern-export" 
+              data-testid="tab-pattern-export"
+              className={!hasPremiumAnalytics ? "relative" : ""}
+            >
+              📤 Export
+              {!hasPremiumAnalytics && (
+                <Badge className="ml-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-1.5 py-0">PREMIUM</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger 
               value="voice" 
               data-testid="tab-voice"
               className={!hasPremiumAnalytics ? "relative" : ""}
