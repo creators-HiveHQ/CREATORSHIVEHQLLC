@@ -1435,15 +1435,21 @@ Dashboard Updates → Memory Palace Synthesizes
       - `/app/backend/routes/elite.py` - Elite tier features (workflows, personas, brands, reports, API access)
       - `/app/backend/routes/referral.py` - Referral system (codes, stats, commissions, admin routes)
     - **Authentication Fixed**: Updated all route modules to use proper JWT decoding from `auth.py`
-    - **Route Registration**: All new routers included in `server.py` api_router
-    - **Duplicate Routes Removed from server.py**:
-      - ✅ Referral routes (~214 lines removed) - Now served from `/routes/referral.py`
-    - **Routes Still in server.py (To Be Migrated Later)**:
-      - Elite routes (workflows, brands, personas, reports, arris-api, multi-brand, contact, inquiries)
-      - ARRIS routes (memory, patterns, learning, activity-feed, queue-stats, etc.)
-      - Subscription routes (plans, checkout, status, transactions, admin)
-    - **Testing**: All routes verified working after migration
-    - **Server.py Size**: Reduced from ~8957 to ~8743 lines
+    - **Dependency Injection Fixed**: Added `feature_gating` to services dict for proper service access
+    - **Duplicate Routes Removed from server.py** (~757 lines total):
+      - ✅ Referral routes (~214 lines) - Now served from `/routes/referral.py`
+      - ✅ Elite status, dashboard, adaptive-intelligence (~130 lines) - Now served from `/routes/elite.py`
+      - ✅ Elite personas (~215 lines) - Now served from `/routes/elite.py`
+      - ✅ Elite scheduled reports (~198 lines) - Now served from `/routes/elite.py`
+    - **Routes Still in server.py (Complex, To Be Migrated Later)**:
+      - Elite workflows and brands (basic CRUD)
+      - Elite ARRIS API endpoints with special key authentication
+      - Elite multi-brand management
+      - Elite contact and inquiries
+      - ARRIS memory, patterns, learning endpoints
+      - Subscription checkout/Stripe integration
+    - **Server.py Size**: Reduced from ~8957 to ~8200 lines (~8.5% reduction)
+    - **Testing**: All routes verified working, feature gating correct for Free vs Elite users
 
 ---
 
