@@ -199,6 +199,9 @@ from creator_health_score_service import CreatorHealthScoreService
 # Import Pattern Export Service
 from pattern_export_service import PatternExportService
 
+# Import Auto-Escalation Service
+from auto_escalation_service import AutoEscalationService
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
