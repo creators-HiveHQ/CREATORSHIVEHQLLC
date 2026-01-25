@@ -1368,7 +1368,7 @@ export const CreatorDashboard = () => {
                           {selectedProposal.arris_insights.summary && (
                             <div className="mb-4">
                               <p className="text-sm text-purple-700 italic">
-                                "{selectedProposal.arris_insights.summary}"
+                                &ldquo;{selectedProposal.arris_insights.summary}&rdquo;
                               </p>
                             </div>
                           )}
