@@ -1428,6 +1428,25 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
     - **Testing**: 30 backend tests + all frontend UI tests (100% pass rate)
 
+40. **Server.py Route Migration (Phase 2)** - Continued refactoring of modular routes:
+    - **New Modular Route Files Created**:
+      - `/app/backend/routes/arris.py` - ARRIS memory, activity, historical, performance endpoints
+      - `/app/backend/routes/subscriptions.py` - Subscription plans, user subscription, usage tracking
+      - `/app/backend/routes/elite.py` - Elite tier features (workflows, personas, brands, reports, API access)
+      - `/app/backend/routes/referral.py` - Referral system (codes, stats, commissions, admin routes)
+    - **Authentication Fixed**: Updated all route modules to use proper JWT decoding from `auth.py`
+    - **Route Registration**: All new routers included in `server.py` api_router:
+      - `arris_routes_router` for `/api/arris/*` endpoints
+      - `subscriptions_router` for `/api/subscriptions/*` endpoints  
+      - `elite_routes_router` for `/api/elite/*` endpoints
+      - `referral_router` for `/api/referral/*` endpoints
+      - `referral_admin_router` for `/api/admin/referral/*` endpoints
+    - **Testing**: 38/38 backend tests passed (100% pass rate)
+    - **Note**: Proposals routes NOT migrated due to route conflicts - remain in server.py
+    - **Route Conflicts Identified**: Some routes exist in both server.py and modular files
+      - Server.py routes take precedence due to FastAPI first-match routing
+      - Future task: Remove duplicate routes from server.py to complete migration
+
 ---
 
 *Built following the No-Assumption Protocol with Sheet 15 Index as the source of truth.*
