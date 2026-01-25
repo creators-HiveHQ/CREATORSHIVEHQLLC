@@ -2080,43 +2080,13 @@ async def export_premium_analytics(
 
 
 # ============== CREATOR PATTERN INSIGHTS ENDPOINTS (Pro+) ==============
+# NOTE: Core pattern insights routes are now handled by routes/creator.py module
+# The following endpoints are managed by creator_routes_router:
+# - GET /creators/me/pattern-insights
+# - GET /creators/me/pattern-recommendations
+# - POST /creators/me/pattern-feedback/{pattern_id}
 
-@api_router.get("/creators/me/pattern-insights")
-async def get_creator_pattern_insights(
-    limit: int = Query(default=10, le=20),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """
-    Get personalized pattern insights for the authenticated creator.
-    Feature-gated: Requires Pro tier or higher.
-    """
-    creator = await get_current_creator(credentials, db)
-    creator_id = creator["id"]
-    
-    if not creator_pattern_insights_service:
-        raise HTTPException(status_code=503, detail="Pattern insights service not available")
-    
-    result = await creator_pattern_insights_service.get_creator_patterns(creator_id, limit=limit)
-    return result
-
-
-@api_router.get("/creators/me/pattern-recommendations")
-async def get_pattern_recommendations(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """
-    Get actionable recommendations based on pattern analysis.
-    Feature-gated: Requires Pro tier or higher.
-    """
-    creator = await get_current_creator(credentials, db)
-    creator_id = creator["id"]
-    
-    if not creator_pattern_insights_service:
-        raise HTTPException(status_code=503, detail="Pattern insights service not available")
-    
-    result = await creator_pattern_insights_service.get_pattern_recommendations(creator_id)
-    return result
-
+# Additional pattern endpoints (not in modular routes):
 
 @api_router.get("/creators/me/pattern-trends")
 async def get_pattern_trends(
