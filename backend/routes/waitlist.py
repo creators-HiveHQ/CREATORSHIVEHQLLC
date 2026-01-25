@@ -5,6 +5,7 @@ Public-facing waitlist signup endpoints for the landing page.
 """
 
 from fastapi import APIRouter, HTTPException, Query
+from typing import Dict, Any
 from datetime import datetime, timezone
 import logging
 
@@ -16,41 +17,69 @@ router = APIRouter(prefix="/waitlist", tags=["Waitlist"])
 
 
 @router.post("/signup")
-async def waitlist_signup(data: dict):
+async def waitlist_signup(signup_data: Dict[str, Any]):
     """
-    Public endpoint - Join the priority waitlist.
-    Supports referral tracking.
+    Public endpoint - Sign up for the priority waitlist.
+    No authentication required.
     """
-    email = data.get("email")
-    referral_code = data.get("referral_code")
-    
-    if not email:
-        raise HTTPException(status_code=400, detail="Email is required")
-    
     waitlist_service = get_service("waitlist")
-    result = await waitlist_service.add_to_waitlist(
-        email=email,
-        referral_code=referral_code
-    )
     
-    if not result.get("success"):
-        raise HTTPException(status_code=400, detail=result.get("error", "Failed to join waitlist"))
+    email = signup_data.get("email", "").strip()
+    name = signup_data.get("name", "").strip()
+    creator_type = signup_data.get("creator_type", "").strip()
+    niche = signup_data.get("niche", "").strip()
+    referral_code = signup_data.get("referral_code")
+    source = signup_data.get("source", "landing_page")
+    
+    if not email or not name or not creator_type:
+        raise HTTPException(status_code=400, detail="Email, name, and creator type are required")
+    
+    result = await waitlist_service.signup(
+        email=email,
+        name=name,
+        creator_type=creator_type,
+        niche=niche,
+        referral_code=referral_code,
+        source=source
+    )
     
     return result
 
 
 @router.get("/position")
-async def get_waitlist_position(email: str = Query(...)):
-    """Get position in the waitlist."""
-    if not email:
-        raise HTTPException(status_code=400, detail="Email is required")
-    
+async def get_waitlist_position(email: str = Query(..., description="Email address")):
+    """
+    Public endpoint - Get current waitlist position by email.
+    """
     waitlist_service = get_service("waitlist")
+    
     result = await waitlist_service.get_position(email)
     
-    if not result.get("found"):
-        raise HTTPException(status_code=404, detail="Email not found in waitlist")
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     
+    return result
+
+
+@router.get("/stats")
+async def get_public_waitlist_stats():
+    """
+    Public endpoint - Get basic waitlist statistics for landing page.
+    Only returns non-sensitive aggregate data.
+    """
+    db = get_db()
+    total = await db.waitlist.count_documents({})
+    return {"total": total}
+
+
+@router.get("/leaderboard")
+async def get_public_leaderboard(limit: int = Query(default=10, le=20)):
+    """
+    Public endpoint - Get top referrers leaderboard.
+    Names are partially masked for privacy.
+    """
+    waitlist_service = get_service("waitlist")
+    result = await waitlist_service.get_leaderboard(limit=limit)
     return result
 
 
