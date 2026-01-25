@@ -1013,6 +1013,16 @@ export const CreatorDashboard = () => {
               )}
             </TabsTrigger>
             <TabsTrigger 
+              value="health" 
+              data-testid="tab-health"
+              className={!hasAdvancedDashboard ? "relative" : ""}
+            >
+              💪 Health
+              {!hasAdvancedDashboard && (
+                <Badge className="ml-2 bg-green-500 text-white text-xs px-1.5 py-0">PRO</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger 
               value="premium-analytics" 
               data-testid="tab-premium-analytics"
               className={!hasPremiumAnalytics ? "relative" : ""}
