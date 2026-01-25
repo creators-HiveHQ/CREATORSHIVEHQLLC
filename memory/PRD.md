@@ -1428,28 +1428,34 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
     - **Testing**: 30 backend tests + all frontend UI tests (100% pass rate)
 
-40. **Server.py Route Migration (Phase 2)** - Continued refactoring of modular routes:
+40. **Server.py Route Migration (Phase 2 & 3)** - Continued refactoring of modular routes:
     - **New Modular Route Files Created**:
       - `/app/backend/routes/arris.py` - ARRIS memory, patterns, learning, activity, historical (ALL routes)
-      - `/app/backend/routes/subscriptions.py` - Subscription plans, user subscription, usage tracking
+      - `/app/backend/routes/subscriptions.py` - Subscription plans, checkout, user subscription, usage, admin (ALL routes)
       - `/app/backend/routes/elite.py` - Elite tier features (ALL routes now migrated)
       - `/app/backend/routes/referral.py` - Referral system (codes, stats, commissions, admin routes)
     - **Authentication Fixed**: Updated all route modules to use proper JWT decoding from `auth.py`
-    - **Dependency Injection Fixed**: Added `feature_gating`, `arris_activity` to services dict
-    - **Duplicate Routes Removed from server.py** (~2296 lines total):
+    - **Dependency Injection Fixed**: Added `feature_gating`, `arris_activity`, `email` to services dict
+    - **Duplicate Routes Removed from server.py** (~2596 lines total):
       - ✅ Referral routes (~214 lines) - Now served from `/routes/referral.py`
       - ✅ Elite ALL routes (~1581 lines) - Now served from `/routes/elite.py`
       - ✅ ARRIS memory/patterns/learning (~260 lines) - Now served from `/routes/arris.py`
       - ✅ ARRIS activity feed/queue (~180 lines) - Now served from `/routes/arris.py`
       - ✅ ARRIS historical learning (~53 lines) - Now served from `/routes/arris.py`
       - ✅ ARRIS performance/training (~8 lines) - Now served from `/routes/arris.py`
+      - ✅ Subscription routes (~300 lines) - Now served from `/routes/subscriptions.py` (Jan 25, 2026)
+    - **Subscription Routes Migrated (20 endpoints)**:
+      - Public: `/api/subscriptions/plans`, `/api/subscriptions/revenue`, `/api/subscriptions` CRUD
+      - Creator: `/api/subscriptions/my-status`, `/feature-access`, `/can-create-proposal`, `/me`, `/me/features`, `/me/usage`, `/me/billing-history`, `/my-transactions`, `/checkout`, `/checkout/status/{session_id}`, `/me/upgrade`, `/me/cancel`
+      - Admin: `/api/admin/subscriptions`, `/api/admin/subscriptions/stats`, `/api/admin/subscriptions/revenue`
+      - Stripe webhook remains in server.py (app-level route with service integrations)
     - **Routes Still in server.py**:
-      - Subscription checkout/Stripe integration (~300 lines)
-      - Proposals and other creator routes
+      - Stripe webhook `/api/webhook/stripe` (app-level)
+      - Proposals routes (conflict resolution pending)
       - Admin and pattern engine routes
-      - Various utility and webhook routes
-    - **Server.py Size**: Reduced from ~8957 to ~6661 lines (~25.6% reduction)
-    - **Testing**: All 70+ migrated routes verified working with proper feature gating
+      - Various utility routes
+    - **Server.py Size**: Reduced from ~8957 to ~6361 lines (~29% reduction)
+    - **Testing**: All 90+ migrated routes verified working with 100% pass rate (45/45 subscription tests passed)
 
 ---
 
