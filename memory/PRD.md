@@ -1432,11 +1432,11 @@ Dashboard Updates → Memory Palace Synthesizes
     - **New Modular Route Files Created**:
       - `/app/backend/routes/arris.py` - ARRIS memory, activity, historical, performance endpoints
       - `/app/backend/routes/subscriptions.py` - Subscription plans, user subscription, usage tracking
-      - `/app/backend/routes/elite.py` - Elite tier features (workflows, personas, brands, reports, API access)
+      - `/app/backend/routes/elite.py` - Elite tier features (ALL routes now migrated)
       - `/app/backend/routes/referral.py` - Referral system (codes, stats, commissions, admin routes)
     - **Authentication Fixed**: Updated all route modules to use proper JWT decoding from `auth.py`
     - **Dependency Injection Fixed**: Added `feature_gating` to services dict for proper service access
-    - **Duplicate Routes Removed from server.py** (~1366 lines total):
+    - **Duplicate Routes Removed from server.py** (~1795 lines total):
       - ✅ Referral routes (~214 lines) - Now served from `/routes/referral.py`
       - ✅ Elite status, dashboard, adaptive-intelligence (~130 lines) - Now served from `/routes/elite.py`
       - ✅ Elite personas (~215 lines) - Now served from `/routes/elite.py`
@@ -1444,15 +1444,14 @@ Dashboard Updates → Memory Palace Synthesizes
       - ✅ Elite workflows (~148 lines) - Now served from `/routes/elite.py`
       - ✅ Elite brands (~120 lines) - Now served from `/routes/elite.py`
       - ✅ Elite ARRIS API endpoints (~341 lines) - Now served from `/routes/elite.py`
-        - Bearer token routes: capabilities, docs, keys, usage, history
-        - Special auth routes (X-ARRIS-API-Key): analyze, insights, content, chat, batch
-    - **Routes Still in server.py (Complex, To Be Migrated Later)**:
-      - Elite multi-brand management (~200 lines)
-      - Elite contact and inquiries (~150 lines)
+      - ✅ Elite multi-brand management (~262 lines) - Now served from `/routes/elite.py`
+      - ✅ Elite contact/inquiries (~167 lines) - Now served from `/routes/elite.py`
+    - **Routes Still in server.py (To Be Migrated Later)**:
       - ARRIS memory, patterns, learning endpoints (~400 lines)
       - Subscription checkout/Stripe integration (~300 lines)
-    - **Server.py Size**: Reduced from ~8957 to ~7591 lines (~15.3% reduction)
-    - **Testing**: All routes verified working, feature gating correct, special auth endpoints functional
+      - Proposals and other creator routes
+    - **Server.py Size**: Reduced from ~8957 to ~7162 lines (~20% reduction)
+    - **Testing**: All 40+ Elite routes verified working with proper feature gating
 
 ---
 
