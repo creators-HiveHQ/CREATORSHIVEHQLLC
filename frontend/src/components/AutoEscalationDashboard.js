@@ -255,7 +255,7 @@ export const AutoEscalationDashboard = ({ token }) => {
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/admin/escalation/dashboard`, { headers });
       setDashboard(response.data);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching escalation dashboard:", err);
       setError("Failed to load escalation dashboard");
     }
@@ -266,7 +266,7 @@ export const AutoEscalationDashboard = ({ token }) => {
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/admin/escalation/stalled?threshold_hours=${thresholdHours}`, { headers });
       setStalledProposals(response.data.stalled_proposals || []);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching stalled proposals:", err);
     }
   }, [getAuthHeaders, thresholdHours]);
@@ -282,7 +282,7 @@ export const AutoEscalationDashboard = ({ token }) => {
       
       const response = await axios.get(`${API}/admin/escalation/history?${params}`, { headers });
       setHistory(response.data.escalations || []);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching history:", err);
     }
   }, [getAuthHeaders, includeResolved, historyFilter]);
@@ -292,7 +292,7 @@ export const AutoEscalationDashboard = ({ token }) => {
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/admin/escalation/analytics`, { headers });
       setAnalytics(response.data);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching analytics:", err);
     }
   }, [getAuthHeaders]);
@@ -336,7 +336,7 @@ export const AutoEscalationDashboard = ({ token }) => {
       setResolutionNotes("");
       fetchDashboard();
       if (activeTab === "history") fetchHistory();
-    } catch (_err) {
+    } catch (err) {
       console.error("Error resolving escalation:", err);
     }
   };
@@ -363,7 +363,7 @@ export const AutoEscalationDashboard = ({ token }) => {
       setEscalationNotes("");
       fetchDashboard();
       fetchStalled();
-    } catch (_err) {
+    } catch (err) {
       console.error("Error escalating proposal:", err);
     }
   };
@@ -376,7 +376,7 @@ export const AutoEscalationDashboard = ({ token }) => {
       setScanResult(response.data);
       fetchDashboard();
       if (activeTab === "stalled") fetchStalled();
-    } catch (_err) {
+    } catch (err) {
       console.error("Error running scan:", err);
     } finally {
       setScanning(false);

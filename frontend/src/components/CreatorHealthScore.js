@@ -254,7 +254,7 @@ export const CreatorHealthScore = ({ token, onUpgrade }) => {
       setHealthData(response.data);
       setTier(response.data.tier);
       setAccessDenied(false);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching health score:", err);
       if (err.response?.status === 403) {
         setAccessDenied(true);
@@ -278,7 +278,7 @@ export const CreatorHealthScore = ({ token, onUpgrade }) => {
       const headers = getAuthHeaders();
       const response = await axios.get(`${API}/creators/me/health-score/component/${component}`, { headers });
       setComponentDetails(response.data.details);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching component details:", err);
     }
   };

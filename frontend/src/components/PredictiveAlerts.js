@@ -285,7 +285,7 @@ export const PredictiveAlerts = ({ token, onUpgrade }) => {
       setTier(alertsRes.data.tier);
       setPreferences(prefsRes.data || {});
       setAccessDenied(false);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching alerts:", err);
       if (err.response?.status === 403) {
         setAccessDenied(true);
@@ -309,7 +309,7 @@ export const PredictiveAlerts = ({ token, onUpgrade }) => {
       const headers = getAuthHeaders();
       await axios.post(`${API}/creators/me/trigger-alerts`, {}, { headers });
       await fetchAlerts();
-    } catch (_err) {
+    } catch (err) {
       console.error("Error refreshing alerts:", err);
     } finally {
       setRefreshing(false);
@@ -322,7 +322,7 @@ export const PredictiveAlerts = ({ token, onUpgrade }) => {
       await axios.post(`${API}/creators/me/alerts/${alertId}/read`, {}, { headers });
       setAlerts(alerts.map(a => a.alert_id === alertId ? { ...a, read: true } : a));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (_err) {
+    } catch (err) {
       console.error("Error marking alert read:", err);
     }
   };
@@ -332,7 +332,7 @@ export const PredictiveAlerts = ({ token, onUpgrade }) => {
       const headers = getAuthHeaders();
       await axios.post(`${API}/creators/me/alerts/${alertId}/dismiss`, {}, { headers });
       setAlerts(alerts.filter(a => a.alert_id !== alertId));
-    } catch (_err) {
+    } catch (err) {
       console.error("Error dismissing alert:", err);
     }
   };
@@ -349,7 +349,7 @@ export const PredictiveAlerts = ({ token, onUpgrade }) => {
       const headers = getAuthHeaders();
       await axios.put(`${API}/creators/me/alert-preferences`, newPrefs, { headers });
       setPreferences(newPrefs);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error saving preferences:", err);
     }
   };

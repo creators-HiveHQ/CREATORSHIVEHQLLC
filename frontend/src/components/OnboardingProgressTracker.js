@@ -47,7 +47,7 @@ export const OnboardingProgressTracker = ({ token, onResumeOnboarding, compact =
       });
       setProgress(response.data);
       setError("");
-    } catch (_err) {
+    } catch (err) {
       setError(err.response?.data?.detail || "Failed to load progress");
     } finally {
       setLoading(false);
@@ -60,7 +60,7 @@ export const OnboardingProgressTracker = ({ token, onResumeOnboarding, compact =
         headers: { Authorization: `Bearer ${token}` }
       });
       setTimeline(response.data.timeline || []);
-    } catch (_err) {
+    } catch (err) {
       console.error("Failed to load timeline:", err);
     }
   }, [token]);
@@ -79,7 +79,7 @@ export const OnboardingProgressTracker = ({ token, onResumeOnboarding, compact =
         { headers: { Authorization: `Bearer ${token}` } }
       );
       await fetchProgress();
-    } catch (_err) {
+    } catch (err) {
       console.error("Failed to update checklist:", err);
     } finally {
       setUpdatingItem(null);

@@ -118,7 +118,7 @@ export const SmartOnboardingWizard = ({ token, onComplete, onSkip }) => {
       } else {
         setFormData({});
       }
-    } catch (_err) {
+    } catch (err) {
       setError(err.response?.data?.detail || "Failed to load step");
     } finally {
       setLoading(false);
@@ -139,7 +139,7 @@ export const SmartOnboardingWizard = ({ token, onComplete, onSkip }) => {
         } else {
           fetchStepDetails(response.data.current_step);
         }
-      } catch (_err) {
+      } catch (err) {
         setError("Failed to load onboarding status");
         setLoading(false);
       }
@@ -179,7 +179,7 @@ export const SmartOnboardingWizard = ({ token, onComplete, onSkip }) => {
         setCurrentStep(response.data.next_step);
         fetchStepDetails(response.data.next_step);
       }
-    } catch (_err) {
+    } catch (err) {
       setError(err.response?.data?.detail || "Failed to save step");
     } finally {
       setSaving(false);
@@ -205,7 +205,7 @@ export const SmartOnboardingWizard = ({ token, onComplete, onSkip }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       onSkip?.();
-    } catch (_err) {
+    } catch (err) {
       setError("Failed to skip onboarding");
     }
   };

@@ -295,7 +295,7 @@ export const CreatorPatternInsights = ({ token, onUpgrade }) => {
       setTier(patternsRes.data.tier);
       setRecommendations(recsRes.data.recommendations || []);
       setAccessDenied(false);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching patterns:", err);
       if (err.response?.status === 403) {
         setAccessDenied(true);
@@ -321,7 +321,7 @@ export const CreatorPatternInsights = ({ token, onUpgrade }) => {
         { pattern_id: patternId, is_helpful: isHelpful },
         { headers }
       );
-    } catch (_err) {
+    } catch (err) {
       console.error("Error sending feedback:", err);
     }
   };

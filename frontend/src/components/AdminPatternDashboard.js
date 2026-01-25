@@ -91,7 +91,7 @@ export function AdminPatternDashboard({ token }) {
       setInsights(await insightsRes.json());
       setChurnRisk(await churnRes.json());
       
-    } catch (_err) {
+    } catch (err) {
       setError(err.message);
       console.error("Pattern dashboard error:", err);
     } finally {
@@ -116,7 +116,7 @@ export function AdminPatternDashboard({ token }) {
       if (res.ok) {
         setRankings(await res.json());
       }
-    } catch (_err) {
+    } catch (err) {
       console.error("Failed to refresh rankings:", err);
     }
   }, [token, rankingSort, rankingTier]);

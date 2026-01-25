@@ -42,7 +42,7 @@ export function ArrisVoiceInteraction({ token, creatorTier, onUpgrade }) {
       if (data.default_voice) {
         setSelectedVoice(data.default_voice);
       }
-    } catch (_err) {
+    } catch (err) {
       console.error("Failed to fetch voice status:", err);
     }
   }, [token]);
@@ -79,7 +79,7 @@ export function ArrisVoiceInteraction({ token, creatorTier, onUpgrade }) {
 
       mediaRecorder.start();
       setIsRecording(true);
-    } catch (_err) {
+    } catch (err) {
       setError("Microphone access denied. Please allow microphone permissions.");
       console.error("Recording error:", err);
     }
@@ -139,7 +139,7 @@ export function ArrisVoiceInteraction({ token, creatorTier, onUpgrade }) {
         playAudio(newMessage.audioBase64, newMessage.audioFormat);
       }
 
-    } catch (_err) {
+    } catch (err) {
       setError(err.message || "Failed to process voice query");
       console.error("Voice query error:", err);
     } finally {
@@ -166,7 +166,7 @@ export function ArrisVoiceInteraction({ token, creatorTier, onUpgrade }) {
       };
       
       audio.play();
-    } catch (_err) {
+    } catch (err) {
       console.error("Audio playback error:", err);
       setError("Failed to play audio response");
     }

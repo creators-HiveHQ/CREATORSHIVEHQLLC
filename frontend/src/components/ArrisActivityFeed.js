@@ -213,7 +213,7 @@ export const ArrisActivityFeed = ({ creatorId, hasPremiumAccess = false }) => {
       const response = await axios.get(`${API}/arris/activity-feed?limit=20`, { headers });
       setActivityData(response.data);
       setError(null);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching activity feed:", err);
       setError(err.response?.data?.detail?.message || "Failed to load activity feed");
     } finally {

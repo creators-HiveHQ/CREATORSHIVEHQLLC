@@ -189,7 +189,7 @@ const RetentionActionModal = ({ subscription, isOpen, onClose, onSubmit, token }
     try {
       await onSubmit(subscription.creator_id, selectedAction, customMessage);
       onClose();
-    } catch (_err) {
+    } catch (err) {
       console.error("Error triggering action:", err);
     } finally {
       setSubmitting(false);
@@ -314,7 +314,7 @@ export const SubscriptionLifecycleDashboard = ({ token }) => {
       setMetrics(metricsRes.data);
       setAtRiskList(atRiskRes.data.at_risk_subscriptions || []);
       setRetentionHistory(historyRes.data.actions || []);
-    } catch (_err) {
+    } catch (err) {
       console.error("Error fetching lifecycle data:", err);
       setError("Failed to load subscription lifecycle data");
     } finally {
@@ -348,7 +348,7 @@ export const SubscriptionLifecycleDashboard = ({ token }) => {
       );
       // Refresh data
       fetchData();
-    } catch (_err) {
+    } catch (err) {
       console.error("Error triggering retention action:", err);
     }
   };

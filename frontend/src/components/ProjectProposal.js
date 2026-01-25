@@ -43,7 +43,7 @@ export const ProjectProposalForm = ({ userId, onSuccess, onCancel }) => {
       try {
         const response = await axios.get(`${API}/proposals/form-options`);
         setFormOptions(response.data);
-      } catch (_err) {
+      } catch (err) {
         console.error("Error fetching form options:", err);
       }
     };
@@ -66,7 +66,7 @@ export const ProjectProposalForm = ({ userId, onSuccess, onCancel }) => {
     try {
       const response = await axios.post(`${API}/proposals`, formData);
       setCreatedProposal(response.data);
-    } catch (_err) {
+    } catch (err) {
       setError(err.response?.data?.detail || "Failed to save draft");
     } finally {
       setLoading(false);
@@ -85,7 +85,7 @@ export const ProjectProposalForm = ({ userId, onSuccess, onCancel }) => {
         setSubmitting(true);
         const submitResponse = await axios.post(`${API}/proposals/${response.data.id}/submit`);
         if (onSuccess) onSuccess(submitResponse.data);
-      } catch (_err) {
+      } catch (err) {
         setError(err.response?.data?.detail || "Failed to submit proposal");
       } finally {
         setLoading(false);
@@ -97,7 +97,7 @@ export const ProjectProposalForm = ({ userId, onSuccess, onCancel }) => {
       try {
         const response = await axios.post(`${API}/proposals/${createdProposal.id}/submit`);
         if (onSuccess) onSuccess(response.data);
-      } catch (_err) {
+      } catch (err) {
         setError(err.response?.data?.detail || "Failed to submit proposal");
       } finally {
         setSubmitting(false);

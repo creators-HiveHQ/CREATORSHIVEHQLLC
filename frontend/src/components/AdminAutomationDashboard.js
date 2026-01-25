@@ -45,7 +45,7 @@ export function AdminAutomationDashboard({ token }) {
       setRules(await rulesRes.json());
       setLogs(await logsRes.json());
       
-    } catch (_err) {
+    } catch (err) {
       setError(err.message);
       console.error("Automation dashboard error:", err);
     } finally {
@@ -71,7 +71,7 @@ export function AdminAutomationDashboard({ token }) {
           r.id === ruleId ? { ...r, is_active: !isActive } : r
         ));
       }
-    } catch (_err) {
+    } catch (err) {
       console.error("Failed to toggle rule:", err);
     }
   };
@@ -95,7 +95,7 @@ export function AdminAutomationDashboard({ token }) {
           setLogs(await logsRes.json());
         }
       }
-    } catch (_err) {
+    } catch (err) {
       console.error("Evaluation failed:", err);
     } finally {
       setEvaluating(false);

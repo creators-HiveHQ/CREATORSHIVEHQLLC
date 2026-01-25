@@ -81,7 +81,7 @@ const LoginPage = () => {
         setError(result.error);
       }
       // If success, the isAuthenticated check above will redirect
-    } catch (_err) {
+    } catch (err) {
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
