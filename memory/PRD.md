@@ -1272,6 +1272,35 @@ Dashboard Updates → Memory Palace Synthesizes
     - **Route**: `/lifecycle` in admin sidebar
     - **Testing**: 50 backend tests + all frontend UI tests (100% pass rate)
 
+28. **Creator Health Score (Module B4)** - Personal health scoring for Pro+ creators:
+    - **Backend Service** (`/app/backend/creator_health_score_service.py`):
+      - `CreatorHealthScoreService` class for personal health analysis
+      - **5 Weighted Components**:
+        - Engagement (25%): Platform activity, proposal submissions, ARRIS interactions
+        - Proposal Success (25%): Approval rate, completion rate, volume bonus
+        - Consistency (20%): Weekly activity, submission gaps, streaks
+        - ARRIS Utilization (15%): Proposals with ARRIS insights, total usage
+        - Profile Completeness (15%): 8 profile fields (name, email, platforms, niche, etc.)
+      - **Status Thresholds**: excellent (≥85), good (≥70), fair (≥50), needs_attention (≥30), critical (<30)
+      - **8 Achievement Badges**: first_proposal, five_approved, ten_approved, streak_7, streak_30, high_approval, arris_expert, complete_profile
+      - Personalized recommendations based on lowest-scoring components
+      - Daily score storage for trend tracking (7-day comparison)
+      - Leaderboard with privacy-masked names
+    - **API Endpoints** (creator auth required, Pro+ tier):
+      - `GET /api/creators/me/health-score` - Full health analysis
+      - `GET /api/creators/me/health-score/history` - Historical scores (up to 90 days)
+      - `GET /api/creators/me/health-score/component/{component}` - Component details
+      - `GET /api/creators/health-leaderboard` - Top creators (masked names)
+    - **Frontend Component** (`/app/frontend/src/components/CreatorHealthScore.js`):
+      - Health score ring with color coding (green/blue/amber/orange/red)
+      - Status indicator with emoji, label, and trend badge (↑/↓/→)
+      - 5 component cards with scores, progress bars, and click-to-expand details
+      - Three tabs: Overview (components), Achievements (badges), Actions (recommendations)
+      - Component details modal with metrics and personalized tips
+      - Upgrade prompt for Free/Starter users
+    - **Feature Gating**: Pro, Premium, Elite have access; Free and Starter see upgrade prompt
+    - **Testing**: 30 backend tests + all frontend UI tests (100% pass rate)
+
 ---
 
 *Built following the No-Assumption Protocol with Sheet 15 Index as the source of truth.*
