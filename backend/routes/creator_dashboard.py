@@ -690,3 +690,10 @@ async def get_health_leaderboard(
         entry["creator"] = f"Creator #{i + 1}"
     
     return {"leaderboard": leaderboard}
+
+
+# DEBUG: Test route
+@router.get("/test-debug")
+async def test_debug():
+    """Test route to verify routing works"""
+    return {"status": "ok", "message": "creator_dashboard.py is working"}
