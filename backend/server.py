@@ -3039,42 +3039,13 @@ async def get_available_voices(
     await get_current_creator(credentials, db)
     return arris_voice_service.get_available_voices()
 
+# NOTE: GET/PATCH /proposals routes migrated to /app/backend/routes/proposals.py
 
-async def get_proposals(
-    user_id: Optional[str] = None,
-    status: Optional[str] = None,
-    priority: Optional[str] = None,
-    limit: int = Query(default=100, le=1000),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """Get all proposals (admin) or user's proposals"""
-    await get_current_user(credentials, db)
-    
-    query = {}
-    if user_id:
-        query["user_id"] = user_id
-    if status:
-        query["status"] = status
-    if priority:
-        query["priority"] = priority
-    
-    proposals = await db.proposals.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
-    return proposals
+# ============== ADMIN PROPOSAL REVIEW (with webhooks & notifications) ==============
+# These routes remain here because they have deep integration with webhooks,
+# email notifications, and project creation. Will be migrated in a future pass.
 
-@api_router.get("/proposals/{proposal_id}")
-async def get_proposal(
-    proposal_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """Get a specific proposal with ARRIS insights"""
-    await get_current_user(credentials, db)
-    
-    proposal = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
-    if not proposal:
-        raise HTTPException(status_code=404, detail="Proposal not found")
-    return proposal
-
-@api_router.patch("/proposals/{proposal_id}")
+@api_router.patch("/proposals/{proposal_id}/admin-review")
 async def update_proposal(
     proposal_id: str,
     update: ProjectProposalUpdate,
