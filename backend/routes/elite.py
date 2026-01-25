@@ -1162,3 +1162,431 @@ async def api_batch_analyze(
     )
     
     return result
+
+
+# ============== MULTI-BRAND MANAGEMENT ENDPOINTS ==============
+
+# Brand limits by tier
+BRAND_LIMITS = {
+    "Free": 1,
+    "Starter": 1,
+    "Pro": 2,
+    "Premium": 3,
+    "Elite": 10
+}
+
+
+@router.get("/multi-brand/templates")
+async def get_brand_templates(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get available brand templates."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    templates = await multi_brand_service.get_brand_templates()
+    return {"templates": templates}
+
+
+@router.get("/multi-brand")
+async def list_multi_brands(
+    include_archived: bool = Query(default=False),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """List all brands for the creator."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    feature_gating = get_service("feature_gating")
+    access = await feature_gating.get_full_feature_access(creator["id"])
+    if not access.get("features", {}).get("custom_arris_workflows"):
+        raise HTTPException(status_code=403, detail="Elite feature required")
+    
+    multi_brand_service = get_service("multi_brand")
+    brands = await multi_brand_service.get_brands(creator["id"], include_archived)
+    limit = BRAND_LIMITS.get(access.get("tier", "Free"), 1)
+    
+    return {"brands": brands, "limit": limit}
+
+
+@router.get("/multi-brand/active")
+async def get_active_brand(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get the currently active brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    brand = await multi_brand_service.get_active_brand(creator["id"])
+    return {"brand": brand}
+
+
+@router.post("/multi-brand")
+async def create_multi_brand(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    data = await request.json()
+    multi_brand_service = get_service("multi_brand")
+    result = await multi_brand_service.create_brand(
+        creator_id=creator["id"],
+        name=data.get("name", ""),
+        description=data.get("description", ""),
+        category=data.get("category", "personal"),
+        template_id=data.get("template_id"),
+        colors=data.get("colors"),
+        logo_url=data.get("logo_url"),
+        platforms=data.get("platforms"),
+        settings=data.get("settings")
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result)
+    
+    return result
+
+
+@router.get("/multi-brand/analytics")
+async def get_cross_brand_analytics(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get aggregated analytics across all brands."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    analytics = await multi_brand_service.get_cross_brand_analytics(creator["id"])
+    return analytics
+
+
+@router.get("/multi-brand/{brand_id}")
+async def get_multi_brand(
+    brand_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get a specific brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    brand = await multi_brand_service.get_brand(creator["id"], brand_id)
+    if not brand:
+        raise HTTPException(status_code=404, detail="Brand not found")
+    
+    return brand
+
+
+@router.put("/multi-brand/{brand_id}")
+async def update_multi_brand(
+    brand_id: str,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update a brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    data = await request.json()
+    multi_brand_service = get_service("multi_brand")
+    result = await multi_brand_service.update_brand(creator["id"], brand_id, data)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@router.delete("/multi-brand/{brand_id}")
+async def delete_multi_brand(
+    brand_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Archive a brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    result = await multi_brand_service.delete_brand(creator["id"], brand_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@router.post("/multi-brand/{brand_id}/switch")
+async def switch_multi_brand(
+    brand_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Switch to a different brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    result = await multi_brand_service.switch_brand(creator["id"], brand_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@router.patch("/multi-brand/{brand_id}/status")
+async def update_brand_status(
+    brand_id: str,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update brand status (active, paused, archived)."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    data = await request.json()
+    status = data.get("status")
+    if not status:
+        raise HTTPException(status_code=400, detail="Status is required")
+    
+    multi_brand_service = get_service("multi_brand")
+    result = await multi_brand_service.update_brand_status(creator["id"], brand_id, status)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@router.get("/multi-brand/{brand_id}/analytics")
+async def get_brand_analytics_detail(
+    brand_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get analytics for a specific brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    analytics = await multi_brand_service.get_brand_analytics(creator["id"], brand_id)
+    
+    if "error" in analytics:
+        raise HTTPException(status_code=404, detail=analytics["error"])
+    
+    return analytics
+
+
+@router.post("/multi-brand/{brand_id}/arris-persona")
+async def set_brand_arris_persona(
+    brand_id: str,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Link an ARRIS persona to a brand."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    data = await request.json()
+    persona_id = data.get("persona_id")
+    if not persona_id:
+        raise HTTPException(status_code=400, detail="persona_id is required")
+    
+    multi_brand_service = get_service("multi_brand")
+    result = await multi_brand_service.set_brand_arris_persona(creator["id"], brand_id, persona_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+    
+    return result
+
+
+@router.get("/multi-brand/{brand_id}/arris-context")
+async def get_brand_arris_context(
+    brand_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get brand-specific context for ARRIS."""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    
+    await check_elite_access(creator["id"])
+    
+    multi_brand_service = get_service("multi_brand")
+    context = await multi_brand_service.get_brand_arris_context(creator["id"], brand_id)
+    return context
+
+
+# ============== ELITE CONTACT & INQUIRIES ENDPOINTS ==============
+
+@router.post("/contact")
+async def submit_elite_inquiry(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Submit an Elite plan inquiry from an authenticated creator.
+    Sends notification to sales team and confirmation to creator.
+    """
+    import uuid
+    from datetime import datetime, timezone
+    
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    creator_email = creator["email"]
+    creator_name = creator.get("name", "Creator")
+    
+    inquiry = await request.json()
+    message = inquiry.get("message")
+    if not message or not message.strip():
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    company_name = inquiry.get("company_name")
+    team_size = inquiry.get("team_size")
+    
+    # Store inquiry in database
+    inquiry_doc = {
+        "id": f"EI-{str(uuid.uuid4())[:8]}",
+        "creator_id": creator_id,
+        "creator_email": creator_email,
+        "creator_name": creator_name,
+        "company_name": company_name,
+        "team_size": team_size,
+        "message": message.strip(),
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.elite_inquiries.insert_one(inquiry_doc)
+    
+    # Send emails (if email service is configured)
+    sales_email_sent = False
+    confirmation_email_sent = False
+    
+    email_service = get_service("email")
+    if email_service and hasattr(email_service, 'is_configured') and email_service.is_configured():
+        try:
+            sales_email_sent = await email_service.send_elite_inquiry_to_sales(
+                creator_name=creator_name,
+                creator_email=creator_email,
+                company_name=company_name,
+                team_size=team_size,
+                message=message.strip(),
+                creator_id=creator_id
+            )
+        except Exception as e:
+            logger.error(f"Failed to send Elite inquiry to sales: {str(e)}")
+        
+        try:
+            confirmation_email_sent = await email_service.send_elite_inquiry_confirmation(
+                creator_email=creator_email,
+                creator_name=creator_name
+            )
+        except Exception as e:
+            logger.error(f"Failed to send Elite inquiry confirmation: {str(e)}")
+    
+    return {
+        "message": "Thank you for your interest in Elite! Our team will be in touch within 24 hours.",
+        "inquiry_id": inquiry_doc["id"],
+        "sales_email_sent": sales_email_sent,
+        "confirmation_email_sent": confirmation_email_sent
+    }
+
+
+@router.get("/inquiries")
+async def get_elite_inquiries(
+    status: Optional[str] = None,
+    limit: int = Query(default=50, le=200),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get all Elite plan inquiries (admin only).
+    """
+    from auth import get_current_user
+    
+    db = get_db()
+    await get_current_user(credentials, db)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    inquiries = await db.elite_inquiries.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    
+    # Get stats
+    total = await db.elite_inquiries.count_documents({})
+    pending = await db.elite_inquiries.count_documents({"status": "pending"})
+    contacted = await db.elite_inquiries.count_documents({"status": "contacted"})
+    converted = await db.elite_inquiries.count_documents({"status": "converted"})
+    
+    return {
+        "inquiries": inquiries,
+        "stats": {
+            "total": total,
+            "pending": pending,
+            "contacted": contacted,
+            "converted": converted
+        }
+    }
+
+
+@router.patch("/inquiries/{inquiry_id}")
+async def update_elite_inquiry(
+    inquiry_id: str,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Update an Elite inquiry status (admin only).
+    Status options: pending, contacted, converted, declined
+    """
+    from auth import get_current_user
+    from datetime import datetime, timezone
+    
+    db = get_db()
+    await get_current_user(credentials, db)
+    
+    update = await request.json()
+    allowed_statuses = ["pending", "contacted", "converted", "declined"]
+    new_status = update.get("status")
+    notes = update.get("notes")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if new_status:
+        if new_status not in allowed_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {allowed_statuses}")
+        update_data["status"] = new_status
+    
+    if notes:
+        update_data["notes"] = notes
+    
+    result = await db.elite_inquiries.update_one(
+        {"id": inquiry_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+    
+    return {"message": "Inquiry updated", "inquiry_id": inquiry_id}
