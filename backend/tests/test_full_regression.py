@@ -474,33 +474,33 @@ class TestARRISWorkflow:
         assert isinstance(data, dict), "Should return patterns dict"
         print(f"✓ GET /api/arris/patterns - {list(data.keys())}")
     
-    def test_03_learning_insights(self):
-        """GET /api/arris/learning/insights - learning insights"""
+    def test_03_learning_metrics(self):
+        """GET /api/arris/learning/metrics - learning metrics"""
         if not self.elite_token:
             pytest.skip("Elite token not available")
         
         response = requests.get(
-            f"{BASE_URL}/api/arris/learning/insights",
+            f"{BASE_URL}/api/arris/learning/metrics",
             headers=self.headers_elite
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         data = response.json()
-        assert isinstance(data, dict), "Should return insights dict"
-        print(f"✓ GET /api/arris/learning/insights - {list(data.keys())}")
+        assert isinstance(data, dict), "Should return metrics dict"
+        print(f"✓ GET /api/arris/learning/metrics - {list(data.keys())}")
     
     def test_04_activity_feed(self):
-        """GET /api/arris/activity/feed - activity feed"""
+        """GET /api/arris/activity-feed - activity feed"""
         if not self.elite_token:
             pytest.skip("Elite token not available")
         
         response = requests.get(
-            f"{BASE_URL}/api/arris/activity/feed",
+            f"{BASE_URL}/api/arris/activity-feed",
             headers=self.headers_elite
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         data = response.json()
         assert isinstance(data, dict), "Should return feed dict"
-        print(f"✓ GET /api/arris/activity/feed - {list(data.keys())}")
+        print(f"✓ GET /api/arris/activity-feed - {list(data.keys())}")
     
     def test_05_queue_stats(self):
         """GET /api/arris/queue-stats - processing queue stats"""
@@ -545,19 +545,19 @@ class TestReferralWorkflow:
         assert isinstance(data, dict), "Should return code info"
         print(f"✓ POST /api/referral/generate-code - {list(data.keys())}")
     
-    def test_02_stats(self):
-        """GET /api/referral/stats - referral statistics"""
+    def test_02_my_stats(self):
+        """GET /api/referral/my-stats - referral statistics"""
         if not self.elite_token:
             pytest.skip("Elite token not available")
         
         response = requests.get(
-            f"{BASE_URL}/api/referral/stats",
+            f"{BASE_URL}/api/referral/my-stats",
             headers=self.headers_elite
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         data = response.json()
         assert isinstance(data, dict), "Should return stats dict"
-        print(f"✓ GET /api/referral/stats - {list(data.keys())}")
+        print(f"✓ GET /api/referral/my-stats - {list(data.keys())}")
     
     def test_03_my_referrals(self):
         """GET /api/referral/my-referrals - creator's referrals"""
@@ -573,19 +573,19 @@ class TestReferralWorkflow:
         assert isinstance(data, dict), "Should return referrals dict"
         print(f"✓ GET /api/referral/my-referrals - {list(data.keys())}")
     
-    def test_04_admin_stats(self):
-        """GET /api/admin/referral/stats - admin referral stats"""
+    def test_04_admin_analytics(self):
+        """GET /api/admin/referral/analytics - admin referral analytics"""
         if not self.admin_token:
             pytest.skip("Admin token not available")
         
         response = requests.get(
-            f"{BASE_URL}/api/admin/referral/stats",
+            f"{BASE_URL}/api/admin/referral/analytics",
             headers=self.headers_admin
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         data = response.json()
-        assert isinstance(data, dict), "Should return admin stats dict"
-        print(f"✓ GET /api/admin/referral/stats - {list(data.keys())}")
+        assert isinstance(data, dict), "Should return admin analytics dict"
+        print(f"✓ GET /api/admin/referral/analytics - {list(data.keys())}")
 
 
 # ============== WAITLIST WORKFLOW ==============
@@ -606,6 +606,7 @@ class TestWaitlistWorkflow:
             json={
                 "email": self.test_email,
                 "name": "Test User",
+                "creator_type": "content_creator",
                 "platform": "YouTube"
             }
         )
@@ -619,25 +620,26 @@ class TestWaitlistWorkflow:
             print(f"✓ POST /api/waitlist/signup - already exists (409)")
     
     def test_02_position(self):
-        """GET /api/waitlist/position/{email} - check position"""
+        """GET /api/waitlist/position - check position"""
         # First signup
         requests.post(
             f"{BASE_URL}/api/waitlist/signup",
             json={
                 "email": self.test_email,
                 "name": "Test User",
+                "creator_type": "content_creator",
                 "platform": "YouTube"
             }
         )
         
-        response = requests.get(f"{BASE_URL}/api/waitlist/position/{self.test_email}")
+        response = requests.get(f"{BASE_URL}/api/waitlist/position?email={self.test_email}")
         assert response.status_code in [200, 404], f"Expected 200/404, got {response.status_code}"
         if response.status_code == 200:
             data = response.json()
             assert "position" in data or "email" in data, "Should have position info"
-            print(f"✓ GET /api/waitlist/position/{self.test_email} - found")
+            print(f"✓ GET /api/waitlist/position?email={self.test_email} - found")
         else:
-            print(f"✓ GET /api/waitlist/position/{self.test_email} - not found (404)")
+            print(f"✓ GET /api/waitlist/position?email={self.test_email} - not found (404)")
     
     def test_03_admin_stats(self):
         """GET /api/admin/waitlist/stats - admin waitlist stats"""
@@ -859,6 +861,7 @@ class TestCrossFeatureIntegration:
                         json={
                             "email": test_email,
                             "name": "Test Referral User",
+                            "creator_type": "content_creator",
                             "platform": "YouTube",
                             "referral_code": referral_code
                         }
@@ -909,7 +912,7 @@ class TestRouteRegistration:
         endpoints = [
             ("GET", "/api/arris/memory/summary"),
             ("GET", "/api/arris/patterns"),
-            ("GET", "/api/arris/activity/feed"),
+            ("GET", "/api/arris/activity-feed"),
         ]
         for method, endpoint in endpoints:
             response = requests.get(f"{BASE_URL}{endpoint}")
@@ -919,7 +922,7 @@ class TestRouteRegistration:
     def test_referral_routes_registered(self):
         """Verify referral routes are registered"""
         endpoints = [
-            ("GET", "/api/referral/stats"),
+            ("GET", "/api/referral/my-stats"),
             ("GET", "/api/referral/my-referrals"),
             ("POST", "/api/referral/generate-code"),
         ]
