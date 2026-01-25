@@ -44,7 +44,8 @@ export default [
       // General rules
       "no-unused-vars": ["warn", { 
         "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_"
+        "varsIgnorePattern": "^_",
+        "caughtErrors": "none"
       }],
       "no-console": "off",
       "no-debugger": "warn",
