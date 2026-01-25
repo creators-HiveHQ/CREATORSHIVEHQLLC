@@ -193,7 +193,7 @@ export const CreatorLoginPage = () => {
           </form>
           <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-slate-500">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link to="/register" className="text-purple-600 hover:underline">
                 Register as a Creator
               </Link>
