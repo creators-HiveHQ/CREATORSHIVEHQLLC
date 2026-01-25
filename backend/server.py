@@ -7982,10 +7982,10 @@ async def generate_proposal_recommendations(
     # Verify authentication
     try:
         current_user = await get_current_user(credentials, db)
-        is_admin = True
-    except:
+        _is_admin = True
+    except Exception:
         current_user = await get_current_creator(credentials, db)
-        is_admin = False
+        _is_admin = False
     
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required")
