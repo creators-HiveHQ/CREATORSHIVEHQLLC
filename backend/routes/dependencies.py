@@ -20,6 +20,7 @@ ws_manager = None
 
 # Service references (set during initialization)
 services = {
+    "feature_gating": None,
     "stripe": None,
     "elite": None,
     "arris_memory": None,
