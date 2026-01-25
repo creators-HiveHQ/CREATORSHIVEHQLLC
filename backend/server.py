@@ -2129,33 +2129,7 @@ async def get_pattern_detail(
     
     return result
 
-
-@api_router.post("/creators/me/pattern-feedback")
-async def submit_pattern_feedback(
-    data: Dict[str, Any],
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """
-    Submit feedback on a pattern (helpful/not helpful).
-    Used to improve pattern detection accuracy.
-    """
-    creator = await get_current_creator(credentials, db)
-    creator_id = creator["id"]
-    
-    if not creator_pattern_insights_service:
-        raise HTTPException(status_code=503, detail="Pattern insights service not available")
-    
-    pattern_id = data.get("pattern_id")
-    if not pattern_id:
-        raise HTTPException(status_code=400, detail="pattern_id is required")
-    
-    result = await creator_pattern_insights_service.save_pattern_feedback(
-        creator_id=creator_id,
-        pattern_id=pattern_id,
-        feedback=data
-    )
-    return result
-
+# NOTE: /creators/me/pattern-feedback/{pattern_id} is now handled by routes/creator.py
 
 # ============== PATTERN EXPORT ENDPOINTS (Premium+) ==============
 
