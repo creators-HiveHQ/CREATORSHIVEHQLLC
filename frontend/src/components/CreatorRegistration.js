@@ -129,7 +129,7 @@ export const CreatorRegistrationForm = () => {
               <p className="text-lg font-mono font-bold text-slate-900">{submissionResult.id}</p>
             </div>
             <p className="text-sm text-slate-600">
-              Keep this ID for your records. We'll send updates to <strong>{submissionResult.email}</strong>
+              Keep this ID for your records. We&apos;ll send updates to <strong>{submissionResult.email}</strong>
             </p>
             <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
               <p className="text-sm text-purple-700">
