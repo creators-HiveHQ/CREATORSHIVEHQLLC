@@ -154,8 +154,9 @@ class AutoEscalationService:
         Check a single proposal for escalation needs.
         Returns escalation status and recommended actions.
         """
+        # Support both 'id' and 'proposal_id' field names
         proposal = await self.db.proposals.find_one(
-            {"proposal_id": proposal_id},
+            {"$or": [{"proposal_id": proposal_id}, {"id": proposal_id}]},
             {"_id": 0}
         )
         
