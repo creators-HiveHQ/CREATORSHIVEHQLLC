@@ -210,7 +210,7 @@ from routes.admin import router as admin_routes_router
 from routes.creator import router as creator_routes_router
 from routes.waitlist import router as waitlist_routes_router
 # Note: proposals routes remain in server.py to avoid conflicts - will migrate later
-# from routes.proposals import router as proposals_router
+from routes.proposals import router as proposals_router
 from routes.arris import router as arris_routes_router
 from routes.subscriptions import router as subscriptions_router, admin_router as subscriptions_admin_router
 from routes.elite import router as elite_routes_router
