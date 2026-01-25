@@ -483,12 +483,59 @@ Dashboard Updates → Memory Palace Synthesizes
 
 **Phase 4 Module E Complete** - All Elite features implemented: Pattern Engine, Smart Automation, Memory Palace, Onboarding Wizard, Auto-Approval, Referral System, Custom ARRIS Personas, Scheduled ARRIS Reports, ARRIS API Access, Multi-Brand Management
 
+**Phase 4 Modules A & B Complete** - Pattern Insights, Predictive Alerts, Subscription Lifecycle, Creator Health Score, Pattern Export, Auto-Escalation System
+
 **Remaining Tasks (Future):**
-- **Module B5**: Auto-Escalation System - Automatically escalate stalled proposals for admin review
 - **Refactor server.py**: Split routes into logical modules (/backend/routes/admin.py, /backend/routes/creator.py)
 - **Minor Linter Issues**: Fix pre-existing linter warnings in backend and frontend
 
 ## Completed Features - Phase 4 (January 2026)
+
+38. **Auto-Escalation System (Module B5)** - Automatic escalation of stalled proposals:
+    - **Escalation Levels**:
+      - **Elevated** (🟡): Needs attention soon
+      - **Urgent** (🟠): Requires immediate attention
+      - **Critical** (🔴): Overdue, executive attention
+    - **Configurable Thresholds** (by status in hours):
+      - Submitted: elevated=48, urgent=96, critical=168
+      - Under Review: elevated=72, urgent=120, critical=168
+      - Approved: elevated=168, urgent=336, critical=504
+      - In Progress: elevated=336, urgent=504, critical=720
+      - Needs Revision: elevated=120, urgent=168, critical=336
+    - **Escalation Actions**:
+      - Admin notifications
+      - Creator notifications (urgent/critical)
+      - Priority boost
+      - Task creation (urgent/critical)
+      - Dashboard highlighting (yellow/orange/red)
+    - **Backend Service** (`/app/backend/auto_escalation_service.py`):
+      - `get_escalation_dashboard()` - Summary stats and active escalations
+      - `get_stalled_proposals()` - List proposals nearing escalation
+      - `escalate_proposal()` - Manual or auto escalation
+      - `resolve_escalation()` - Mark escalation as resolved
+      - `scan_all_proposals()` - Full system scan
+      - `get_escalation_analytics()` - Performance metrics
+    - **API Endpoints** (Admin only):
+      - `GET /api/admin/escalation/dashboard` - Dashboard summary
+      - `GET /api/admin/escalation/stalled` - Stalled proposals list
+      - `GET /api/admin/escalation/history` - Escalation history
+      - `GET /api/admin/escalation/analytics` - Analytics data
+      - `GET /api/admin/escalation/config` - Configuration
+      - `POST /api/admin/escalation/escalate/{proposal_id}` - Escalate proposal
+      - `POST /api/admin/escalation/resolve/{escalation_id}` - Resolve escalation
+      - `POST /api/admin/escalation/scan` - Run full scan
+    - **Frontend Dashboard** (`/app/frontend/src/components/AutoEscalationDashboard.js`):
+      - Summary cards (Active, Critical, Urgent, Elevated, Health Status)
+      - Active escalations tab with resolve/view buttons
+      - Stalled proposals tab with threshold filter
+      - History tab with level and resolved filters
+      - Analytics tab with charts and metrics
+      - Manual escalation dialog
+      - Resolve escalation dialog
+      - Run Scan button
+    - **Route**: `/escalation` in admin sidebar
+    - **Testing**: 33 backend tests passed (100%), all frontend tests passed
+    - **Collections**: escalation_log, escalation_config, escalation_scan_log, tasks
 
 37. **Pattern Export (Module A5)** - Premium+ creators can export pattern analysis data:
     - **Export Formats**:
