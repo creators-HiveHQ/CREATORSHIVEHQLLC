@@ -2515,6 +2515,14 @@ export const CreatorDashboard = () => {
             )}
           </TabsContent>
 
+          {/* Pattern Export Tab (Premium+) */}
+          <TabsContent value="pattern-export" data-testid="pattern-export-tab-content">
+            <PatternExport 
+              token={creatorToken}
+              onUpgrade={() => navigate("/creator/subscription")}
+            />
+          </TabsContent>
+
           {/* Voice Tab (Premium) */}
           <TabsContent value="voice" data-testid="voice-tab-content">
             <ArrisVoiceInteraction 
