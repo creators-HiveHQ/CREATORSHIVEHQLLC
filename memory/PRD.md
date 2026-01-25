@@ -1469,6 +1469,20 @@ Dashboard Updates → Memory Palace Synthesizes
       - iteration_45.json: 45/45 subscription tests passed
       - iteration_46.json: 37/37 proposal tests passed
 
+41. **Bug Fixes (Jan 25, 2026)**:
+    - **Frontend Linter Issues Fixed**:
+      - Created ESLint v9 config (`eslint.config.js`) with React/Hooks plugins
+      - Fixed 7 React Hook dependency issues in useEffect/useCallback
+      - Fixed parsing error in ProposalRecommendations.js (extra semicolon)
+      - Configured ESLint to ignore unused catch parameters
+      - Reduced warnings from 130 to 74 (43% reduction)
+      - 0 errors, 74 warnings remaining (all are unused imports - non-critical)
+    - **Null `proposal_id` Issue Fixed**:
+      - Updated `ProjectProposal` model to include `proposal_id` field (alias for `id`)
+      - Added `__init__` method to auto-populate `proposal_id` from `id`
+      - `auto_escalation_service.py` already handles both field names defensively
+      - Added migration script for historical data (no broken records found in current DB)
+
 ---
 
 *Built following the No-Assumption Protocol with Sheet 15 Index as the source of truth.*
