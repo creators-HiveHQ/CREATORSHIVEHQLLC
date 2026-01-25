@@ -408,6 +408,14 @@ async def startup_db():
     creator_health_score_service = CreatorHealthScoreService(db, feature_gating=feature_gating)
     logger.info("Creator Health Score Service initialized - Personal health scoring for Pro+ creators")
     
+    # Initialize Pattern Export Service
+    pattern_export_service = PatternExportService(
+        db, 
+        feature_gating=feature_gating, 
+        pattern_insights_service=creator_pattern_insights_service
+    )
+    logger.info("Pattern Export Service initialized - Pattern data export for Premium+ creators")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
