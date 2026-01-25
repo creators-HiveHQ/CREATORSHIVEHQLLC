@@ -375,7 +375,7 @@ export function AdminPatternDashboard({ token }) {
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 Success Patterns
               </CardTitle>
-              <CardDescription>What's working well across the platform</CardDescription>
+              <CardDescription>What&apos;s working well across the platform</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
