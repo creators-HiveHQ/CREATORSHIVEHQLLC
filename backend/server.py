@@ -2271,6 +2271,158 @@ async def submit_pattern_feedback(
     return result
 
 
+# ============== PATTERN EXPORT ENDPOINTS (Premium+) ==============
+
+@api_router.get("/creators/me/pattern-export/options")
+async def get_pattern_export_options(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get available export options for the authenticated creator.
+    Returns formats, filters, and data availability info.
+    Feature-gated: Requires Premium tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not pattern_export_service:
+        raise HTTPException(status_code=503, detail="Pattern export service not available")
+    
+    result = await pattern_export_service.get_export_options(creator_id)
+    
+    if result.get("access_denied"):
+        raise HTTPException(
+            status_code=403, 
+            detail=result.get("upgrade_message"),
+            headers={"X-Upgrade-URL": result.get("upgrade_url", "/creator/subscription")}
+        )
+    
+    return result
+
+
+@api_router.get("/creators/me/pattern-export/preview")
+async def get_pattern_export_preview(
+    categories: str = Query(default=None, description="Comma-separated categories to filter"),
+    confidence_level: str = Query(default="all"),
+    date_range: str = Query(default="all"),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get a preview of what would be exported based on filters.
+    Shows counts and sample data without generating the full export.
+    Feature-gated: Requires Premium tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not pattern_export_service:
+        raise HTTPException(status_code=503, detail="Pattern export service not available")
+    
+    # Parse categories
+    category_list = categories.split(",") if categories else None
+    
+    result = await pattern_export_service.get_export_preview(
+        creator_id=creator_id,
+        categories=category_list,
+        confidence_level=confidence_level,
+        date_range=date_range
+    )
+    
+    if result.get("access_denied"):
+        raise HTTPException(
+            status_code=403, 
+            detail=result.get("upgrade_message"),
+            headers={"X-Upgrade-URL": result.get("upgrade_url", "/creator/subscription")}
+        )
+    
+    return result
+
+
+@api_router.post("/creators/me/pattern-export")
+async def export_patterns(
+    export_format: str = Query(default="json", description="Export format: json or csv"),
+    categories: str = Query(default=None, description="Comma-separated categories to filter"),
+    confidence_level: str = Query(default="all"),
+    date_range: str = Query(default="all"),
+    include_recommendations: bool = Query(default=True),
+    include_trends: bool = Query(default=True),
+    include_feedback: bool = Query(default=False),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Export pattern analysis data in JSON or CSV format.
+    Feature-gated: Requires Premium tier or higher.
+    
+    Returns:
+        - export_id: Unique identifier for this export
+        - format: The export format (json/csv)
+        - content: The exported data content
+        - content_type: MIME type for the content
+        - filename: Suggested filename for download
+        - checksum: SHA256 checksum for data integrity
+        - record_counts: Number of records exported by type
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not pattern_export_service:
+        raise HTTPException(status_code=503, detail="Pattern export service not available")
+    
+    # Parse categories
+    category_list = categories.split(",") if categories else None
+    
+    result = await pattern_export_service.export_patterns(
+        creator_id=creator_id,
+        export_format=export_format,
+        categories=category_list,
+        confidence_level=confidence_level,
+        date_range=date_range,
+        include_recommendations=include_recommendations,
+        include_trends=include_trends,
+        include_feedback=include_feedback
+    )
+    
+    if result.get("access_denied"):
+        raise HTTPException(
+            status_code=403, 
+            detail=result.get("upgrade_message"),
+            headers={"X-Upgrade-URL": result.get("upgrade_url", "/creator/subscription")}
+        )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Export failed"))
+    
+    return result
+
+
+@api_router.get("/creators/me/pattern-export/history")
+async def get_pattern_export_history(
+    limit: int = Query(default=20, le=50),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Get pattern export history for the authenticated creator.
+    Shows previous exports with metadata.
+    Feature-gated: Requires Premium tier or higher.
+    """
+    creator = await get_current_creator(credentials, db)
+    creator_id = creator["id"]
+    
+    if not pattern_export_service:
+        raise HTTPException(status_code=503, detail="Pattern export service not available")
+    
+    result = await pattern_export_service.get_export_history(creator_id, limit=limit)
+    
+    if result.get("access_denied"):
+        raise HTTPException(
+            status_code=403, 
+            detail=result.get("upgrade_message"),
+            headers={"X-Upgrade-URL": result.get("upgrade_url", "/creator/subscription")}
+        )
+    
+    return result
+
+
 # ============== PREDICTIVE ALERTS ENDPOINTS (Pro+) ==============
 
 @api_router.get("/creators/me/predictive-alerts")
