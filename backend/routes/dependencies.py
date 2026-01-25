@@ -23,6 +23,7 @@ services = {
     "feature_gating": None,
     "stripe": None,
     "elite": None,
+    "arris": None,
     "arris_memory": None,
     "arris_historical": None,
     "arris_activity": None,
@@ -48,6 +49,7 @@ services = {
     "auto_escalation": None,
     "webhook": None,
     "email": None,
+    "notification": None,
 }
 
 
