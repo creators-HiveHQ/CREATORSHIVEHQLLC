@@ -1430,28 +1430,26 @@ Dashboard Updates → Memory Palace Synthesizes
 
 40. **Server.py Route Migration (Phase 2)** - Continued refactoring of modular routes:
     - **New Modular Route Files Created**:
-      - `/app/backend/routes/arris.py` - ARRIS memory, activity, historical, performance endpoints
+      - `/app/backend/routes/arris.py` - ARRIS memory, patterns, learning, activity, historical (ALL routes)
       - `/app/backend/routes/subscriptions.py` - Subscription plans, user subscription, usage tracking
       - `/app/backend/routes/elite.py` - Elite tier features (ALL routes now migrated)
       - `/app/backend/routes/referral.py` - Referral system (codes, stats, commissions, admin routes)
     - **Authentication Fixed**: Updated all route modules to use proper JWT decoding from `auth.py`
-    - **Dependency Injection Fixed**: Added `feature_gating` to services dict for proper service access
-    - **Duplicate Routes Removed from server.py** (~1795 lines total):
+    - **Dependency Injection Fixed**: Added `feature_gating`, `arris_activity` to services dict
+    - **Duplicate Routes Removed from server.py** (~2296 lines total):
       - ✅ Referral routes (~214 lines) - Now served from `/routes/referral.py`
-      - ✅ Elite status, dashboard, adaptive-intelligence (~130 lines) - Now served from `/routes/elite.py`
-      - ✅ Elite personas (~215 lines) - Now served from `/routes/elite.py`
-      - ✅ Elite scheduled reports (~198 lines) - Now served from `/routes/elite.py`
-      - ✅ Elite workflows (~148 lines) - Now served from `/routes/elite.py`
-      - ✅ Elite brands (~120 lines) - Now served from `/routes/elite.py`
-      - ✅ Elite ARRIS API endpoints (~341 lines) - Now served from `/routes/elite.py`
-      - ✅ Elite multi-brand management (~262 lines) - Now served from `/routes/elite.py`
-      - ✅ Elite contact/inquiries (~167 lines) - Now served from `/routes/elite.py`
-    - **Routes Still in server.py (To Be Migrated Later)**:
-      - ARRIS memory, patterns, learning endpoints (~400 lines)
+      - ✅ Elite ALL routes (~1581 lines) - Now served from `/routes/elite.py`
+      - ✅ ARRIS memory/patterns/learning (~260 lines) - Now served from `/routes/arris.py`
+      - ✅ ARRIS activity feed/queue (~180 lines) - Now served from `/routes/arris.py`
+      - ✅ ARRIS historical learning (~53 lines) - Now served from `/routes/arris.py`
+      - ✅ ARRIS performance/training (~8 lines) - Now served from `/routes/arris.py`
+    - **Routes Still in server.py**:
       - Subscription checkout/Stripe integration (~300 lines)
       - Proposals and other creator routes
-    - **Server.py Size**: Reduced from ~8957 to ~7162 lines (~20% reduction)
-    - **Testing**: All 40+ Elite routes verified working with proper feature gating
+      - Admin and pattern engine routes
+      - Various utility and webhook routes
+    - **Server.py Size**: Reduced from ~8957 to ~6661 lines (~25.6% reduction)
+    - **Testing**: All 70+ migrated routes verified working with proper feature gating
 
 ---
 
