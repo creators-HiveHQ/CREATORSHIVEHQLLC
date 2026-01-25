@@ -167,6 +167,7 @@ async def get_arris_activity_stats(
 @router.get("/historical")
 async def get_arris_historical(
     limit: int = Query(default=10, le=50),
+    date_range: str = Query(default="all", description="Date range: 7d, 30d, 90d, all"),
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Get historical learning data for ARRIS."""
@@ -175,7 +176,7 @@ async def get_arris_historical(
     creator_id = creator["id"]
     
     arris_historical_service = get_service("arris_historical")
-    history = await arris_historical_service.get_creator_history(creator_id, limit=limit)
+    history = await arris_historical_service.get_learning_timeline(creator_id, date_range=date_range)
     
     return history
 
@@ -189,10 +190,15 @@ async def get_arris_historical_patterns(
     creator = await get_current_creator(credentials, db)
     creator_id = creator["id"]
     
+    # Get learning snapshot which includes active patterns
     arris_historical_service = get_service("arris_historical")
-    patterns = await arris_historical_service.get_patterns(creator_id)
+    snapshot = await arris_historical_service.get_learning_snapshot(creator_id)
     
-    return patterns
+    return {
+        "patterns": snapshot.get("active_patterns", []),
+        "learning_metrics": snapshot.get("current_metrics", {}),
+        "recent_activity": snapshot.get("recent_activity", [])
+    }
 
 
 # ============== ARRIS CHAT/QUERY ==============
