@@ -3931,71 +3931,7 @@ async def stripe_webhook(request: Request):
         logger.error(f"Webhook processing error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# Admin endpoints for subscription management
-@api_router.get("/admin/subscriptions")
-async def get_all_subscriptions(
-    status: Optional[str] = None,
-    tier: Optional[str] = None,
-    limit: int = Query(default=50, le=200),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """Admin: Get all subscriptions"""
-    await get_current_user(credentials, db)
-    
-    query = {}
-    if status:
-        query["status"] = status
-    if tier:
-        query["tier"] = tier
-    
-    subscriptions = await db.creator_subscriptions.find(
-        query, {"_id": 0}
-    ).sort("created_at", -1).limit(limit).to_list(limit)
-    
-    return {"subscriptions": subscriptions, "total": len(subscriptions)}
-
-@api_router.get("/admin/subscriptions/revenue")
-async def get_subscription_revenue(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """Admin: Get subscription revenue summary"""
-    await get_current_user(credentials, db)
-    
-    # Total revenue from subscriptions
-    revenue_pipeline = [
-        {"$match": {"status": "completed"}},
-        {"$group": {
-            "_id": None,
-            "total_revenue": {"$sum": "$amount"},
-            "total_transactions": {"$sum": 1}
-        }}
-    ]
-    revenue_result = await db.payment_transactions.aggregate(revenue_pipeline).to_list(1)
-    
-    # Revenue by plan
-    plan_pipeline = [
-        {"$match": {"status": "completed"}},
-        {"$group": {
-            "_id": "$plan_id",
-            "revenue": {"$sum": "$amount"},
-            "count": {"$sum": 1}
-        }}
-    ]
-    plan_revenue = await db.payment_transactions.aggregate(plan_pipeline).to_list(10)
-    
-    # Active subscriptions by tier
-    tier_pipeline = [
-        {"$match": {"status": "active"}},
-        {"$group": {"_id": "$tier", "count": {"$sum": 1}}}
-    ]
-    tier_counts = await db.creator_subscriptions.aggregate(tier_pipeline).to_list(5)
-    
-    return {
-        "total_revenue": revenue_result[0]["total_revenue"] if revenue_result else 0,
-        "total_transactions": revenue_result[0]["total_transactions"] if revenue_result else 0,
-        "by_plan": {item["_id"]: {"revenue": item["revenue"], "count": item["count"]} for item in plan_revenue},
-        "active_by_tier": {item["_id"]: item["count"] for item in tier_counts}
-    }
+# NOTE: Admin subscription endpoints migrated to /app/backend/routes/subscriptions.py
 
 # ============== SCHEMA INDEX (Sheet 15) ==============
 
