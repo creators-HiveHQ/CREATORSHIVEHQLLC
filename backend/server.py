@@ -287,6 +287,7 @@ waitlist_service_instance = None
 creator_pattern_insights_service = None
 predictive_alerts_service = None
 subscription_lifecycle_service = None
+creator_health_score_service = None
 
 @app.on_event("startup")
 async def startup_db():
