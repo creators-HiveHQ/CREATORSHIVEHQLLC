@@ -13,7 +13,9 @@ from routes.dependencies import security, get_db, get_service
 from auth import (
     AdminUserCreate, AdminUserLogin, Token,
     create_admin_user, login_user, get_current_user,
-    get_password_hash, verify_password,
+    get_password_hash, verify_password
+)
+from models_creator import (
     CreatorRegistration, CreatorRegistrationCreate, CreatorRegistrationResponse,
     PLATFORM_OPTIONS, NICHE_OPTIONS, ARRIS_INTAKE_QUESTIONS
 )
