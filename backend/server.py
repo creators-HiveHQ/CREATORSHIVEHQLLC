@@ -8048,7 +8048,7 @@ async def get_creator_recommendation_history(
             admin = await get_current_user(credentials, db)
             if not admin:
                 raise HTTPException(status_code=403, detail="Access denied")
-        except:
+        except Exception:
             raise HTTPException(status_code=403, detail="Access denied")
     
     return await proposal_recommendation_service.get_creator_recommendation_history(
