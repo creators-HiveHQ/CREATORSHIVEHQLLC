@@ -1960,8 +1960,8 @@ async def get_creator_premium_analytics(
     
     arris_analytics = {
         "total_interactions": len(arris_logs),
-        "successful_interactions": len([l for l in arris_logs if l.get("success")]),
-        "success_rate": round((len([l for l in arris_logs if l.get("success")]) / len(arris_logs) * 100), 1) if arris_logs else 0,
+        "successful_interactions": len([log for log in arris_logs if log.get("success")]),
+        "success_rate": round((len([log for log in arris_logs if log.get("success")]) / len(arris_logs) * 100), 1) if arris_logs else 0,
         "processing_times": {
             "average": avg_processing_time,
             "min": min_processing_time,
