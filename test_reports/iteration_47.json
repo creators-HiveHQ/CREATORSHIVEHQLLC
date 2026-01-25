@@ -1,0 +1,155 @@
+{
+  "summary": "Full system regression test after major backend refactoring. Routes migrated from server.py to modular files (proposals.py, subscriptions.py, arris.py, referral.py, elite.py, waitlist.py). Backend: 43/43 tests passed (100%). All critical workflows verified: Proposals CRUD with ARRIS integration, Subscriptions with feature gating, ARRIS memory/patterns/activity, Referral system, Waitlist signup, Elite tier features. Cross-module integration working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "=== PROPOSALS WORKFLOW (7 tests) ===",
+    "GET /api/proposals/form-options - returns platforms, timelines, priorities, statuses, arris_question",
+    "POST /api/proposals - creator can create proposal (returns id, title, status=draft)",
+    "GET /api/proposals/{id} - returns specific proposal details",
+    "POST /api/proposals/{id}/submit - submits draft and generates ARRIS insights",
+    "PATCH /api/proposals/{id} - admin can update proposal status (under_review)",
+    "GET /api/proposals/stats/summary - admin gets total_proposals, by_status, by_priority",
+    "POST /api/proposals/{id}/generate-recommendations - generates AI recommendations",
+    
+    "=== SUBSCRIPTIONS WORKFLOW (10 tests) ===",
+    "GET /api/subscriptions/plans - returns 8 subscription plans",
+    "GET /api/subscriptions/my-status (free) - returns tier, proposals_per_month",
+    "GET /api/subscriptions/my-status (pro) - returns tier info",
+    "GET /api/subscriptions/my-status (elite) - returns tier info",
+    "GET /api/subscriptions/feature-access - returns tier and features",
+    "GET /api/subscriptions/can-create-proposal - returns can_create, limit, used",
+    "POST /api/subscriptions/checkout - requires plan_id (400 without)",
+    "POST /api/subscriptions/checkout - creates Stripe checkout session",
+    "GET /api/subscriptions/me/usage - returns proposals usage and tier",
+    "GET /api/admin/subscriptions/stats - admin gets subscription statistics",
+    
+    "=== ARRIS WORKFLOW (5 tests) ===",
+    "GET /api/arris/memory/summary - returns memory palace summary",
+    "GET /api/arris/patterns - returns pattern detection data",
+    "GET /api/arris/learning/metrics - returns learning metrics",
+    "GET /api/arris/activity-feed - returns activity feed",
+    "GET /api/arris/queue-stats - returns processing queue stats",
+    
+    "=== REFERRAL WORKFLOW (4 tests) ===",
+    "POST /api/referral/generate-code - generates referral code",
+    "GET /api/referral/my-stats - returns referral statistics",
+    "GET /api/referral/my-referrals - returns creator's referrals",
+    "GET /api/admin/referral/analytics - admin gets referral analytics",
+    
+    "=== WAITLIST WORKFLOW (4 tests) ===",
+    "POST /api/waitlist/signup - new waitlist signup (requires email, name, creator_type)",
+    "GET /api/waitlist/position - check position by email",
+    "GET /api/admin/waitlist/stats - admin gets waitlist stats",
+    "GET /api/admin/waitlist/signups - admin lists all signups",
+    
+    "=== ELITE WORKFLOW (3 tests) ===",
+    "GET /api/elite/status - returns is_elite, tier, elite_features",
+    "GET /api/elite/dashboard - returns dashboard data (or 403 if not elite)",
+    "GET /api/elite/dashboard - correctly gates free user (403)",
+    
+    "=== CROSS-FEATURE INTEGRATION (4 tests) ===",
+    "Feature gating across tiers (free/pro/elite) - verified",
+    "Proposal creation respects subscription limits - verified",
+    "ARRIS insights generated on proposal submission - verified",
+    "Referral code validation on waitlist signup - verified",
+    
+    "=== ROUTE REGISTRATION (6 tests) ===",
+    "Proposals routes registered under /api/proposals",
+    "Subscriptions routes registered under /api/subscriptions",
+    "ARRIS routes registered under /api/arris",
+    "Referral routes registered under /api/referral",
+    "Waitlist routes registered under /api/waitlist",
+    "Elite routes registered under /api/elite"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_full_regression.py",
+    "/app/test_reports/pytest/full_regression_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Backend refactoring successful - server.py reduced by 37% with routes properly migrated to modular files",
+    "All 6 route modules (proposals, subscriptions, arris, referral, waitlist, elite) are properly registered and functional",
+    "Feature gating service correctly limits features by subscription tier (free/pro/elite)",
+    "ARRIS integration works correctly - insights generated on proposal submission",
+    "Cross-module integration verified - data flows correctly between modules",
+    "Admin endpoints correctly require admin authentication",
+    "Creator endpoints correctly require creator authentication",
+    "No regressions detected after refactoring"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_full_regression.py"
+  ],
+  "success_rate": {
+    "backend": "100% (43/43 passed)",
+    "frontend": "N/A (backend only testing)"
+  },
+  "test_credentials": {
+    "admin": {"email": "admin@hivehq.com", "password": "admin123"},
+    "free_tier_creator": {"email": "freetest@hivehq.com", "password": "testpassword"},
+    "pro_tier_creator": {"email": "protest@hivehq.com", "password": "testpassword"},
+    "elite_tier_creator": {"email": "elitetest@hivehq.com", "password": "testpassword123"}
+  },
+  "seed_data_creation": "No new seed data created - using existing test users",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Full system regression test complete after major backend refactoring. All 43 tests passed (100%). Routes successfully migrated from server.py to modular files: proposals.py (7 endpoints), subscriptions.py (10+ endpoints), arris.py (15+ endpoints), referral.py (10 endpoints), waitlist.py (6 endpoints), elite.py (5+ endpoints). Feature gating works correctly across tiers. ARRIS integration generates insights on proposal submission. Cross-module integration verified. No regressions detected.",
+  "endpoints_tested": {
+    "proposals": [
+      "GET /api/proposals/form-options",
+      "POST /api/proposals",
+      "GET /api/proposals/{id}",
+      "POST /api/proposals/{id}/submit",
+      "PATCH /api/proposals/{id}",
+      "GET /api/proposals/stats/summary",
+      "POST /api/proposals/{id}/generate-recommendations"
+    ],
+    "subscriptions": [
+      "GET /api/subscriptions/plans",
+      "GET /api/subscriptions/my-status",
+      "GET /api/subscriptions/feature-access",
+      "GET /api/subscriptions/can-create-proposal",
+      "POST /api/subscriptions/checkout",
+      "GET /api/subscriptions/me/usage",
+      "GET /api/admin/subscriptions/stats"
+    ],
+    "arris": [
+      "GET /api/arris/memory/summary",
+      "GET /api/arris/patterns",
+      "GET /api/arris/learning/metrics",
+      "GET /api/arris/activity-feed",
+      "GET /api/arris/queue-stats"
+    ],
+    "referral": [
+      "POST /api/referral/generate-code",
+      "GET /api/referral/my-stats",
+      "GET /api/referral/my-referrals",
+      "GET /api/admin/referral/analytics"
+    ],
+    "waitlist": [
+      "POST /api/waitlist/signup",
+      "GET /api/waitlist/position",
+      "GET /api/admin/waitlist/stats",
+      "GET /api/admin/waitlist/signups"
+    ],
+    "elite": [
+      "GET /api/elite/status",
+      "GET /api/elite/dashboard"
+    ]
+  },
+  "mocked_apis": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": [
+      "ARRIS AI insights (mock LLM when OpenAI key not configured)",
+      "Stripe payments (test mode)",
+      "Email notifications (SendGrid not configured)"
+    ]
+  }
+}
