@@ -2914,7 +2914,7 @@ async def escalate_proposal(
     Admin only endpoint.
     """
     try:
-        _admin = await get_current_admin(credentials)
+        admin = await get_current_admin(credentials)
         admin_id = admin.get("user_id", "admin")
     except HTTPException:
         raise HTTPException(status_code=403, detail="Admin access required")
