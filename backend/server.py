@@ -3684,7 +3684,7 @@ async def get_persona_options(credentials: HTTPAuthorizationCredentials = Depend
     Get available options for creating/customizing personas.
     Returns available tones, styles, focus areas, etc.
     """
-    creator = await get_current_creator(credentials, db)
+    _creator = await get_current_creator(credentials, db)
     
     return {
         "tones": AVAILABLE_TONES,
