@@ -36,7 +36,7 @@ export const AdminWebhooksPage = () => {
       setEvents(eventsRes.data);
       setRules(rulesRes.data);
       setStats(statsRes.data);
-    } catch (_error) {
+    } catch (error) {
       console.error("Error fetching webhook data:", error);
     } finally {
       setLoading(false);
@@ -51,7 +51,7 @@ export const AdminWebhooksPage = () => {
     try {
       await axios.patch(`${API}/webhooks/rules/${ruleId}?is_active=${!isActive}`);
       fetchData();
-    } catch (_error) {
+    } catch (error) {
       console.error("Error toggling rule:", error);
     }
   };
@@ -60,7 +60,7 @@ export const AdminWebhooksPage = () => {
     try {
       await axios.post(`${API}/webhooks/test?event_type=${eventType}`);
       fetchData();
-    } catch (_error) {
+    } catch (error) {
       console.error("Error testing webhook:", error);
     }
   };

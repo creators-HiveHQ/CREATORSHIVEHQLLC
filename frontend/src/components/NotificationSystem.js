@@ -227,7 +227,7 @@ export const NotificationProvider = ({ children, userType, userId, userName }) =
 
           const notification = JSON.parse(event.data);
           handleNotification(notification);
-        } catch (_error) {
+        } catch (error) {
           console.error("Failed to parse notification:", error);
         }
       };
@@ -258,7 +258,7 @@ export const NotificationProvider = ({ children, userType, userId, userName }) =
       wsRef.current.onerror = (error) => {
         console.error("WebSocket error:", error);
       };
-    } catch (_error) {
+    } catch (error) {
       console.error("Failed to create WebSocket:", error);
     }
   }, [userId, userType, handleNotification]);

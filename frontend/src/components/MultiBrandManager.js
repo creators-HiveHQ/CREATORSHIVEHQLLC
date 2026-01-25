@@ -101,7 +101,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
           const data = await analyticsRes.json();
           setAnalytics(data);
         }
-      } catch (_error) {
+      } catch (error) {
         if (!cancelled) {
           console.error('Failed to load brand data:', error);
           toast.error('Failed to load brand settings');
@@ -147,7 +147,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
         const error = await response.json();
         toast.error(error.detail?.error || error.detail || 'Failed to create brand');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to create brand');
     }
   };
@@ -173,7 +173,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
         const error = await response.json();
         toast.error(error.detail?.error || 'Failed to update brand');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to update brand');
     }
   };
@@ -196,7 +196,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
         const error = await response.json();
         toast.error(error.detail?.error || 'Failed to archive brand');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to archive brand');
     }
   };
@@ -219,7 +219,7 @@ export default function MultiBrandManager({ token, onBrandSwitch }) {
       } else {
         toast.error('Failed to switch brand');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to switch brand');
     }
   };

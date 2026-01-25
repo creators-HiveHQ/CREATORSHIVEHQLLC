@@ -163,7 +163,7 @@ export const AdminRevenueDashboard = () => {
       setForecast(forecastRes.data);
       setSelfFundingLoop(loopRes.data);
       setEliteInquiries(inquiriesRes.data);
-    } catch (_error) {
+    } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);

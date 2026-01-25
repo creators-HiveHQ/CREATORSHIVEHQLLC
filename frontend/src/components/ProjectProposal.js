@@ -457,7 +457,7 @@ export const AdminProposalsPage = () => {
       ]);
       setProposals(proposalsRes.data);
       setStats(statsRes.data);
-    } catch (_error) {
+    } catch (error) {
       console.error("Error fetching proposals:", error);
     } finally {
       setLoading(false);
@@ -476,7 +476,7 @@ export const AdminProposalsPage = () => {
       });
       fetchProposals();
       setSelectedProposal(null);
-    } catch (_error) {
+    } catch (error) {
       console.error("Error updating proposal:", error);
     }
   };
@@ -487,7 +487,7 @@ export const AdminProposalsPage = () => {
       // Refresh the selected proposal
       const updatedProposal = await axios.get(`${API}/proposals/${proposalId}`);
       setSelectedProposal(updatedProposal.data);
-    } catch (_error) {
+    } catch (error) {
       console.error("Error regenerating insights:", error);
     }
   };

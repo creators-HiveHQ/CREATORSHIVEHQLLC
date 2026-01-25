@@ -216,7 +216,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
           const data = await activeRes.json();
           setActivePersona(data);
         }
-      } catch (_error) {
+      } catch (error) {
         if (!cancelled) {
           console.error('Failed to load personas:', error);
           toast.error('Failed to load ARRIS personas');
@@ -252,7 +252,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
       } else {
         toast.error('Failed to activate persona');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to activate persona');
     }
   };
@@ -282,7 +282,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
         const error = await response.json();
         toast.error(error.detail || 'Failed to create persona');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to create persona');
     }
   };
@@ -302,7 +302,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
       } else {
         toast.error('Failed to delete persona');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to delete persona');
     }
   };
@@ -328,7 +328,7 @@ export default function ArrisPersonaManager({ token, onPersonaChange }) {
       } else {
         toast.error('Failed to test persona');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to test persona');
     }
   };

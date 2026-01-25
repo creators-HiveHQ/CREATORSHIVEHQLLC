@@ -78,7 +78,7 @@ export default function ScheduledReportsManager({ token }) {
           const data = await historyRes.json();
           setReports(data.reports || []);
         }
-      } catch (_error) {
+      } catch (error) {
         if (!cancelled) {
           console.error('Failed to load report data:', error);
           toast.error('Failed to load report settings');
@@ -117,7 +117,7 @@ export default function ScheduledReportsManager({ token }) {
       } else {
         toast.error('Failed to save settings');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to save settings');
     }
     setSaving(false);
@@ -152,7 +152,7 @@ export default function ScheduledReportsManager({ token }) {
       } else {
         toast.error('Failed to generate report');
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to generate report');
     }
     setGenerating(false);
@@ -169,7 +169,7 @@ export default function ScheduledReportsManager({ token }) {
         const data = await response.json();
         setSelectedReport(data);
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to load report');
     }
   };
@@ -190,7 +190,7 @@ export default function ScheduledReportsManager({ token }) {
         toast.success('Report deleted');
         refreshData();
       }
-    } catch (_error) {
+    } catch (error) {
       toast.error('Failed to delete report');
     }
   };
