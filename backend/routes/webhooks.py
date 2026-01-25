@@ -17,7 +17,7 @@ from routes.dependencies import get_db, get_service
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/webhook", tags=["Webhooks"])
+router = APIRouter(tags=["Webhooks"])
 
 
 # ============== IDEMPOTENCY HELPER ==============
