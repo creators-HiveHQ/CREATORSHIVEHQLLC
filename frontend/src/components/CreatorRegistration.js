@@ -606,7 +606,7 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
                   <span>🧠</span> ARRIS Intake Response
                 </Label>
                 <p className="text-slate-700 mt-2 italic">
-                  "{selectedCreator.arris_intake_question || "No response provided"}"
+                  &ldquo;{selectedCreator.arris_intake_question || "No response provided"}&rdquo;
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
