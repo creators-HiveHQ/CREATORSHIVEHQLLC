@@ -196,6 +196,9 @@ from subscription_lifecycle_service import SubscriptionLifecycleService, RiskLev
 # Import Creator Health Score Service
 from creator_health_score_service import CreatorHealthScoreService
 
+# Import Pattern Export Service
+from pattern_export_service import PatternExportService
+
 # Import Email service
 from email_service import email_service, EmailDeliveryError
 
