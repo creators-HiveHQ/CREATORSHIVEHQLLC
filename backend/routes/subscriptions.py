@@ -35,7 +35,7 @@ async def get_current_admin(credentials: HTTPAuthorizationCredentials, db):
 @router.get("/plans")
 async def get_subscription_plans():
     """Get available subscription plans (public endpoint)"""
-    from models import SUBSCRIPTION_PLANS, SubscriptionTier
+    from models_subscription import SUBSCRIPTION_PLANS, SubscriptionTier
     
     plans = []
     for plan_id, plan in SUBSCRIPTION_PLANS.items():
