@@ -8013,7 +8013,7 @@ async def get_proposal_recommendations(
     # Verify authentication (either admin or creator)
     try:
         current_user = await get_current_user(credentials, db)
-    except:
+    except Exception:
         current_user = await get_current_creator(credentials, db)
     
     if not current_user:
