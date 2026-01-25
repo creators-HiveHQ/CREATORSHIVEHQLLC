@@ -506,11 +506,13 @@ class AutoEscalationService:
         ).to_list(1000)
         
         for proposal in proposals:
-            check = await self.check_proposal(proposal.get("proposal_id"))
+            # Support both 'id' and 'proposal_id' field names
+            proposal_id = proposal.get("proposal_id") or proposal.get("id")
+            check = await self.check_proposal(proposal_id)
             
             if check.get("hours_in_status", 0) >= threshold_hours:
                 stalled.append({
-                    "proposal_id": proposal.get("proposal_id"),
+                    "proposal_id": proposal_id,
                     "title": proposal.get("title"),
                     "status": proposal.get("status"),
                     "creator_id": proposal.get("user_id"),
