@@ -467,6 +467,40 @@ async def startup_db():
     arris_activity_service.set_notification_callback(arris_activity_notification_callback)
     logger.info("ARRIS Activity Feed initialized - Real-time queue updates active")
     
+    # Initialize route dependencies for modular routes
+    route_deps.init_dependencies(
+        database=db,
+        feature_gating_service=feature_gating,
+        notification_svc=notification_service,
+        websocket_manager=ws_manager,
+        stripe=stripe_service,
+        elite=elite_service,
+        arris_memory=arris_memory_service,
+        arris_historical=arris_historical_service,
+        calculator=calculator_service,
+        export=export_service,
+        pattern_engine=pattern_engine,
+        smart_automation=smart_automation_engine,
+        proposal_recommendation=proposal_recommendation_service,
+        enhanced_memory_palace=enhanced_memory_palace,
+        onboarding_wizard=onboarding_wizard,
+        auto_approval=auto_approval_service,
+        referral=referral_service,
+        persona=persona_service,
+        scheduled_reports=scheduled_reports_service,
+        arris_api=arris_api_service,
+        multi_brand=multi_brand_service,
+        waitlist=waitlist_service_instance,
+        creator_pattern_insights=creator_pattern_insights_service,
+        predictive_alerts=predictive_alerts_service,
+        subscription_lifecycle=subscription_lifecycle_service,
+        creator_health_score=creator_health_score_service,
+        pattern_export=pattern_export_service,
+        auto_escalation=auto_escalation_service,
+        webhook=webhook_service,
+    )
+    logger.info("Route dependencies initialized for modular route handlers")
+    
     logger.info("Feature Gating service initialized")
     logger.info("Stripe service initialized - Self-Funding Loop active")
     logger.info("Database ready - Zero-Human Operational Model active")
