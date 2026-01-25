@@ -1436,21 +1436,23 @@ Dashboard Updates → Memory Palace Synthesizes
       - `/app/backend/routes/referral.py` - Referral system (codes, stats, commissions, admin routes)
     - **Authentication Fixed**: Updated all route modules to use proper JWT decoding from `auth.py`
     - **Dependency Injection Fixed**: Added `feature_gating` to services dict for proper service access
-    - **Duplicate Routes Removed from server.py** (~1025 lines total):
+    - **Duplicate Routes Removed from server.py** (~1366 lines total):
       - ✅ Referral routes (~214 lines) - Now served from `/routes/referral.py`
       - ✅ Elite status, dashboard, adaptive-intelligence (~130 lines) - Now served from `/routes/elite.py`
       - ✅ Elite personas (~215 lines) - Now served from `/routes/elite.py`
       - ✅ Elite scheduled reports (~198 lines) - Now served from `/routes/elite.py`
       - ✅ Elite workflows (~148 lines) - Now served from `/routes/elite.py`
       - ✅ Elite brands (~120 lines) - Now served from `/routes/elite.py`
+      - ✅ Elite ARRIS API endpoints (~341 lines) - Now served from `/routes/elite.py`
+        - Bearer token routes: capabilities, docs, keys, usage, history
+        - Special auth routes (X-ARRIS-API-Key): analyze, insights, content, chat, batch
     - **Routes Still in server.py (Complex, To Be Migrated Later)**:
-      - Elite ARRIS API endpoints with special key authentication (~300 lines)
       - Elite multi-brand management (~200 lines)
       - Elite contact and inquiries (~150 lines)
       - ARRIS memory, patterns, learning endpoints (~400 lines)
       - Subscription checkout/Stripe integration (~300 lines)
-    - **Server.py Size**: Reduced from ~8957 to ~7932 lines (~11.4% reduction)
-    - **Testing**: All routes verified working, feature gating correct for Free vs Elite users
+    - **Server.py Size**: Reduced from ~8957 to ~7591 lines (~15.3% reduction)
+    - **Testing**: All routes verified working, feature gating correct, special auth endpoints functional
 
 ---
 
