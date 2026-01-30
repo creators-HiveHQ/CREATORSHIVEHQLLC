@@ -2,9 +2,9 @@
 Creators Hive HQ - Module Routes
 ================================
 API endpoints for managing user modules.
-Modules are unlocked based on track and selected engines.
+Modules are reconnected to the restored system architecture.
 
-Phase 2 of the system restoration.
+Phase 4 of the system restoration - Module Realignment.
 """
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -12,20 +12,30 @@ from fastapi.security import HTTPAuthorizationCredentials
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
+from enum import Enum
 import logging
 
 from routes.dependencies import security, get_db, get_service
-from models_system import TrackType, EngineType
+from models_system import TrackType, EngineType, EngineStatus, AssetsAlreadyHave, MissingElements, FirstPriority
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/modules", tags=["Modules"])
 
 
-# ============== MODULE DEFINITIONS ==============
+# ============== MODULE STATUS ENUM ==============
+
+class ModuleStatus(str, Enum):
+    ACTIVE = "active"
+    UNLOCKED = "unlocked"
+    LOCKED = "locked"
+    BLOCKED = "blocked"
+
+
+# ============== MODULE DEFINITIONS (Phase 4 Enhanced) ==============
 
 MODULE_REGISTRY = {
-    # Core modules (all tracks)
+    # ============== CORE MODULES (all tracks) ==============
     "dashboard": {
         "name": "Command Center Dashboard",
         "description": "Central control hub showing active items, next steps, blockers, and AI outputs",
@@ -34,7 +44,15 @@ MODULE_REGISTRY = {
         "engines": [],
         "is_core": True,
         "icon": "layout-dashboard",
-        "color": "slate"
+        "color": "slate",
+        # Phase 4 metadata
+        "required_track": None,  # Available to all
+        "required_engines": [],
+        "required_assets": [],
+        "unlock_conditions": [],
+        "blockers_when": [],
+        "next_steps_after": ["Complete profile setup", "Review engine status"],
+        "starting_point_priority": []  # Always accessible
     },
     "profile": {
         "name": "Profile & Identity",
@@ -44,10 +62,17 @@ MODULE_REGISTRY = {
         "engines": [],
         "is_core": True,
         "icon": "user-circle",
-        "color": "blue"
+        "color": "blue",
+        "required_track": None,
+        "required_engines": [],
+        "required_assets": [],
+        "unlock_conditions": [],
+        "blockers_when": [],
+        "next_steps_after": ["Define your primary goal", "Select your support areas"],
+        "starting_point_priority": [FirstPriority.BUILD_FOUNDATION]
     },
     
-    # Business Engine modules
+    # ============== BUSINESS ENGINE MODULES ==============
     "business_model_canvas": {
         "name": "Business Model Canvas",
         "description": "Define and visualize your business model components",
@@ -56,7 +81,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.BUSINESS],
         "is_core": False,
         "icon": "grid-3x3",
-        "color": "blue"
+        "color": "blue",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.BUSINESS],
+        "required_assets": [],
+        "unlock_conditions": ["Business Support active"],
+        "blockers_when": [
+            {"condition": "missing_clarity_structure", "message": "Complete clarity/structure assessment first"}
+        ],
+        "next_steps_after": ["Define target market", "Build financial projections"],
+        "starting_point_priority": [FirstPriority.BUILD_FOUNDATION, FirstPriority.LAUNCH_OFFER]
     },
     "market_research": {
         "name": "Market Research",
@@ -66,7 +100,14 @@ MODULE_REGISTRY = {
         "engines": [EngineType.BUSINESS],
         "is_core": False,
         "icon": "search",
-        "color": "blue"
+        "color": "blue",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.BUSINESS],
+        "required_assets": [],
+        "unlock_conditions": ["Business Support active"],
+        "blockers_when": [],
+        "next_steps_after": ["Validate business model", "Identify competitors"],
+        "starting_point_priority": [FirstPriority.BUILD_FOUNDATION]
     },
     "financial_planning": {
         "name": "Financial Planning",
@@ -76,7 +117,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.BUSINESS, EngineType.INCOME],
         "is_core": False,
         "icon": "calculator",
-        "color": "blue"
+        "color": "blue",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.BUSINESS],
+        "required_assets": [AssetsAlreadyHave.OFFERS_PRODUCTS],
+        "unlock_conditions": ["Business Support active", "Income Support recommended"],
+        "blockers_when": [
+            {"condition": "no_offers", "message": "Define offers/products first"}
+        ],
+        "next_steps_after": ["Set pricing strategy", "Track revenue"],
+        "starting_point_priority": [FirstPriority.INCREASE_INCOME, FirstPriority.LAUNCH_OFFER]
     },
     "strategy_builder": {
         "name": "Strategy Builder",
@@ -86,10 +136,19 @@ MODULE_REGISTRY = {
         "engines": [EngineType.BUSINESS],
         "is_core": False,
         "icon": "route",
-        "color": "blue"
+        "color": "blue",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.BUSINESS],
+        "required_assets": [],
+        "unlock_conditions": ["Business Support active"],
+        "blockers_when": [
+            {"condition": "no_business_model", "message": "Complete Business Model Canvas first"}
+        ],
+        "next_steps_after": ["Execute strategy phases", "Review progress"],
+        "starting_point_priority": [FirstPriority.BUILD_FOUNDATION, FirstPriority.FIX_GAPS]
     },
     
-    # Engagement Engine modules
+    # ============== ENGAGEMENT ENGINE MODULES ==============
     "audience_builder": {
         "name": "Audience Builder",
         "description": "Define and understand your audience",
@@ -98,7 +157,14 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ENGAGEMENT],
         "is_core": False,
         "icon": "users",
-        "color": "purple"
+        "color": "purple",
+        "required_track": TrackType.CREATOR,
+        "required_engines": [EngineType.ENGAGEMENT],
+        "required_assets": [AssetsAlreadyHave.SOCIAL_MEDIA_ACCOUNTS],
+        "unlock_conditions": ["Audience & Visibility Support active"],
+        "blockers_when": [],
+        "next_steps_after": ["Create content plan", "Optimize platforms"],
+        "starting_point_priority": [FirstPriority.GROW_AUDIENCE, FirstPriority.BUILD_FOUNDATION]
     },
     "content_planner": {
         "name": "Content Planner",
@@ -108,7 +174,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ENGAGEMENT],
         "is_core": False,
         "icon": "calendar",
-        "color": "purple"
+        "color": "purple",
+        "required_track": TrackType.CREATOR,
+        "required_engines": [EngineType.ENGAGEMENT],
+        "required_assets": [],
+        "unlock_conditions": ["Audience & Visibility Support active"],
+        "blockers_when": [
+            {"condition": "missing_content_plan", "message": "Define audience first for targeted content"}
+        ],
+        "next_steps_after": ["Schedule content", "Track engagement"],
+        "starting_point_priority": [FirstPriority.IMPROVE_CONSISTENCY, FirstPriority.GROW_AUDIENCE]
     },
     "platform_optimizer": {
         "name": "Platform Optimizer",
@@ -118,7 +193,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ENGAGEMENT],
         "is_core": False,
         "icon": "share-2",
-        "color": "purple"
+        "color": "purple",
+        "required_track": TrackType.CREATOR,
+        "required_engines": [EngineType.ENGAGEMENT],
+        "required_assets": [AssetsAlreadyHave.SOCIAL_MEDIA_ACCOUNTS],
+        "unlock_conditions": ["Audience & Visibility Support active"],
+        "blockers_when": [
+            {"condition": "no_social_accounts", "message": "Set up social media accounts first"}
+        ],
+        "next_steps_after": ["A/B test content", "Analyze platform performance"],
+        "starting_point_priority": [FirstPriority.GROW_AUDIENCE]
     },
     "community_manager": {
         "name": "Community Manager",
@@ -128,10 +212,19 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ENGAGEMENT],
         "is_core": False,
         "icon": "heart",
-        "color": "purple"
+        "color": "purple",
+        "required_track": TrackType.CREATOR,
+        "required_engines": [EngineType.ENGAGEMENT],
+        "required_assets": [AssetsAlreadyHave.EXISTING_AUDIENCE],
+        "unlock_conditions": ["Audience & Visibility Support active", "Some audience exists"],
+        "blockers_when": [
+            {"condition": "no_audience", "message": "Build initial audience first"}
+        ],
+        "next_steps_after": ["Engage with community", "Create community events"],
+        "starting_point_priority": [FirstPriority.GROW_AUDIENCE]
     },
     
-    # Role Engine modules
+    # ============== ROLE ENGINE MODULES ==============
     "role_definer": {
         "name": "Role Definer",
         "description": "Define roles and responsibilities",
@@ -140,7 +233,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ROLE],
         "is_core": False,
         "icon": "badge",
-        "color": "amber"
+        "color": "amber",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.ROLE],
+        "required_assets": [],
+        "unlock_conditions": ["Creator Identity Support active", "Business Support active (dependency)"],
+        "blockers_when": [
+            {"condition": "business_engine_inactive", "message": "Activate Business Support first (dependency)"}
+        ],
+        "next_steps_after": ["Build team structure", "Set accountability"],
+        "starting_point_priority": [FirstPriority.BUILD_FOUNDATION, FirstPriority.FIX_GAPS]
     },
     "team_builder": {
         "name": "Team Builder",
@@ -150,7 +252,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ROLE],
         "is_core": False,
         "icon": "users-round",
-        "color": "amber"
+        "color": "amber",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.ROLE],
+        "required_assets": [],
+        "unlock_conditions": ["Creator Identity Support active"],
+        "blockers_when": [
+            {"condition": "no_roles_defined", "message": "Define roles first"}
+        ],
+        "next_steps_after": ["Hire team members", "Set up workflows"],
+        "starting_point_priority": [FirstPriority.FIX_GAPS]
     },
     "delegation_matrix": {
         "name": "Delegation Matrix",
@@ -160,7 +271,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ROLE],
         "is_core": False,
         "icon": "network",
-        "color": "amber"
+        "color": "amber",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.ROLE],
+        "required_assets": [],
+        "unlock_conditions": ["Creator Identity Support active"],
+        "blockers_when": [
+            {"condition": "no_team", "message": "Build team structure first"}
+        ],
+        "next_steps_after": ["Document processes", "Train team on delegation"],
+        "starting_point_priority": [FirstPriority.FIX_GAPS]
     },
     "accountability_tracker": {
         "name": "Accountability Tracker",
@@ -170,10 +290,19 @@ MODULE_REGISTRY = {
         "engines": [EngineType.ROLE],
         "is_core": False,
         "icon": "check-circle",
-        "color": "amber"
+        "color": "amber",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.ROLE],
+        "required_assets": [],
+        "unlock_conditions": ["Creator Identity Support active"],
+        "blockers_when": [
+            {"condition": "no_delegation", "message": "Set up delegation matrix first"}
+        ],
+        "next_steps_after": ["Review performance", "Adjust accountability"],
+        "starting_point_priority": [FirstPriority.IMPROVE_CONSISTENCY]
     },
     
-    # Income Engine modules
+    # ============== INCOME ENGINE MODULES ==============
     "revenue_tracker": {
         "name": "Revenue Tracker",
         "description": "Track and analyze income sources",
@@ -182,7 +311,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.INCOME],
         "is_core": False,
         "icon": "trending-up",
-        "color": "emerald"
+        "color": "emerald",
+        "required_track": None,  # All tracks
+        "required_engines": [EngineType.INCOME],
+        "required_assets": [AssetsAlreadyHave.OFFERS_PRODUCTS],
+        "unlock_conditions": ["Monetization Support active"],
+        "blockers_when": [
+            {"condition": "no_income_sources", "message": "Set up offers/products first"}
+        ],
+        "next_steps_after": ["Optimize pricing", "Identify growth opportunities"],
+        "starting_point_priority": [FirstPriority.INCREASE_INCOME]
     },
     "pricing_optimizer": {
         "name": "Pricing Optimizer",
@@ -192,7 +330,16 @@ MODULE_REGISTRY = {
         "engines": [EngineType.INCOME],
         "is_core": False,
         "icon": "tag",
-        "color": "emerald"
+        "color": "emerald",
+        "required_track": None,
+        "required_engines": [EngineType.INCOME],
+        "required_assets": [AssetsAlreadyHave.OFFERS_PRODUCTS],
+        "unlock_conditions": ["Monetization Support active"],
+        "blockers_when": [
+            {"condition": "missing_offer_strategy", "message": "Define offer strategy first"}
+        ],
+        "next_steps_after": ["Test pricing", "Analyze conversion rates"],
+        "starting_point_priority": [FirstPriority.INCREASE_INCOME, FirstPriority.LAUNCH_OFFER]
     },
     "sales_funnel": {
         "name": "Sales Funnel",
@@ -202,7 +349,17 @@ MODULE_REGISTRY = {
         "engines": [EngineType.INCOME],
         "is_core": False,
         "icon": "filter",
-        "color": "emerald"
+        "color": "emerald",
+        "required_track": TrackType.BUSINESS,
+        "required_engines": [EngineType.INCOME],
+        "required_assets": [AssetsAlreadyHave.OFFERS_PRODUCTS, AssetsAlreadyHave.EXISTING_AUDIENCE],
+        "unlock_conditions": ["Monetization Support active", "Offers defined"],
+        "blockers_when": [
+            {"condition": "no_audience", "message": "Build audience first"},
+            {"condition": "no_offers", "message": "Create offers first"}
+        ],
+        "next_steps_after": ["Optimize conversion", "Scale funnel"],
+        "starting_point_priority": [FirstPriority.LAUNCH_OFFER, FirstPriority.INCREASE_INCOME]
     },
     "financial_dashboard": {
         "name": "Financial Dashboard",
@@ -212,7 +369,14 @@ MODULE_REGISTRY = {
         "engines": [EngineType.INCOME],
         "is_core": False,
         "icon": "bar-chart-3",
-        "color": "emerald"
+        "color": "emerald",
+        "required_track": None,
+        "required_engines": [EngineType.INCOME],
+        "required_assets": [],
+        "unlock_conditions": ["Monetization Support active"],
+        "blockers_when": [],
+        "next_steps_after": ["Set financial goals", "Review projections"],
+        "starting_point_priority": [FirstPriority.INCREASE_INCOME]
     }
 }
 
@@ -255,6 +419,317 @@ def get_engine_display_name(engine: EngineType) -> str:
         EngineType.INCOME: "Monetization Support"
     }
     return names.get(engine, engine.value)
+
+
+def calculate_module_status(
+    module_id: str,
+    module_def: dict,
+    user_state: dict,
+    engine_states: dict
+) -> dict:
+    """Calculate module status based on user state and engine states"""
+    
+    unlocked_modules = user_state.get("unlocked_modules", [])
+    active_modules = user_state.get("active_modules", [])
+    assets = user_state.get("assets_already_have", [])
+    missing = user_state.get("missing_elements", [])
+    first_priority = user_state.get("first_priority", "")
+    
+    # Determine base status
+    if module_id in active_modules:
+        status = ModuleStatus.ACTIVE
+    elif module_id in unlocked_modules:
+        status = ModuleStatus.UNLOCKED
+    else:
+        status = ModuleStatus.LOCKED
+    
+    # Check for blockers
+    blockers = []
+    blocker_conditions = module_def.get("blockers_when", [])
+    
+    for blocker_def in blocker_conditions:
+        condition = blocker_def.get("condition", "")
+        message = blocker_def.get("message", "")
+        
+        # Check various blocking conditions
+        if condition == "no_audience" and AssetsAlreadyHave.EXISTING_AUDIENCE.value not in assets:
+            blockers.append(message)
+        elif condition == "no_offers" and AssetsAlreadyHave.OFFERS_PRODUCTS.value not in assets:
+            blockers.append(message)
+        elif condition == "no_social_accounts" and AssetsAlreadyHave.SOCIAL_MEDIA_ACCOUNTS.value not in assets:
+            blockers.append(message)
+        elif condition == "missing_clarity_structure" and MissingElements.CLARITY_STRUCTURE.value in missing:
+            blockers.append(message)
+        elif condition == "missing_content_plan" and MissingElements.CONTENT_PLAN.value in missing:
+            blockers.append(message)
+        elif condition == "missing_offer_strategy" and MissingElements.OFFER_STRATEGY.value in missing:
+            blockers.append(message)
+        elif condition == "business_engine_inactive":
+            business_state = engine_states.get(EngineType.BUSINESS.value)
+            if business_state and business_state.get("status") != "active":
+                blockers.append(message)
+    
+    if blockers and status != ModuleStatus.LOCKED:
+        status = ModuleStatus.BLOCKED
+    
+    # Calculate health
+    health = "good"
+    health_notes = []
+    
+    if status == ModuleStatus.BLOCKED:
+        health = "blocked"
+        health_notes.extend(blockers)
+    elif status == ModuleStatus.LOCKED:
+        health = "locked"
+        health_notes.append("Module not unlocked - missing requirements")
+    elif status == ModuleStatus.UNLOCKED:
+        health = "ready"
+        health_notes.append("Module ready to activate")
+    
+    # Calculate priority alignment
+    priority_alignment = False
+    module_priorities = module_def.get("starting_point_priority", [])
+    if first_priority:
+        try:
+            user_priority = FirstPriority(first_priority)
+            priority_alignment = user_priority in module_priorities
+        except ValueError:
+            pass
+    
+    # Get next steps
+    next_steps = module_def.get("next_steps_after", []) if status == ModuleStatus.ACTIVE else []
+    
+    return {
+        "status": status.value,
+        "health": health,
+        "health_notes": health_notes,
+        "blockers": blockers,
+        "priority_alignment": priority_alignment,
+        "next_steps": next_steps
+    }
+
+
+# ============== MODULE STATUS ENDPOINT (Phase 4) ==============
+
+@router.get("/status")
+async def get_modules_status(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    GET /api/modules/status
+    
+    Returns comprehensive module status including:
+    - active_modules
+    - unlocked_modules (ready but not active)
+    - locked_modules
+    - blocked_modules
+    - module_health for each
+    - dependencies
+    """
+    db = get_db()
+    auth_user = await get_current_user_or_creator(credentials, db)
+    user_id = auth_user["user_id"]
+    
+    # Get user system state
+    user_state = await db.user_system_states.find_one(
+        {"user_id": user_id},
+        {"_id": 0}
+    )
+    
+    if not user_state:
+        return {
+            "initialized": False,
+            "message": "System not initialized. Complete intake form first.",
+            "redirect_to": "/intake"
+        }
+    
+    # Get engine states
+    engine_record = await db.user_engine_states.find_one(
+        {"user_id": user_id},
+        {"_id": 0}
+    )
+    engine_states = engine_record.get("engines", {}) if engine_record else {}
+    
+    # Categorize modules
+    active_modules = []
+    unlocked_modules = []
+    locked_modules = []
+    blocked_modules = []
+    
+    module_details = []
+    
+    for module_id, module_def in MODULE_REGISTRY.items():
+        status_info = calculate_module_status(
+            module_id, module_def, user_state, engine_states
+        )
+        
+        module_info = {
+            "module_id": module_id,
+            "name": module_def["name"],
+            "description": module_def["description"],
+            "purpose": module_def["purpose"],
+            "is_core": module_def.get("is_core", False),
+            "icon": module_def.get("icon", "circle"),
+            "color": module_def.get("color", "slate"),
+            "status": status_info["status"],
+            "health": status_info["health"],
+            "health_notes": status_info["health_notes"],
+            "blockers": status_info["blockers"],
+            "priority_alignment": status_info["priority_alignment"],
+            "next_steps": status_info["next_steps"],
+            "required_engines": [get_engine_display_name(e) for e in module_def.get("engines", [])],
+            "required_track": module_def.get("required_track").value if module_def.get("required_track") else None
+        }
+        
+        module_details.append(module_info)
+        
+        # Categorize
+        if status_info["status"] == ModuleStatus.ACTIVE.value:
+            active_modules.append(module_info)
+        elif status_info["status"] == ModuleStatus.BLOCKED.value:
+            blocked_modules.append(module_info)
+        elif status_info["status"] == ModuleStatus.UNLOCKED.value:
+            unlocked_modules.append(module_info)
+        else:
+            locked_modules.append(module_info)
+    
+    # Calculate overall health
+    overall_health = "good"
+    if len(blocked_modules) > 0:
+        overall_health = "has_blockers"
+    elif len(active_modules) == 0:
+        overall_health = "no_active_modules"
+    
+    return {
+        "initialized": True,
+        "overall_health": overall_health,
+        "track": user_state.get("assigned_track"),
+        "first_priority": user_state.get("first_priority"),
+        "summary": {
+            "total": len(MODULE_REGISTRY),
+            "active": len(active_modules),
+            "unlocked": len(unlocked_modules),
+            "blocked": len(blocked_modules),
+            "locked": len(locked_modules)
+        },
+        "active_modules": active_modules,
+        "unlocked_modules": unlocked_modules,
+        "blocked_modules": blocked_modules,
+        "locked_modules": locked_modules,
+        "all_modules": module_details
+    }
+
+
+# ============== MODULE UPDATE ENDPOINT (Phase 4) ==============
+
+class ModuleUpdateRequest(BaseModel):
+    """Request to update module status"""
+    action: str  # "activate", "deactivate", "acknowledge_blocker"
+    blocker_to_acknowledge: Optional[str] = None
+
+
+@router.post("/update/{module_id}")
+async def update_module_status(
+    module_id: str,
+    request: ModuleUpdateRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    POST /api/modules/update/{module_id}
+    
+    Update module status (activate/deactivate only, no rebuild).
+    """
+    db = get_db()
+    auth_user = await get_current_user_or_creator(credentials, db)
+    user_id = auth_user["user_id"]
+    
+    if module_id not in MODULE_REGISTRY:
+        raise HTTPException(status_code=404, detail="Module not found")
+    
+    module_def = MODULE_REGISTRY[module_id]
+    
+    # Get user state
+    user_state = await db.user_system_states.find_one(
+        {"user_id": user_id},
+        {"_id": 0}
+    )
+    
+    if not user_state:
+        raise HTTPException(status_code=404, detail="Please complete intake first")
+    
+    unlocked_modules = user_state.get("unlocked_modules", [])
+    active_modules = user_state.get("active_modules", [])
+    
+    if request.action == "activate":
+        if module_id not in unlocked_modules:
+            raise HTTPException(status_code=403, detail=f"Module {module_id} is not unlocked")
+        
+        if module_id not in active_modules:
+            active_modules.append(module_id)
+            await db.user_system_states.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "active_modules": active_modules,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+            
+            # Log module activation
+            await db.module_activity_log.insert_one({
+                "user_id": user_id,
+                "module_id": module_id,
+                "action": "activated",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+        
+        return {
+            "success": True,
+            "module_id": module_id,
+            "status": "active",
+            "message": f"{module_def['name']} activated"
+        }
+    
+    elif request.action == "deactivate":
+        if module_id in active_modules:
+            active_modules.remove(module_id)
+            await db.user_system_states.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "active_modules": active_modules,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+            
+            await db.module_activity_log.insert_one({
+                "user_id": user_id,
+                "module_id": module_id,
+                "action": "deactivated",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+        
+        return {
+            "success": True,
+            "module_id": module_id,
+            "status": "unlocked",
+            "message": f"{module_def['name']} deactivated"
+        }
+    
+    elif request.action == "acknowledge_blocker":
+        # Store acknowledged blocker
+        await db.acknowledged_blockers.update_one(
+            {"user_id": user_id, "module_id": module_id},
+            {"$addToSet": {"blockers": request.blocker_to_acknowledge}},
+            upsert=True
+        )
+        
+        return {
+            "success": True,
+            "module_id": module_id,
+            "blocker_acknowledged": request.blocker_to_acknowledge
+        }
+    
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action. Use: activate, deactivate, acknowledge_blocker")
 
 
 # ============== LIST ALL MODULES ==============
@@ -371,14 +846,26 @@ async def get_module(
     
     module_def = MODULE_REGISTRY[module_id]
     
-    # Check if unlocked
-    state = await db.user_system_states.find_one(
+    # Get user state
+    user_state = await db.user_system_states.find_one(
         {"user_id": user_id},
-        {"_id": 0, "unlocked_modules": 1, "active_modules": 1}
+        {"_id": 0}
     )
     
-    is_unlocked = module_id in state.get("unlocked_modules", []) if state else False
-    is_active = module_id in state.get("active_modules", []) if state else False
+    is_unlocked = module_id in user_state.get("unlocked_modules", []) if user_state else False
+    is_active = module_id in user_state.get("active_modules", []) if user_state else False
+    
+    # Get engine states for status calculation
+    engine_record = await db.user_engine_states.find_one(
+        {"user_id": user_id},
+        {"_id": 0}
+    )
+    engine_states = engine_record.get("engines", {}) if engine_record else {}
+    
+    # Calculate status
+    status_info = calculate_module_status(
+        module_id, module_def, user_state or {}, engine_states
+    )
     
     # Get module data if any
     module_data = await db.module_data.find_one(
@@ -394,15 +881,26 @@ async def get_module(
         "is_core": module_def.get("is_core", False),
         "is_unlocked": is_unlocked,
         "is_active": is_active,
+        "status": status_info["status"],
+        "health": status_info["health"],
+        "health_notes": status_info["health_notes"],
+        "blockers": status_info["blockers"],
+        "priority_alignment": status_info["priority_alignment"],
+        "next_steps": status_info["next_steps"],
         "icon": module_def.get("icon", "circle"),
         "color": module_def.get("color", "slate"),
         "tracks": [t.value for t in module_def.get("tracks", [])],
         "engines": [get_engine_display_name(e) for e in module_def.get("engines", [])],
+        "required_track": module_def.get("required_track").value if module_def.get("required_track") else None,
+        "required_engines": [e.value for e in module_def.get("required_engines", [])],
+        "required_assets": [a.value for a in module_def.get("required_assets", [])],
+        "unlock_conditions": module_def.get("unlock_conditions", []),
+        "starting_point_priority": [p.value for p in module_def.get("starting_point_priority", [])],
         "data": module_data.get("data") if module_data else None
     }
 
 
-# ============== ACTIVATE MODULE ==============
+# ============== ACTIVATE/DEACTIVATE MODULE (Legacy endpoints) ==============
 
 @router.post("/{module_id}/activate")
 async def activate_module(
@@ -410,44 +908,9 @@ async def activate_module(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Activate a module (add to active list)."""
-    db = get_db()
-    auth_user = await get_current_user_or_creator(credentials, db)
-    user_id = auth_user["user_id"]
-    
-    if module_id not in MODULE_REGISTRY:
-        raise HTTPException(status_code=404, detail="Module not found")
-    
-    state = await db.user_system_states.find_one(
-        {"user_id": user_id},
-        {"_id": 0}
-    )
-    
-    if not state:
-        raise HTTPException(status_code=404, detail="Please complete intake first")
-    
-    if module_id not in state.get("unlocked_modules", []):
-        raise HTTPException(status_code=403, detail=f"Module {module_id} is not unlocked")
-    
-    active_modules = state.get("active_modules", [])
-    if module_id not in active_modules:
-        active_modules.append(module_id)
-        await db.user_system_states.update_one(
-            {"user_id": user_id},
-            {"$set": {
-                "active_modules": active_modules,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
-    
-    return {
-        "success": True,
-        "module_id": module_id,
-        "is_active": True,
-        "active_modules": active_modules
-    }
+    request = ModuleUpdateRequest(action="activate")
+    return await update_module_status(module_id, request, credentials)
 
-
-# ============== DEACTIVATE MODULE ==============
 
 @router.post("/{module_id}/deactivate")
 async def deactivate_module(
@@ -455,24 +918,8 @@ async def deactivate_module(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Deactivate a module (remove from active list)."""
-    db = get_db()
-    auth_user = await get_current_user_or_creator(credentials, db)
-    user_id = auth_user["user_id"]
-    
-    result = await db.user_system_states.update_one(
-        {"user_id": user_id},
-        {
-            "$pull": {"active_modules": module_id},
-            "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
-        }
-    )
-    
-    return {
-        "success": True,
-        "module_id": module_id,
-        "is_active": False,
-        "removed": result.modified_count > 0
-    }
+    request = ModuleUpdateRequest(action="deactivate")
+    return await update_module_status(module_id, request, credentials)
 
 
 # ============== SAVE MODULE DATA ==============
