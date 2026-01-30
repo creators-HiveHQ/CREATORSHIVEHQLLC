@@ -5,7 +5,7 @@
  * with consistent styling and micro-interactions.
  */
 
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
