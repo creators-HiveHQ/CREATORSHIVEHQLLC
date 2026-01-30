@@ -1460,6 +1460,13 @@ function App() {
               </CreatorProtectedRoute>
             } />
             
+            {/* Intake Form Route - System Activation */}
+            <Route path="/intake" element={
+              <CreatorProtectedRoute>
+                <IntakeFormWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
             {/* Subscription Routes */}
             <Route path="/creator/subscription" element={
               <CreatorAuthProvider>
