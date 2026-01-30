@@ -5519,6 +5519,7 @@ api_router.include_router(command_center_router)  # Command center dashboard rou
 api_router.include_router(engines_router)  # Engine management routes
 api_router.include_router(modules_router)  # Module management routes
 api_router.include_router(system_health_router)  # System health and data consistency routes
+api_router.include_router(inventory_router)  # Inventory CRUD routes (Expression Phase)
 
 # Include the router into the app
 app.include_router(api_router)
