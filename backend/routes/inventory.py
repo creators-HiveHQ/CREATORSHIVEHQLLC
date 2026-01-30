@@ -352,3 +352,347 @@ async def update_item_status(
     update = InventoryItemUpdate(status=status)
     return await update_inventory_item(category, item_id, update, credentials)
 
+
+
+
+# ============== FILE UPLOAD ==============
+
+# Create uploads directory if it doesn't exist
+UPLOAD_DIR = "/app/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Allowed file types
+ALLOWED_EXTENSIONS = {
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "application/pdf",
+    "video/mp4", "video/webm",
+    "audio/mpeg", "audio/wav",
+    "application/msword", 
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel", 
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+}
+
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+class UploadResponse(BaseModel):
+    """File upload response"""
+    id: str
+    name: str
+    type: str
+    size: str
+    url: str
+    created_at: str
+
+
+@router.post("/upload", response_model=UploadResponse)
+async def upload_file(
+    file: UploadFile = File(...),
+    category: str = Form(...),
+    item_id: str = Form(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Upload a file attachment to an inventory item"""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    user_id = creator["id"]
+    
+    # Validate file type
+    if file.content_type not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"File type '{file.content_type}' not allowed")
+    
+    # Read file content
+    content = await file.read()
+    
+    # Validate file size
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+    
+    # Generate unique filename
+    file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
+    file_id = f"file-{str(uuid.uuid4())[:8]}"
+    stored_filename = f"{user_id}_{file_id}{file_ext}"
+    file_path = os.path.join(UPLOAD_DIR, stored_filename)
+    
+    # Save file
+    try:
+        with open(file_path, "wb") as f:
+            f.write(content)
+    except Exception as e:
+        logger.error(f"Failed to save file: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
+    
+    # Create attachment record
+    now = datetime.now(timezone.utc).isoformat()
+    attachment = {
+        "id": file_id,
+        "name": file.filename,
+        "type": file.content_type,
+        "size": f"{len(content) / 1024:.1f} KB" if len(content) < 1024 * 1024 else f"{len(content) / (1024 * 1024):.1f} MB",
+        "url": f"/api/inventory/files/{stored_filename}",
+        "created_at": now
+    }
+    
+    # Update item's attachments
+    inventory = await get_user_inventory(db, user_id)
+    items = inventory.get(category, [])
+    
+    for item in items:
+        if item.get("id") == item_id:
+            if "metadata" not in item:
+                item["metadata"] = {}
+            if "attachments" not in item["metadata"]:
+                item["metadata"]["attachments"] = []
+            item["metadata"]["attachments"].append(attachment)
+            item["updated_at"] = now
+            break
+    
+    inventory[category] = items
+    await save_user_inventory(db, user_id, inventory)
+    
+    logger.info(f"Uploaded file {file_id} for item {item_id}")
+    
+    return UploadResponse(**attachment)
+
+
+@router.get("/files/{filename}")
+async def get_file(filename: str):
+    """Serve an uploaded file"""
+    from fastapi.responses import FileResponse
+    
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(file_path)
+
+
+# ============== WORKFLOW TRIGGERS ==============
+
+class WorkflowTrigger(BaseModel):
+    """Workflow trigger model"""
+    id: str
+    type: str  # manual, scheduled, task_completed, engine_activated, webhook, condition
+    name: Optional[str] = None
+    enabled: bool = True
+    schedule: Optional[str] = None
+    cron: Optional[str] = None
+    task_id: Optional[str] = None
+    task_name: Optional[str] = None
+    engine: Optional[str] = None
+    webhook_url: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+
+class TriggerExecutionRequest(BaseModel):
+    """Trigger execution request"""
+    trigger_id: str
+    payload: Dict[str, Any] = {}
+
+
+@router.post("/workflows/{workflow_id}/execute")
+async def execute_workflow(
+    workflow_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Manually execute a workflow"""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    user_id = creator["id"]
+    
+    # Get workflow
+    inventory = await get_user_inventory(db, user_id)
+    workflows = inventory.get("workflows", [])
+    
+    workflow = None
+    for w in workflows:
+        if w.get("id") == workflow_id:
+            workflow = w
+            break
+    
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    
+    # Log execution
+    now = datetime.now(timezone.utc).isoformat()
+    execution = {
+        "id": f"exec-{str(uuid.uuid4())[:8]}",
+        "workflow_id": workflow_id,
+        "trigger_type": "manual",
+        "status": "completed",
+        "started_at": now,
+        "completed_at": now
+    }
+    
+    # Update workflow with execution history
+    if "metadata" not in workflow:
+        workflow["metadata"] = {}
+    if "executions" not in workflow["metadata"]:
+        workflow["metadata"]["executions"] = []
+    workflow["metadata"]["executions"].append(execution)
+    workflow["metadata"]["last_executed"] = now
+    workflow["updated_at"] = now
+    
+    # Save
+    for i, w in enumerate(workflows):
+        if w.get("id") == workflow_id:
+            workflows[i] = workflow
+            break
+    
+    inventory["workflows"] = workflows
+    await save_user_inventory(db, user_id, inventory)
+    
+    logger.info(f"Executed workflow {workflow_id} for user {user_id}")
+    
+    return {
+        "success": True,
+        "execution_id": execution["id"],
+        "workflow_id": workflow_id,
+        "status": "completed"
+    }
+
+
+@router.post("/workflows/trigger/{trigger_id}")
+async def trigger_workflow_webhook(
+    trigger_id: str,
+    payload: Dict[str, Any] = {}
+):
+    """
+    Webhook endpoint to trigger a workflow.
+    This is a public endpoint for external integrations.
+    """
+    db = get_db()
+    
+    # Find workflow with this trigger
+    # Note: In production, you'd want to store trigger->workflow mapping more efficiently
+    # For now, we search through all user profiles
+    profiles = await db.user_system_profiles.find({}).to_list(100)
+    
+    for profile in profiles:
+        inventory = profile.get("inventory", {})
+        workflows = inventory.get("workflows", [])
+        
+        for workflow in workflows:
+            triggers = workflow.get("metadata", {}).get("triggers", [])
+            for trigger in triggers:
+                if trigger.get("id") == trigger_id and trigger.get("enabled"):
+                    # Found the trigger - execute workflow
+                    now = datetime.now(timezone.utc).isoformat()
+                    execution = {
+                        "id": f"exec-{str(uuid.uuid4())[:8]}",
+                        "workflow_id": workflow["id"],
+                        "trigger_type": "webhook",
+                        "trigger_id": trigger_id,
+                        "payload": payload,
+                        "status": "completed",
+                        "started_at": now,
+                        "completed_at": now
+                    }
+                    
+                    # Update workflow
+                    if "metadata" not in workflow:
+                        workflow["metadata"] = {}
+                    if "executions" not in workflow["metadata"]:
+                        workflow["metadata"]["executions"] = []
+                    workflow["metadata"]["executions"].append(execution)
+                    workflow["metadata"]["last_executed"] = now
+                    
+                    # Save back to database
+                    await db.user_system_profiles.update_one(
+                        {"_id": profile["_id"]},
+                        {"$set": {"inventory": inventory}}
+                    )
+                    
+                    logger.info(f"Webhook triggered workflow {workflow['id']} via trigger {trigger_id}")
+                    
+                    return {
+                        "success": True,
+                        "execution_id": execution["id"],
+                        "workflow_id": workflow["id"],
+                        "trigger_id": trigger_id
+                    }
+    
+    raise HTTPException(status_code=404, detail="Trigger not found or disabled")
+
+
+@router.post("/tasks/{task_id}/complete")
+async def mark_task_complete(
+    task_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Mark a task as complete and trigger any associated workflows.
+    """
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    user_id = creator["id"]
+    
+    inventory = await get_user_inventory(db, user_id)
+    tasks = inventory.get("tasks", [])
+    workflows = inventory.get("workflows", [])
+    
+    # Find and update task
+    task_found = False
+    for task in tasks:
+        if task.get("id") == task_id:
+            task["status"] = "completed"
+            task["updated_at"] = datetime.now(timezone.utc).isoformat()
+            if "metadata" not in task:
+                task["metadata"] = {}
+            task["metadata"]["completed_at"] = task["updated_at"]
+            task_found = True
+            break
+    
+    if not task_found:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Check for workflows triggered by this task completion
+    triggered_workflows = []
+    now = datetime.now(timezone.utc).isoformat()
+    
+    for workflow in workflows:
+        triggers = workflow.get("metadata", {}).get("triggers", [])
+        for trigger in triggers:
+            if (trigger.get("type") == "task_completed" and 
+                trigger.get("task_id") == task_id and 
+                trigger.get("enabled")):
+                # Trigger this workflow
+                execution = {
+                    "id": f"exec-{str(uuid.uuid4())[:8]}",
+                    "workflow_id": workflow["id"],
+                    "trigger_type": "task_completed",
+                    "trigger_id": trigger["id"],
+                    "task_id": task_id,
+                    "status": "completed",
+                    "started_at": now,
+                    "completed_at": now
+                }
+                
+                if "metadata" not in workflow:
+                    workflow["metadata"] = {}
+                if "executions" not in workflow["metadata"]:
+                    workflow["metadata"]["executions"] = []
+                workflow["metadata"]["executions"].append(execution)
+                workflow["metadata"]["last_executed"] = now
+                
+                triggered_workflows.append({
+                    "workflow_id": workflow["id"],
+                    "workflow_name": workflow.get("name"),
+                    "execution_id": execution["id"]
+                })
+    
+    # Save changes
+    inventory["tasks"] = tasks
+    inventory["workflows"] = workflows
+    await save_user_inventory(db, user_id, inventory)
+    
+    logger.info(f"Completed task {task_id}, triggered {len(triggered_workflows)} workflows")
+    
+    return {
+        "success": True,
+        "task_id": task_id,
+        "triggered_workflows": triggered_workflows
+    }
