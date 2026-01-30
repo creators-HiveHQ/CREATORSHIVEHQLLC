@@ -248,7 +248,7 @@ async def get_intake_status(
         "intake_completed": True,
         "intake_id": state.intake_id if state else None,
         "assigned_track": state.assigned_track.value if state and state.assigned_track else None,
-        "engines_active": len([e for e in state.engines.values() if e.get("status") == "active"]) if state else 0,
+        "engines_active": len([e for k, e in state.engines.items() if isinstance(e, dict) and e.get("status") == "active" or hasattr(e, 'status') and e.status == EngineStatus.ACTIVE]) if state else 0,
         "modules_unlocked": len(state.unlocked_modules) if state else 0
     }
 
