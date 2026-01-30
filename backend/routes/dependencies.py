@@ -50,6 +50,10 @@ services = {
     "webhook": None,
     "email": None,
     "notification": None,
+    # New system restoration services
+    "intake": None,
+    "engine": None,
+    "millicent": None,
 }
 
 
