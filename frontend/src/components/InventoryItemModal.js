@@ -82,14 +82,6 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "Archived", color: "bg-slate-100 text-slate-400" }
 ];
 
-// Custom hook to track previous value
-function usePrevious(value) {
-  const ref = useRef();
-  const prev = ref.current;
-  ref.current = value;
-  return prev;
-}
-
 export default function InventoryItemModal({
   isOpen,
   onClose,
@@ -98,44 +90,63 @@ export default function InventoryItemModal({
   editItem = null,
   loading = false
 }) {
-  // Initialize form with editItem data or defaults
-  const getInitialFormData = () => ({
-    name: editItem?.name || "",
-    description: editItem?.description || "",
-    status: editItem?.status || "draft",
-    type: editItem?.type || "",
-    tags: editItem?.tags || []
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    status: "draft",
+    type: "",
+    tags: []
   });
-
-  const [formData, setFormData] = useState(getInitialFormData);
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState({});
+  
+  // Track if modal just opened to reset form
+  const modalOpenRef = useRef(false);
+  const editItemRef = useRef(editItem);
+
+  // Reset form when modal opens or editItem changes
+  if (isOpen && !modalOpenRef.current) {
+    // Modal just opened
+    modalOpenRef.current = true;
+    const newData = {
+      name: editItem?.name || "",
+      description: editItem?.description || "",
+      status: editItem?.status || "draft",
+      type: editItem?.type || "",
+      tags: editItem?.tags || []
+    };
+    // Use a microtask to avoid setState during render
+    Promise.resolve().then(() => {
+      setFormData(newData);
+      setErrors({});
+      setTagInput("");
+    });
+  } else if (!isOpen && modalOpenRef.current) {
+    // Modal closed
+    modalOpenRef.current = false;
+  }
+  
+  // Update editItemRef
+  if (editItemRef.current !== editItem) {
+    editItemRef.current = editItem;
+    if (isOpen && editItem) {
+      Promise.resolve().then(() => {
+        setFormData({
+          name: editItem.name || "",
+          description: editItem.description || "",
+          status: editItem.status || "draft",
+          type: editItem.type || "",
+          tags: editItem.tags || []
+        });
+        setErrors({});
+      });
+    }
+  }
 
   const isEditMode = !!editItem;
   const categoryConfig = CATEGORIES[category] || CATEGORIES.assets;
   const CategoryIcon = categoryConfig.icon;
-
-  // Reset form when editItem changes (using key prop from parent is preferred)
-  // This effect only handles the case when dialog content needs to sync
-  const prevEditItem = usePrevious(editItem);
-  const prevIsOpen = usePrevious(isOpen);
-  
-  if (isOpen && !prevIsOpen) {
-    // Modal just opened - reset form data
-    const newFormData = getInitialFormData();
-    if (JSON.stringify(newFormData) !== JSON.stringify(formData)) {
-      setFormData(newFormData);
-      setErrors({});
-      setTagInput("");
-    }
-  } else if (editItem !== prevEditItem && isOpen) {
-    // Edit item changed while modal is open
-    const newFormData = getInitialFormData();
-    if (JSON.stringify(newFormData) !== JSON.stringify(formData)) {
-      setFormData(newFormData);
-      setErrors({});
-    }
-  }
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
