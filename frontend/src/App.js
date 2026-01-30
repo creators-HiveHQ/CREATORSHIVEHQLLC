@@ -1393,6 +1393,33 @@ const InventoryWrapper = () => {
   );
 };
 
+// Wrapper for Inventory Item Detail with Creator Auth
+const InventoryItemDetailWrapper = () => {
+  const { token } = useCreatorAuth();
+  
+  return (
+    <InventoryItemDetail token={token} />
+  );
+};
+
+// Wrapper for Asset Upload with Creator Auth
+const AssetUploadWrapper = () => {
+  const { token } = useCreatorAuth();
+  
+  return (
+    <AssetUpload token={token} />
+  );
+};
+
+// Wrapper for Workflow Triggers with Creator Auth
+const WorkflowTriggersWrapper = () => {
+  const { token } = useCreatorAuth();
+  
+  return (
+    <WorkflowTriggers token={token} />
+  );
+};
+
 // Main App
 function App() {
   return (
