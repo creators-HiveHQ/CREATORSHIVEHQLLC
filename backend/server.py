@@ -203,6 +203,11 @@ from pattern_export_service import PatternExportService
 # Import Auto-Escalation Service
 from auto_escalation_service import AutoEscalationService
 
+# Import System Restoration Services (Engines, Intake, Millicent)
+from engine_service import EngineService
+from intake_service import IntakeService
+from millicent_service import MillicentService
+
 # Import route modules
 from routes import dependencies as route_deps
 from routes.auth import router as auth_router, creator_auth_router
@@ -216,6 +221,7 @@ from routes.subscriptions import router as subscriptions_router, admin_router as
 from routes.elite import router as elite_routes_router
 from routes.referral import router as referral_router, admin_router as referral_admin_router
 from routes.webhooks import router as webhooks_router
+from routes.intake import router as intake_router, dashboard_router as command_center_router
 
 # Import Email service
 from email_service import email_service, EmailDeliveryError
