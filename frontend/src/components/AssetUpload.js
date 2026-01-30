@@ -59,9 +59,17 @@ const ALLOWED_TYPES = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+// Get file icon component
+const FileIconComponent = ({ mimeType, className }) => {
+  if (mimeType?.startsWith("image/")) return <FileImage className={className} />;
+  if (mimeType?.startsWith("video/")) return <FileVideo className={className} />;
+  if (mimeType?.startsWith("audio/")) return <FileAudio className={className} />;
+  if (mimeType === "application/pdf") return <FileText className={className} />;
+  return <File className={className} />;
+};
+
 // ============== FILE PREVIEW CARD ==============
 const FilePreviewCard = ({ file, preview, onRemove, uploadProgress, uploadStatus }) => {
-  const FileIcon = getFileIcon(file.type);
   const isImage = file.type?.startsWith("image/");
   
   return (
@@ -72,7 +80,7 @@ const FilePreviewCard = ({ file, preview, onRemove, uploadProgress, uploadStatus
           {isImage && preview ? (
             <img src={preview} alt={file.name} className="w-full h-full object-cover" />
           ) : (
-            <FileIcon className="w-8 h-8 text-slate-400" />
+            <FileIconComponent mimeType={file.type} className="w-8 h-8 text-slate-400" />
           )}
         </div>
         
