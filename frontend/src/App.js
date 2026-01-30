@@ -1520,6 +1520,13 @@ function App() {
               </CreatorProtectedRoute>
             } />
             
+            {/* Universal Inventory Route - Expression Phase */}
+            <Route path="/inventory" element={
+              <CreatorProtectedRoute>
+                <InventoryWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
             {/* Subscription Routes */}
             <Route path="/creator/subscription" element={
               <CreatorAuthProvider>
