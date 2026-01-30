@@ -3,15 +3,18 @@ Inventory Routes - Expression Phase
 ====================================
 CRUD endpoints for user inventory items (assets, offers, content, workflows, tasks).
 Stores data in user_system_profiles collection.
+Includes file upload and workflow trigger functionality.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 import uuid
 import logging
+import os
+import base64
 
 from routes.dependencies import security, get_db
 from auth import get_current_creator
