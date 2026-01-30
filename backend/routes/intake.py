@@ -5,17 +5,16 @@ API endpoints for the Intake Form and system state management.
 This replaces the existing onboarding wizard.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from datetime import datetime, timezone
 import logging
 
 from routes.dependencies import security, get_db, get_service
 from models_system import (
-    IntakeFormSubmission, IntakeFormResponse, IntakeUserIdentity,
-    IntakeSystemNeed, IntakeStartingPoint, UserSystemState,
-    DashboardState, EngineType, EngineStatus, TrackType
+    IntakeFormSubmission, IntakeFormResponse,
+    UserSystemState, DashboardState, EngineStatus
 )
 
 logger = logging.getLogger(__name__)
@@ -58,77 +57,125 @@ async def get_current_user_or_creator(credentials: HTTPAuthorizationCredentials,
 
 @router.get("/form-options")
 async def get_intake_form_options():
-    """Get all options for the intake form dropdowns and selections"""
+    """
+    Get all options for the intake form.
+    
+    Returns the exact field definitions for the single-page intake form:
+    - CATEGORY 1: User Identity (identity_type, stage, primary_goal)
+    - CATEGORY 2: System Need (selected_engines - multi-select)
+    - CATEGORY 3: Starting Point (assets_already_have, missing_elements, first_priority)
+    """
     
     return {
         "user_identity": {
-            "identity_types": [
-                {"value": "creator", "label": "Creator", "description": "Content creators, artists, influencers"},
-                {"value": "business", "label": "Business", "description": "Entrepreneurs, business owners, consultants"},
-                {"value": "hybrid", "label": "Hybrid", "description": "Creative business owners, creator-entrepreneurs"}
-            ],
-            "stages": [
-                {"value": "beginner", "label": "Beginner", "description": "Just starting out, learning the basics"},
-                {"value": "intermediate", "label": "Intermediate", "description": "Some experience, growing steadily"},
-                {"value": "advanced", "label": "Advanced", "description": "Established, optimizing and scaling"}
-            ]
-        },
-        "engines": [
-            {
-                "id": "business_engine",
-                "name": "Business Engine",
-                "description": "Business planning, strategy, market analysis",
-                "best_for": ["Business", "Hybrid"],
-                "inputs": ["Business model", "Target market", "Value proposition", "Revenue streams", "Cost structure"],
-                "outputs": ["Business plan", "Market analysis", "Growth strategy"]
+            "identity_type": {
+                "label": "I am a...",
+                "required": True,
+                "type": "radio",
+                "options": [
+                    {"value": "creator", "label": "Creator", "description": "Content creators, artists, influencers"},
+                    {"value": "business", "label": "Business", "description": "Entrepreneurs, business owners, consultants"},
+                    {"value": "hybrid", "label": "Hybrid", "description": "Creative business owners, creator-entrepreneurs"}
+                ]
             },
-            {
-                "id": "engagement_engine",
-                "name": "Engagement Engine",
-                "description": "Audience building, content strategy, community",
-                "best_for": ["Creator", "Hybrid"],
-                "inputs": ["Audience profile", "Content strategy", "Platform selection", "Engagement goals"],
-                "outputs": ["Engagement plan", "Content calendar", "Community strategy"]
+            "stage": {
+                "label": "My current stage is...",
+                "required": True,
+                "type": "radio",
+                "options": [
+                    {"value": "beginner", "label": "Beginner", "description": "Just starting out, learning the basics"},
+                    {"value": "intermediate", "label": "Intermediate", "description": "Some experience, growing steadily"},
+                    {"value": "advanced", "label": "Advanced", "description": "Established, optimizing and scaling"}
+                ]
             },
-            {
-                "id": "role_engine",
-                "name": "Role Engine",
-                "description": "Role definition, team building, delegation",
-                "best_for": ["Business", "Hybrid"],
-                "inputs": ["Role definition", "Responsibilities", "Skills required", "Authority level"],
-                "outputs": ["Role clarity", "Team structure", "Delegation plan"]
-            },
-            {
-                "id": "income_engine",
-                "name": "Income Engine",
-                "description": "Revenue tracking, pricing, sales optimization",
-                "best_for": ["Creator", "Business", "Hybrid"],
-                "inputs": ["Income sources", "Pricing strategy", "Sales pipeline", "Financial goals"],
-                "outputs": ["Revenue forecast", "Pricing recommendations", "Cash flow plan"]
+            "primary_goal": {
+                "label": "My primary goal is...",
+                "required": True,
+                "type": "radio",
+                "options": [
+                    {"value": "grow_audience", "label": "Grow audience"},
+                    {"value": "build_brand", "label": "Build brand"},
+                    {"value": "monetize_content", "label": "Monetize content"},
+                    {"value": "launch_offers", "label": "Launch offers"},
+                    {"value": "improve_consistency", "label": "Improve consistency"},
+                    {"value": "other", "label": "Other", "has_text_input": True}
+                ]
             }
-        ],
-        "starting_point_prompts": {
-            "what_they_have": [
-                "I have an existing audience on...",
-                "I have a business plan that includes...",
-                "I currently make income from...",
-                "I have a team that handles...",
-                "I have content that performs well on..."
-            ],
-            "what_is_missing": [
-                "I need help with audience growth",
-                "I need a clearer business strategy",
-                "I need to increase my income",
-                "I need better role definition",
-                "I need a content system"
-            ],
-            "first_accomplishment": [
-                "Define my target audience",
-                "Create a business plan",
-                "Set up income tracking",
-                "Clarify my role and responsibilities",
-                "Build a content calendar"
-            ]
+        },
+        "system_need": {
+            "selected_engines": {
+                "label": "Select the engines you need",
+                "required": True,
+                "type": "checkbox",
+                "min_selections": 1,
+                "options": [
+                    {
+                        "value": "business_engine",
+                        "label": "Business Engine",
+                        "description": "Business planning, strategy, market analysis",
+                        "best_for": ["Business", "Hybrid"]
+                    },
+                    {
+                        "value": "engagement_engine",
+                        "label": "Engagement Engine",
+                        "description": "Audience building, content strategy, community",
+                        "best_for": ["Creator", "Hybrid"]
+                    },
+                    {
+                        "value": "role_engine",
+                        "label": "Role Engine",
+                        "description": "Role definition, team building, delegation",
+                        "best_for": ["Business", "Hybrid"]
+                    },
+                    {
+                        "value": "income_engine",
+                        "label": "Income Engine",
+                        "description": "Revenue tracking, pricing, sales optimization",
+                        "best_for": ["Creator", "Business", "Hybrid"]
+                    }
+                ]
+            }
+        },
+        "starting_point": {
+            "assets_already_have": {
+                "label": "What do you already have?",
+                "required": False,
+                "type": "checkbox",
+                "options": [
+                    {"value": "social_media_accounts", "label": "Social media accounts"},
+                    {"value": "existing_audience", "label": "Existing audience"},
+                    {"value": "offers_products", "label": "Offers/products"},
+                    {"value": "brand_identity", "label": "Brand identity"},
+                    {"value": "content_system", "label": "Content system"},
+                    {"value": "none", "label": "None"}
+                ]
+            },
+            "missing_elements": {
+                "label": "What is missing?",
+                "required": False,
+                "type": "checkbox",
+                "options": [
+                    {"value": "clarity_structure", "label": "Clarity/structure"},
+                    {"value": "content_plan", "label": "Content plan"},
+                    {"value": "offer_strategy", "label": "Offer strategy"},
+                    {"value": "brand_voice", "label": "Brand voice"},
+                    {"value": "monetization_path", "label": "Monetization path"},
+                    {"value": "systems_automation", "label": "Systems/automation"}
+                ]
+            },
+            "first_priority": {
+                "label": "What is your first priority?",
+                "required": True,
+                "type": "radio",
+                "options": [
+                    {"value": "build_foundation", "label": "Build foundation"},
+                    {"value": "fix_gaps", "label": "Fix gaps"},
+                    {"value": "grow_audience", "label": "Grow audience"},
+                    {"value": "launch_offer", "label": "Launch offer"},
+                    {"value": "increase_income", "label": "Increase income"},
+                    {"value": "improve_consistency", "label": "Improve consistency"}
+                ]
+            }
         }
     }
 
