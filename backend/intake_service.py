@@ -21,7 +21,8 @@ from models_system import (
     IntakeFormSubmission, IntakeFormResponse, IntakeUserIdentity,
     IntakeSystemNeed, IntakeStartingPoint, UserSystemState,
     TrackType, UserIdentityType, UserStage, EngineType, EngineStatus,
-    ArrisStructuralOutput, MillicentToneOutput, DashboardState
+    ArrisStructuralOutput, MillicentToneOutput, DashboardState,
+    PrimaryGoal, AssetsAlreadyHave, MissingElements, FirstPriority
 )
 from engine_service import EngineService
 from millicent_service import MillicentService
@@ -186,6 +187,45 @@ MODULES = {
 }
 
 
+# ============== LABEL MAPPINGS ==============
+
+ASSETS_LABELS = {
+    AssetsAlreadyHave.SOCIAL_MEDIA_ACCOUNTS: "Social media accounts",
+    AssetsAlreadyHave.EXISTING_AUDIENCE: "Existing audience",
+    AssetsAlreadyHave.OFFERS_PRODUCTS: "Offers/products",
+    AssetsAlreadyHave.BRAND_IDENTITY: "Brand identity",
+    AssetsAlreadyHave.CONTENT_SYSTEM: "Content system",
+    AssetsAlreadyHave.NONE: "None"
+}
+
+MISSING_LABELS = {
+    MissingElements.CLARITY_STRUCTURE: "Clarity/structure",
+    MissingElements.CONTENT_PLAN: "Content plan",
+    MissingElements.OFFER_STRATEGY: "Offer strategy",
+    MissingElements.BRAND_VOICE: "Brand voice",
+    MissingElements.MONETIZATION_PATH: "Monetization path",
+    MissingElements.SYSTEMS_AUTOMATION: "Systems/automation"
+}
+
+PRIORITY_LABELS = {
+    FirstPriority.BUILD_FOUNDATION: "Build foundation",
+    FirstPriority.FIX_GAPS: "Fix gaps",
+    FirstPriority.GROW_AUDIENCE: "Grow audience",
+    FirstPriority.LAUNCH_OFFER: "Launch offer",
+    FirstPriority.INCREASE_INCOME: "Increase income",
+    FirstPriority.IMPROVE_CONSISTENCY: "Improve consistency"
+}
+
+GOAL_LABELS = {
+    PrimaryGoal.GROW_AUDIENCE: "Grow audience",
+    PrimaryGoal.BUILD_BRAND: "Build brand",
+    PrimaryGoal.MONETIZE_CONTENT: "Monetize content",
+    PrimaryGoal.LAUNCH_OFFERS: "Launch offers",
+    PrimaryGoal.IMPROVE_CONSISTENCY: "Improve consistency",
+    PrimaryGoal.OTHER: "Other"
+}
+
+
 # ============== TRACK ASSIGNMENT LOGIC ==============
 
 def determine_track(identity_type: UserIdentityType) -> TrackType:
@@ -199,17 +239,8 @@ def determine_track(identity_type: UserIdentityType) -> TrackType:
 
 
 def get_selected_engines(system_need: IntakeSystemNeed) -> List[EngineType]:
-    """Convert system need selections to engine types"""
-    engines = []
-    if system_need.business_engine:
-        engines.append(EngineType.BUSINESS)
-    if system_need.engagement_engine:
-        engines.append(EngineType.ENGAGEMENT)
-    if system_need.role_engine:
-        engines.append(EngineType.ROLE)
-    if system_need.income_engine:
-        engines.append(EngineType.INCOME)
-    return engines
+    """Get selected engines from system need"""
+    return system_need.selected_engines
 
 
 def get_modules_for_track_and_engines(
@@ -278,15 +309,6 @@ class IntakeService:
         # ===== STEP 2: Activate Engines =====
         selected_engines = get_selected_engines(intake_data.system_need)
         
-        if not selected_engines:
-            # Default engines based on track
-            if assigned_track == TrackType.CREATOR:
-                selected_engines = [EngineType.ENGAGEMENT, EngineType.INCOME]
-            elif assigned_track == TrackType.BUSINESS:
-                selected_engines = [EngineType.BUSINESS, EngineType.ROLE, EngineType.INCOME]
-            else:
-                selected_engines = [EngineType.BUSINESS, EngineType.ENGAGEMENT, EngineType.INCOME]
-        
         engine_states = await self.engine_service.initialize_engines_for_user(
             user_id, selected_engines
         )
@@ -316,13 +338,18 @@ class IntakeService:
             stage=intake_data.user_identity.stage
         )
         
-        # ARRIS structural recommendations (using existing ARRIS service if available)
+        # ARRIS structural recommendations
         arris_recommendations = await self._generate_arris_recommendations(
             user_id,
             intake_data,
             assigned_track,
             selected_engines
         )
+        
+        # Get primary goal text
+        primary_goal_text = GOAL_LABELS.get(intake_data.user_identity.primary_goal, "")
+        if intake_data.user_identity.primary_goal == PrimaryGoal.OTHER:
+            primary_goal_text = intake_data.user_identity.primary_goal_other or "Other"
         
         # ===== Store System State =====
         system_state = UserSystemState(
@@ -333,10 +360,10 @@ class IntakeService:
             assigned_track=assigned_track,
             identity_type=intake_data.user_identity.identity_type,
             stage=intake_data.user_identity.stage,
-            primary_goal=intake_data.user_identity.primary_goal,
-            what_they_have=intake_data.starting_point.what_they_have,
-            what_is_missing=intake_data.starting_point.what_is_missing,
-            first_accomplishment=intake_data.starting_point.first_accomplishment,
+            primary_goal=primary_goal_text,
+            assets_already_have=[a.value for a in intake_data.starting_point.assets_already_have],
+            missing_elements=[m.value for m in intake_data.starting_point.missing_elements],
+            first_priority=intake_data.starting_point.first_priority.value,
             engines={k: v.model_dump() for k, v in engine_states.items()},
             unlocked_modules=unlocked_modules,
             active_modules=["dashboard", "profile"],
@@ -392,40 +419,35 @@ class IntakeService:
         
         steps = []
         
-        # Based on what they want to accomplish first
-        first_goal = starting_point.first_accomplishment.lower()
+        # Based on first priority
+        priority = starting_point.first_priority
         
-        # Map goal keywords to modules
-        if "audience" in first_goal or "engagement" in first_goal:
-            steps.append("Start with Audience Builder to define your target audience")
-        if "business" in first_goal or "plan" in first_goal:
-            steps.append("Begin with Business Model Canvas to structure your business")
-        if "income" in first_goal or "revenue" in first_goal or "money" in first_goal:
-            steps.append("Set up Revenue Tracker to monitor income sources")
-        if "team" in first_goal or "role" in first_goal:
-            steps.append("Use Role Definer to clarify responsibilities")
-        if "content" in first_goal:
-            steps.append("Open Content Planner to organize your content strategy")
+        priority_steps = {
+            FirstPriority.BUILD_FOUNDATION: "Start with Profile & Identity to establish your foundation",
+            FirstPriority.FIX_GAPS: "Review your missing elements and address them systematically",
+            FirstPriority.GROW_AUDIENCE: "Begin with Audience Builder to define your target audience",
+            FirstPriority.LAUNCH_OFFER: "Set up your Business Model Canvas to structure your offer",
+            FirstPriority.INCREASE_INCOME: "Open Revenue Tracker to analyze and optimize income streams",
+            FirstPriority.IMPROVE_CONSISTENCY: "Use Content Planner to establish a consistent workflow"
+        }
         
-        # If no specific goal matched, suggest based on engines
-        if not steps:
-            for engine in selected_engines:
-                if engine == EngineType.BUSINESS:
-                    steps.append("Complete Business Model Canvas to define your business structure")
-                    break
-                elif engine == EngineType.ENGAGEMENT:
-                    steps.append("Start with Audience Builder to understand your audience")
-                    break
-                elif engine == EngineType.INCOME:
-                    steps.append("Set up Revenue Tracker to organize your income streams")
-                    break
-                elif engine == EngineType.ROLE:
-                    steps.append("Define your role using Role Definer")
-                    break
+        if priority in priority_steps:
+            steps.append(priority_steps[priority])
         
-        # Add stage-appropriate steps
+        # Based on what's missing
+        for missing in starting_point.missing_elements:
+            if missing == MissingElements.CLARITY_STRUCTURE and len(steps) < 5:
+                steps.append("Use Strategy Builder to gain clarity on your structure")
+            elif missing == MissingElements.CONTENT_PLAN and len(steps) < 5:
+                steps.append("Open Content Planner to organize your content strategy")
+            elif missing == MissingElements.OFFER_STRATEGY and len(steps) < 5:
+                steps.append("Define your offers in Business Model Canvas")
+            elif missing == MissingElements.MONETIZATION_PATH and len(steps) < 5:
+                steps.append("Set up Revenue Tracker to map your monetization")
+        
+        # Add stage-appropriate step
         if user_identity.stage == UserStage.BEGINNER:
-            steps.append("Explore the Dashboard to understand your command center")
+            steps.append("Explore the Command Center Dashboard to understand your control hub")
         
         # Limit to 5 steps
         return steps[:5]
@@ -438,21 +460,20 @@ class IntakeService:
         """Identify what's incomplete based on starting point"""
         
         incomplete = []
-        missing = intake_data.starting_point.what_is_missing.lower()
         
-        # Map missing items to modules
-        if "audience" in missing:
-            incomplete.append("audience_builder")
-        if "content" in missing:
-            incomplete.append("content_planner")
-        if "business" in missing or "plan" in missing:
-            incomplete.append("business_model_canvas")
-        if "revenue" in missing or "income" in missing:
-            incomplete.append("revenue_tracker")
-        if "pricing" in missing:
-            incomplete.append("pricing_optimizer")
-        if "team" in missing or "role" in missing:
-            incomplete.append("role_definer")
+        # Map missing elements to modules
+        missing_to_module = {
+            MissingElements.CLARITY_STRUCTURE: "strategy_builder",
+            MissingElements.CONTENT_PLAN: "content_planner",
+            MissingElements.OFFER_STRATEGY: "business_model_canvas",
+            MissingElements.BRAND_VOICE: "audience_builder",
+            MissingElements.MONETIZATION_PATH: "revenue_tracker",
+            MissingElements.SYSTEMS_AUTOMATION: "delegation_matrix"
+        }
+        
+        for missing in intake_data.starting_point.missing_elements:
+            if missing in missing_to_module:
+                incomplete.append(missing_to_module[missing])
         
         return incomplete
     
