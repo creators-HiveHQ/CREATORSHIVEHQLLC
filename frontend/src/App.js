@@ -1503,6 +1503,13 @@ function App() {
               </CreatorProtectedRoute>
             } />
             
+            {/* Command Center Route - Phase 5 Dashboard */}
+            <Route path="/command-center" element={
+              <CreatorProtectedRoute>
+                <CommandCenterWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
             {/* Subscription Routes */}
             <Route path="/creator/subscription" element={
               <CreatorAuthProvider>
