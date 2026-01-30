@@ -222,6 +222,8 @@ from routes.elite import router as elite_routes_router
 from routes.referral import router as referral_router, admin_router as referral_admin_router
 from routes.webhooks import router as webhooks_router
 from routes.intake import router as intake_router, dashboard_router as command_center_router
+from routes.engines import router as engines_router
+from routes.modules import router as modules_router
 
 # Import Email service
 from email_service import email_service, EmailDeliveryError
