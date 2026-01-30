@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +23,13 @@ import {
   LayoutDashboard, Activity, Grid3X3, ArrowRight,
   AlertTriangle, CheckCircle2, Lightbulb, MessageSquare,
   RefreshCw, Zap, Target, TrendingUp, User,
-  ChevronRight, Sparkles, Brain
+  ChevronRight, Sparkles, Brain, Eye, Layers
 } from "lucide-react";
 
 import EngineStatusPanel from "./EngineStatusPanel";
 import ModuleStatusPanel from "./ModuleStatusPanel";
+import KeeperPanel, { KeeperWidget } from "./KeeperPanel";
+import { InventoryWidget } from "./UniversalInventory";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
