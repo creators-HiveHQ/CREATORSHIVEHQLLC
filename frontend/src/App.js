@@ -1381,6 +1381,15 @@ const CommandCenterWrapper = () => {
   );
 };
 
+// Wrapper for Universal Inventory with Creator Auth
+const InventoryWrapper = () => {
+  const { token } = useCreatorAuth();
+  
+  return (
+    <UniversalInventory token={token} />
+  );
+};
+
 // Main App
 function App() {
   return (
