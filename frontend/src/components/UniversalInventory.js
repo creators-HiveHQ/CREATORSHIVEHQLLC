@@ -104,22 +104,23 @@ const StatusBadge = ({ status }) => {
 };
 
 // ============== INVENTORY ITEM CARD ==============
-const InventoryItemCard = ({ item, category, onEdit, onDelete }) => {
+const InventoryItemCard = ({ item, category, onEdit, onDelete, onView }) => {
   const categoryConfig = INVENTORY_CATEGORIES[category];
   const Icon = categoryConfig?.icon || Package;
   const isSystemGenerated = item.id?.startsWith("workflow-") || item.id?.startsWith("task-") || item.id?.startsWith("asset-");
 
   return (
     <Card 
-      className={`border ${categoryConfig?.borderColor || "border-slate-200"} hover:shadow-md transition-all group`}
+      className={`border ${categoryConfig?.borderColor || "border-slate-200"} hover:shadow-md transition-all group cursor-pointer`}
       data-testid={`inventory-item-${item.id}`}
+      onClick={() => onView && onView(item)}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className={`p-2 rounded-lg ${categoryConfig?.bgColor || "bg-slate-50"}`}>
             <Icon className={`w-5 h-5 ${categoryConfig?.color || "text-slate-500"}`} />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <StatusBadge status={item.status || "draft"} />
             {!isSystemGenerated && (
               <DropdownMenu>
