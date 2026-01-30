@@ -1351,14 +1351,31 @@ const IntakeFormWrapper = () => {
   const navigate = useNavigate();
   
   const handleIntakeComplete = (result) => {
-    // Navigate to dashboard after intake completion
-    navigate("/creator/dashboard");
+    // Navigate to command center after intake completion
+    navigate("/command-center");
   };
   
   return (
     <IntakeForm 
       token={token} 
       onComplete={handleIntakeComplete}
+    />
+  );
+};
+
+// Wrapper for Command Center with Creator Auth
+const CommandCenterWrapper = () => {
+  const { token, creator } = useCreatorAuth();
+  const navigate = useNavigate();
+  
+  const handleNavigateToIntake = () => {
+    navigate("/intake");
+  };
+  
+  return (
+    <CommandCenter 
+      token={token} 
+      onNavigateToIntake={handleNavigateToIntake}
     />
   );
 };
