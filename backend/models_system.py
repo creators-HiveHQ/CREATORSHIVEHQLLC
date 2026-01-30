@@ -310,3 +310,100 @@ class MillicentToneOutput(BaseModel):
     tone_style: str  # "professional", "friendly", "authoritative", "empathetic"
     related_module: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+# ============== HEALTH MODELS (Phase 6) ==============
+
+class EngineHealthSummary(BaseModel):
+    """Health summary for a single engine"""
+    engine_id: str
+    status: str  # active, pending, blocked, inactive
+    health: str  # good, needs_attention, blocked, inactive
+    progress: float
+    inputs_received: int
+    outputs_generated: int
+    blockers_count: int
+    dependencies_met: bool
+    last_activity: Optional[str] = None
+
+
+class ModuleHealthSummary(BaseModel):
+    """Health summary for a single module"""
+    module_id: str
+    status: str  # active, unlocked, blocked, locked
+    health: str  # good, ready, blocked, locked
+    priority_alignment: bool
+    blockers_count: int
+    is_core: bool
+
+
+class SystemHealthSummary(BaseModel):
+    """Overall system health summary"""
+    user_id: str
+    overall_health: str  # good, needs_attention, has_blockers, critical
+    
+    # Engine health
+    engine_health: Dict[str, EngineHealthSummary] = {}
+    engines_total: int = 0
+    engines_active: int = 0
+    engines_blocked: int = 0
+    engines_average_progress: float = 0.0
+    
+    # Module health
+    module_health: Dict[str, ModuleHealthSummary] = {}
+    modules_total: int = 0
+    modules_active: int = 0
+    modules_unlocked: int = 0
+    modules_blocked: int = 0
+    
+    # Blockers summary
+    total_blockers: int = 0
+    engine_blockers: List[str] = []
+    module_blockers: List[str] = []
+    
+    # Data consistency
+    intake_completed: bool = False
+    track_assigned: bool = False
+    engines_initialized: bool = False
+    modules_initialized: bool = False
+    
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class UserSystemProfile(BaseModel):
+    """
+    Complete user system profile - Phase 6 canonical model.
+    This is the central data model storing all user state.
+    """
+    # Identity
+    user_id: str
+    identity_type: Optional[str] = None
+    stage: Optional[str] = None
+    primary_goal: Optional[str] = None
+    
+    # Intake selections
+    selected_engines: List[str] = []
+    assets_already_have: List[str] = []
+    missing_elements: List[str] = []
+    first_priority: Optional[str] = None
+    
+    # Track
+    assigned_track: Optional[str] = None
+    
+    # Engine state
+    active_engines: List[str] = []
+    engine_health: Dict[str, Dict[str, Any]] = {}
+    
+    # Module state
+    unlocked_modules: List[str] = []
+    active_modules: List[str] = []
+    module_health: Dict[str, Dict[str, Any]] = {}
+    
+    # System health
+    overall_health: str = "unknown"
+    total_blockers: int = 0
+    
+    # Timestamps
+    intake_completed_at: Optional[str] = None
+    last_updated: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
