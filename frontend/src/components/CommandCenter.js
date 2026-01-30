@@ -523,8 +523,20 @@ export default function CommandCenter({ token, onNavigateToIntake }) {
                 </Card>
               </div>
 
-              {/* Right Column - Blockers & Guidance */}
+              {/* Right Column - Keeper, Inventory & Blockers */}
               <div className="space-y-6">
+                {/* Keeper Widget */}
+                <KeeperWidget 
+                  systemState={commandCenterData}
+                  onClick={() => setActiveTab("keeper")}
+                />
+
+                {/* Inventory Widget */}
+                <InventoryWidget 
+                  inventoryData={{}}
+                  onClick={() => navigate("/inventory")}
+                />
+
                 <BlockersPanel blockers={blockers} loading={false} />
                 
                 {/* Quick ARRIS Tip */}
@@ -560,6 +572,85 @@ export default function CommandCenter({ token, onNavigateToIntake }) {
                     </CardContent>
                   </Card>
                 )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Keeper Tab */}
+          <TabsContent value="keeper">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <KeeperPanel
+                  systemState={commandCenterData}
+                  engines={commandCenterData.engines || []}
+                  modules={commandCenterData.active_modules || []}
+                  nextSteps={nextSteps}
+                  blockers={blockers}
+                  loading={false}
+                />
+              </div>
+              <div className="space-y-4">
+                {/* Quick Actions from Keeper */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate("/inventory")}
+                    >
+                      <Layers className="w-4 h-4 mr-2" />
+                      Open Inventory
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveTab("engines")}
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      View Engines
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveTab("modules")}
+                    >
+                      <Grid3X3 className="w-4 h-4 mr-2" />
+                      View Modules
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* System Status Summary */}
+                <Card className="border-0 shadow-sm bg-gradient-to-br from-slate-50 to-slate-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">System Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600">Engines Active</span>
+                        <Badge className="bg-emerald-100 text-emerald-700">
+                          {commandCenterData.engines_active || 0} / 4
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600">Modules Unlocked</span>
+                        <Badge className="bg-blue-100 text-blue-700">
+                          {commandCenterData.modules_unlocked || 0} / 18
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600">Blockers</span>
+                        <Badge className={blockers.length > 0 ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}>
+                          {blockers.length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
