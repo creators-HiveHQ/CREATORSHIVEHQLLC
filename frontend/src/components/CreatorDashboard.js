@@ -932,6 +932,13 @@ export const CreatorDashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             <Button 
+              onClick={() => navigate("/command-center")} 
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
+              data-testid="command-center-btn"
+            >
+              🎯 Command Center
+            </Button>
+            <Button 
               onClick={() => setShowNewProposal(true)} 
               className="bg-purple-600 hover:bg-purple-700"
               data-testid="new-proposal-btn"
