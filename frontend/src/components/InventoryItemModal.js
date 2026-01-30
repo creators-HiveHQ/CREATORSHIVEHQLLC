@@ -119,7 +119,7 @@ export default function InventoryItemModal({
       setErrors({});
       setTagInput("");
     }
-  }, [isOpen, editItem?.id]); // Only depend on editItem.id to avoid unnecessary rerenders
+  }, [isOpen, editItem]); // Depend on the full editItem object
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
