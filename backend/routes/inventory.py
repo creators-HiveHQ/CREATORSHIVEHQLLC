@@ -144,6 +144,35 @@ async def get_inventory(
     )
 
 
+@router.get("/stats/summary")
+async def get_inventory_stats(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get inventory statistics summary"""
+    db = get_db()
+    creator = await get_current_creator(credentials, db)
+    user_id = creator["id"]
+    
+    inventory = await get_user_inventory(db, user_id)
+    
+    stats = {}
+    for category, items in inventory.items():
+        active_count = len([i for i in items if i.get("status") in ["active", "published", "in_progress"]])
+        stats[category] = {
+            "total": len(items),
+            "active": active_count,
+            "draft": len([i for i in items if i.get("status") == "draft"]),
+            "completed": len([i for i in items if i.get("status") == "completed"])
+        }
+    
+    return {
+        "user_id": user_id,
+        "categories": stats,
+        "total_items": sum(s["total"] for s in stats.values()),
+        "total_active": sum(s["active"] for s in stats.values())
+    }
+
+
 @router.get("/{category}")
 async def get_category_items(
     category: str,
