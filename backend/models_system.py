@@ -218,6 +218,11 @@ class UserSystemState(BaseModel):
     next_steps: List[str] = []
     blockers: List[str] = []
     
+    # Health summaries (Phase 6)
+    engine_health: Dict[str, Any] = {}  # Per-engine health status
+    module_health: Dict[str, Any] = {}  # Per-module health status
+    overall_health: str = "unknown"      # Overall system health
+    
     # AI outputs
     arris_recommendations: List[str] = []  # Structure, clarity, logic
     millicent_guidance: List[str] = []     # Tone, resonance, communication
