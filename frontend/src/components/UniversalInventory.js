@@ -445,7 +445,7 @@ export default function UniversalInventory({ token }) {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Universal Inventory</h1>
-            <p className="text-sm text-slate-500">Everything you've built, organized and accessible</p>
+            <p className="text-sm text-slate-500">Everything you&apos;ve built, organized and accessible</p>
           </div>
         </div>
 
