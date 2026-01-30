@@ -124,7 +124,7 @@ export const CreatorLoginPage = () => {
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    return <Navigate to="/creator/dashboard" replace />;
+    return <Navigate to="/command-center" replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -135,7 +135,7 @@ export const CreatorLoginPage = () => {
     const result = await login(email, password);
     
     if (result.success) {
-      navigate("/creator/dashboard");
+      navigate("/command-center");
     } else {
       setError(result.error);
     }
