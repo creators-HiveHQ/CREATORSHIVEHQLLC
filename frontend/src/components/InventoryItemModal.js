@@ -90,13 +90,16 @@ export default function InventoryItemModal({
   editItem = null,
   loading = false
 }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    status: "draft",
-    type: "",
-    tags: []
+  // Initialize form with editItem data or defaults
+  const getInitialFormData = () => ({
+    name: editItem?.name || "",
+    description: editItem?.description || "",
+    status: editItem?.status || "draft",
+    type: editItem?.type || "",
+    tags: editItem?.tags || []
   });
+
+  const [formData, setFormData] = useState(getInitialFormData);
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState({});
 
@@ -104,30 +107,27 @@ export default function InventoryItemModal({
   const categoryConfig = CATEGORIES[category] || CATEGORIES.assets;
   const CategoryIcon = categoryConfig.icon;
 
-  // Reset form when modal opens/closes or editItem changes
-  useEffect(() => {
-    if (isOpen) {
-      if (editItem) {
-        setFormData({
-          name: editItem.name || "",
-          description: editItem.description || "",
-          status: editItem.status || "draft",
-          type: editItem.type || "",
-          tags: editItem.tags || []
-        });
-      } else {
-        setFormData({
-          name: "",
-          description: "",
-          status: "draft",
-          type: "",
-          tags: []
-        });
-      }
+  // Reset form when editItem changes (using key prop from parent is preferred)
+  // This effect only handles the case when dialog content needs to sync
+  const prevEditItem = usePrevious(editItem);
+  const prevIsOpen = usePrevious(isOpen);
+  
+  if (isOpen && !prevIsOpen) {
+    // Modal just opened - reset form data
+    const newFormData = getInitialFormData();
+    if (JSON.stringify(newFormData) !== JSON.stringify(formData)) {
+      setFormData(newFormData);
       setErrors({});
       setTagInput("");
     }
-  }, [isOpen, editItem]);
+  } else if (editItem !== prevEditItem && isOpen) {
+    // Edit item changed while modal is open
+    const newFormData = getInitialFormData();
+    if (JSON.stringify(newFormData) !== JSON.stringify(formData)) {
+      setFormData(newFormData);
+      setErrors({});
+    }
+  }
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
