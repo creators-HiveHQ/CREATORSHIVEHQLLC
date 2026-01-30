@@ -27,7 +27,7 @@ class TestModuleStatusEndpoint:
         
         # Login as free tier creator
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/creator/login",
+            f"{BASE_URL}/api/creators/login",
             json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
         )
         
