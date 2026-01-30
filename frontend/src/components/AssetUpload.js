@@ -20,16 +20,6 @@ import {
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
-// File type icons
-const FILE_ICONS = {
-  "image": FileImage,
-  "video": FileVideo,
-  "audio": FileAudio,
-  "application/pdf": FileText,
-  "default": File
-};
-
-// Get icon for file type
 // Format file size
 const formatFileSize = (bytes) => {
   if (bytes === 0) return "0 B";
