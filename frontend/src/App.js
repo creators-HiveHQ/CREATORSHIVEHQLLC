@@ -1557,6 +1557,27 @@ function App() {
               </CreatorProtectedRoute>
             } />
             
+            {/* Inventory Item Detail Route */}
+            <Route path="/inventory/:category/:itemId" element={
+              <CreatorProtectedRoute>
+                <InventoryItemDetailWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
+            {/* Asset Upload Route */}
+            <Route path="/inventory/:category/:itemId/upload" element={
+              <CreatorProtectedRoute>
+                <AssetUploadWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
+            {/* Workflow Triggers Route */}
+            <Route path="/inventory/:category/:itemId/triggers" element={
+              <CreatorProtectedRoute>
+                <WorkflowTriggersWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
             {/* Subscription Routes */}
             <Route path="/creator/subscription" element={
               <CreatorAuthProvider>
