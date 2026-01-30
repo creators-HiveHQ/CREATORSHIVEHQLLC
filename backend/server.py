@@ -529,6 +529,10 @@ async def startup_db():
         webhook=webhook_service,
         email=email_service,
         notification=notification_service,
+        # System Restoration Services
+        intake=intake_service,
+        engine=engine_service,
+        millicent=millicent_service,
     )
     logger.info("Route dependencies initialized for modular route handlers")
     
