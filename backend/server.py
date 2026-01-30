@@ -225,6 +225,7 @@ from routes.intake import router as intake_router, dashboard_router as command_c
 from routes.engines import router as engines_router
 from routes.modules import router as modules_router
 from routes.system_health import router as system_health_router
+from routes.inventory import router as inventory_router
 
 # Import Email service
 from email_service import email_service, EmailDeliveryError
