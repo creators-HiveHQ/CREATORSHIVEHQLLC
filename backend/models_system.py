@@ -2,9 +2,11 @@
 Creators Hive HQ - Core System Models
 =====================================
 Data models for Intake Form, Engines, Tracks, and System State.
+
+UPDATED: Single-page Intake Form with specific field definitions.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from enum import Enum
 from datetime import datetime, timezone
@@ -25,6 +27,16 @@ class UserStage(str, Enum):
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
+
+
+class PrimaryGoal(str, Enum):
+    """Primary goal options"""
+    GROW_AUDIENCE = "grow_audience"
+    BUILD_BRAND = "build_brand"
+    MONETIZE_CONTENT = "monetize_content"
+    LAUNCH_OFFERS = "launch_offers"
+    IMPROVE_CONSISTENCY = "improve_consistency"
+    OTHER = "other"
 
 
 # ============== ENGINE TYPES ==============
@@ -54,32 +66,76 @@ class TrackType(str, Enum):
     HYBRID = "hybrid_track"
 
 
+# ============== STARTING POINT OPTIONS ==============
+
+class AssetsAlreadyHave(str, Enum):
+    """Assets the user already has"""
+    SOCIAL_MEDIA_ACCOUNTS = "social_media_accounts"
+    EXISTING_AUDIENCE = "existing_audience"
+    OFFERS_PRODUCTS = "offers_products"
+    BRAND_IDENTITY = "brand_identity"
+    CONTENT_SYSTEM = "content_system"
+    NONE = "none"
+
+
+class MissingElements(str, Enum):
+    """Elements the user is missing"""
+    CLARITY_STRUCTURE = "clarity_structure"
+    CONTENT_PLAN = "content_plan"
+    OFFER_STRATEGY = "offer_strategy"
+    BRAND_VOICE = "brand_voice"
+    MONETIZATION_PATH = "monetization_path"
+    SYSTEMS_AUTOMATION = "systems_automation"
+
+
+class FirstPriority(str, Enum):
+    """First priority options"""
+    BUILD_FOUNDATION = "build_foundation"
+    FIX_GAPS = "fix_gaps"
+    GROW_AUDIENCE = "grow_audience"
+    LAUNCH_OFFER = "launch_offer"
+    INCREASE_INCOME = "increase_income"
+    IMPROVE_CONSISTENCY = "improve_consistency"
+
+
 # ============== INTAKE FORM ==============
 
 class IntakeUserIdentity(BaseModel):
     """Section 1: User Identity"""
     identity_type: UserIdentityType
     stage: UserStage
-    primary_goal: str = Field(..., min_length=5, max_length=500)
+    primary_goal: PrimaryGoal
+    primary_goal_other: Optional[str] = Field(default=None, max_length=500)
+    
+    @field_validator('primary_goal_other')
+    @classmethod
+    def validate_other_goal(cls, v, info):
+        # If primary_goal is OTHER, primary_goal_other should have content
+        # This is a soft validation - frontend handles required logic
+        return v
 
 
 class IntakeSystemNeed(BaseModel):
-    """Section 2: System Need - which engines required"""
-    business_engine: bool = False
-    engagement_engine: bool = False
-    role_engine: bool = False
-    income_engine: bool = False
+    """Section 2: System Need - which engines required (multi-select)"""
+    selected_engines: List[EngineType] = Field(..., min_length=1)
+    
+    @field_validator('selected_engines')
+    @classmethod
+    def validate_engines(cls, v):
+        if not v:
+            raise ValueError("At least one engine must be selected")
+        return v
 
 
 class IntakeStartingPoint(BaseModel):
     """Section 3: Starting Point"""
-    what_they_have: str = Field(..., min_length=5, max_length=1000)
-    what_is_missing: str = Field(..., min_length=5, max_length=1000)
-    first_accomplishment: str = Field(..., min_length=5, max_length=500)
+    assets_already_have: List[AssetsAlreadyHave] = Field(default_factory=list)
+    missing_elements: List[MissingElements] = Field(default_factory=list)
+    first_priority: FirstPriority
 
 
 class IntakeFormSubmission(BaseModel):
-    """Complete Intake Form submission"""
+    """Complete Intake Form submission (single-page form)"""
     user_identity: IntakeUserIdentity
     system_need: IntakeSystemNeed
     starting_point: IntakeStartingPoint
@@ -141,6 +197,11 @@ class UserSystemState(BaseModel):
     primary_goal: Optional[str] = None
     
     # Starting point
+    assets_already_have: List[str] = []
+    missing_elements: List[str] = []
+    first_priority: Optional[str] = None
+    
+    # Legacy fields (for backwards compatibility)
     what_they_have: Optional[str] = None
     what_is_missing: Optional[str] = None
     first_accomplishment: Optional[str] = None
