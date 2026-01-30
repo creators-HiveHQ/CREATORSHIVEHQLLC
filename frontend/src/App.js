@@ -1344,6 +1344,24 @@ const Layout = ({ children }) => {
   );
 };
 
+// Wrapper for Intake Form with Creator Auth
+const IntakeFormWrapper = () => {
+  const { token, creator } = useCreatorAuth();
+  const navigate = useNavigate();
+  
+  const handleIntakeComplete = (result) => {
+    // Navigate to dashboard after intake completion
+    navigate("/creator/dashboard");
+  };
+  
+  return (
+    <IntakeForm 
+      token={token} 
+      onComplete={handleIntakeComplete}
+    />
+  );
+};
+
 // Main App
 function App() {
   return (
