@@ -31,6 +31,9 @@ import AutoEscalationDashboard from "@/components/AutoEscalationDashboard";
 import IntakeForm from "@/components/IntakeForm";
 import CommandCenter from "@/components/CommandCenter";
 import UniversalInventory from "@/components/UniversalInventory";
+import InventoryItemDetail from "@/components/InventoryItemDetail";
+import AssetUpload from "@/components/AssetUpload";
+import WorkflowTriggers from "@/components/WorkflowTriggers";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
