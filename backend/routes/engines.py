@@ -91,6 +91,156 @@ ENGINE_DESCRIPTIONS = {
     EngineType.INCOME: "Revenue tracking, pricing, and sales optimization"
 }
 
+ENGINE_INDICATORS = {
+    EngineType.BUSINESS: {
+        "health_metrics": ["business_clarity", "strategy_defined", "market_analyzed"],
+        "warning_thresholds": {"inputs_required": 3, "stale_days": 14}
+    },
+    EngineType.ENGAGEMENT: {
+        "health_metrics": ["audience_defined", "content_planned", "platforms_active"],
+        "warning_thresholds": {"inputs_required": 2, "stale_days": 7}
+    },
+    EngineType.ROLE: {
+        "health_metrics": ["roles_defined", "delegation_clear", "accountability_set"],
+        "warning_thresholds": {"inputs_required": 2, "stale_days": 21}
+    },
+    EngineType.INCOME: {
+        "health_metrics": ["revenue_tracked", "pricing_set", "funnel_active"],
+        "warning_thresholds": {"inputs_required": 2, "stale_days": 7}
+    }
+}
+
+
+# ============== STATUS ENDPOINT (Phase 3) ==============
+
+@router.get("/status")
+async def get_engines_status(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    GET /api/engines/status
+    
+    Returns comprehensive status of all engines including:
+    - Current status (active/pending/blocked/inactive)
+    - Progress percentage
+    - Input/output counts
+    - Blockers
+    - Health indicators
+    - Dependencies status
+    """
+    db = get_db()
+    auth_user = await get_current_user_or_creator(credentials, db)
+    user_id = auth_user["user_id"]
+    
+    engine_service = get_service("engine")
+    if not engine_service:
+        raise HTTPException(status_code=503, detail="Engine service not available")
+    
+    engines = await engine_service.get_all_engine_states(user_id)
+    
+    if not engines:
+        return {
+            "initialized": False,
+            "message": "Engines not initialized. Complete intake form first.",
+            "redirect_to": "/intake"
+        }
+    
+    # Build detailed status for each engine
+    engine_statuses = []
+    overall_health = "good"
+    total_progress = 0
+    active_count = 0
+    blocked_count = 0
+    
+    for engine_id, engine_state in engines.items():
+        try:
+            engine_type = EngineType(engine_id)
+        except ValueError:
+            continue
+        
+        config = engine_service.configs.get(engine_type)
+        indicators = ENGINE_INDICATORS.get(engine_type, {})
+        
+        # Calculate health status
+        health = "good"
+        warnings = []
+        
+        if engine_state.status == EngineStatus.BLOCKED:
+            health = "blocked"
+            blocked_count += 1
+        elif engine_state.status == EngineStatus.PENDING:
+            health = "pending"
+            warnings.append("Waiting for dependencies")
+        elif engine_state.status == EngineStatus.ACTIVE:
+            active_count += 1
+            if engine_state.progress < 25:
+                health = "needs_attention"
+                warnings.append("Low progress - add more inputs")
+            elif engine_state.inputs_received < indicators.get("warning_thresholds", {}).get("inputs_required", 0):
+                health = "needs_attention"
+                warnings.append("Insufficient inputs received")
+        
+        total_progress += engine_state.progress
+        
+        # Get recent activity
+        last_input = await db.engine_inputs.find_one(
+            {"user_id": user_id, "engine_id": engine_id},
+            {"_id": 0, "created_at": 1}
+        )
+        last_output = await db.engine_outputs.find_one(
+            {"user_id": user_id, "engine_id": engine_id},
+            {"_id": 0, "created_at": 1}
+        )
+        
+        engine_statuses.append({
+            "engine_id": engine_id,
+            "display_name": ENGINE_DISPLAY_NAMES.get(engine_type, engine_id),
+            "description": ENGINE_DESCRIPTIONS.get(engine_type, ""),
+            "status": engine_state.status.value,
+            "health": health,
+            "warnings": warnings,
+            "progress": engine_state.progress,
+            "inputs": {
+                "received": engine_state.inputs_received,
+                "required": config.inputs if config else [],
+                "total_types": len(config.inputs) if config else 0
+            },
+            "outputs": {
+                "generated": engine_state.outputs_generated,
+                "available": config.outputs if config else []
+            },
+            "blockers": engine_state.blockers,
+            "dependencies": {
+                "required": [d.value for d in config.dependencies] if config else [],
+                "met": engine_state.dependencies_met
+            },
+            "last_input_at": last_input.get("created_at") if last_input else None,
+            "last_output_at": last_output.get("created_at") if last_output else None,
+            "last_activity": engine_state.last_activity
+        })
+    
+    # Determine overall health
+    if blocked_count > 0:
+        overall_health = "has_blockers"
+    elif active_count == 0:
+        overall_health = "no_active_engines"
+    elif total_progress / len(engines) < 25:
+        overall_health = "low_progress"
+    
+    return {
+        "initialized": True,
+        "overall_health": overall_health,
+        "summary": {
+            "total": len(engine_statuses),
+            "active": active_count,
+            "blocked": blocked_count,
+            "pending": len([e for e in engine_statuses if e["status"] == "pending"]),
+            "inactive": len([e for e in engine_statuses if e["status"] == "inactive"]),
+            "average_progress": round(total_progress / len(engines), 1) if engines else 0
+        },
+        "engines": engine_statuses
+    }
+
 
 # ============== LIST ALL ENGINES ==============
 
