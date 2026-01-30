@@ -18,7 +18,7 @@ import uuid
 from datetime import datetime
 
 # Use the public URL from environment
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://creators-hive.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://engine-dashboard-1.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_CREDENTIALS = {
