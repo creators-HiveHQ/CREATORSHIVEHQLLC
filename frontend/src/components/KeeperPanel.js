@@ -244,7 +244,7 @@ export default function KeeperPanel({
               </Badge>
             </div>
             <p className="text-sm text-slate-400 mt-1">
-              Your guide through the Hive. I see what you've built and what comes next.
+              Your guide through the Hive. I see what you&apos;ve built and what comes next.
             </p>
           </div>
         </div>
