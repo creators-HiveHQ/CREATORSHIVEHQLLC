@@ -18,7 +18,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CreatorRegistrationForm, AdminCreatorsPage } from "@/components/CreatorRegistration";
 import { AdminProposalsPage } from "@/components/ProjectProposal";
 import WebhooksAdmin from "@/components/WebhooksAdmin";
-import { CreatorAuthProvider, CreatorLoginPage, CreatorProtectedRoute, CreatorDashboard } from "@/components/CreatorDashboard";
+import { CreatorAuthProvider, CreatorLoginPage, CreatorProtectedRoute, CreatorDashboard, useCreatorAuth } from "@/components/CreatorDashboard";
 import { SubscriptionPlans, SubscriptionSuccess, SubscriptionCancel } from "@/components/SubscriptionPlans";
 import { AdminRevenueDashboard } from "@/components/AdminRevenueDashboard";
 import { AdminPatternDashboard } from "@/components/AdminPatternDashboard";
