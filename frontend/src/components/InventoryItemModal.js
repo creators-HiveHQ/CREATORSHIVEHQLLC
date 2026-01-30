@@ -82,6 +82,14 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "Archived", color: "bg-slate-100 text-slate-400" }
 ];
 
+// Custom hook to track previous value
+function usePrevious(value) {
+  const ref = useRef();
+  const prev = ref.current;
+  ref.current = value;
+  return prev;
+}
+
 export default function InventoryItemModal({
   isOpen,
   onClose,
