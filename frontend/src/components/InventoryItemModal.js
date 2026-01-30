@@ -100,53 +100,49 @@ export default function InventoryItemModal({
   });
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState({});
-  
-  // Track if modal just opened to reset form
-  const modalOpenRef = useRef(false);
-  const editItemRef = useRef(editItem);
-
-  // Reset form when modal opens or editItem changes
-  if (isOpen && !modalOpenRef.current) {
-    // Modal just opened
-    modalOpenRef.current = true;
-    const newData = {
-      name: editItem?.name || "",
-      description: editItem?.description || "",
-      status: editItem?.status || "draft",
-      type: editItem?.type || "",
-      tags: editItem?.tags || []
-    };
-    // Use a microtask to avoid setState during render
-    Promise.resolve().then(() => {
-      setFormData(newData);
-      setErrors({});
-      setTagInput("");
-    });
-  } else if (!isOpen && modalOpenRef.current) {
-    // Modal closed
-    modalOpenRef.current = false;
-  }
-  
-  // Update editItemRef
-  if (editItemRef.current !== editItem) {
-    editItemRef.current = editItem;
-    if (isOpen && editItem) {
-      Promise.resolve().then(() => {
-        setFormData({
-          name: editItem.name || "",
-          description: editItem.description || "",
-          status: editItem.status || "draft",
-          type: editItem.type || "",
-          tags: editItem.tags || []
-        });
-        setErrors({});
-      });
-    }
-  }
 
   const isEditMode = !!editItem;
   const categoryConfig = CATEGORIES[category] || CATEGORIES.assets;
   const CategoryIcon = categoryConfig.icon;
+  
+  // Create a stable key from editItem to detect changes
+  const editItemKey = editItem ? `${editItem.id}-${editItem.updated_at || ""}` : "new";
+  
+  // Handler to reset form - called by parent or on dialog open
+  const resetForm = (item = null) => {
+    setFormData({
+      name: item?.name || "",
+      description: item?.description || "",
+      status: item?.status || "draft",
+      type: item?.type || "",
+      tags: item?.tags || []
+    });
+    setErrors({});
+    setTagInput("");
+  };
+
+  // Reset form when dialog opens with new/different item
+  const handleOpenChange = (open) => {
+    if (!open) {
+      onClose();
+    }
+  };
+  
+  // Effect to sync form data when editItem changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const syncFormData = () => {
+    if (isOpen) {
+      resetForm(editItem);
+    }
+  };
+  
+  // Using a key-based approach - when editItemKey changes, sync form
+  const prevKeyRef = useRef(editItemKey);
+  if (prevKeyRef.current !== editItemKey && isOpen) {
+    // Schedule the update for after render
+    setTimeout(() => resetForm(editItem), 0);
+    prevKeyRef.current = editItemKey;
+  }
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
