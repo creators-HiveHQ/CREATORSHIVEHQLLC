@@ -370,6 +370,173 @@ async def get_engine(
     }
 
 
+# ============== GET ENGINE DETAILS (Phase 3) ==============
+
+@router.get("/{engine_id}/details")
+async def get_engine_details(
+    engine_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    GET /api/engines/{engine_name}/details
+    
+    Returns comprehensive details for a specific engine including:
+    - Full configuration (inputs, outputs, rules, dependencies)
+    - Current state and progress
+    - Recent inputs and outputs
+    - Health indicators
+    - Connected modules
+    - Rule enforcement status
+    """
+    db = get_db()
+    auth_user = await get_current_user_or_creator(credentials, db)
+    user_id = auth_user["user_id"]
+    
+    try:
+        engine_type = EngineType(engine_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid engine_id. Must be one of: {[e.value for e in EngineType]}"
+        )
+    
+    engine_service = get_service("engine")
+    if not engine_service:
+        raise HTTPException(status_code=503, detail="Engine service not available")
+    
+    engine_state = await engine_service.get_engine_state(user_id, engine_type)
+    
+    if not engine_state:
+        raise HTTPException(
+            status_code=404,
+            detail="Engine not initialized. Please complete the intake form first."
+        )
+    
+    config = engine_service.configs.get(engine_type)
+    indicators = ENGINE_INDICATORS.get(engine_type, {})
+    
+    # Get recent inputs
+    recent_inputs = await db.engine_inputs.find(
+        {"user_id": user_id, "engine_id": engine_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    # Get recent outputs
+    recent_outputs = await db.engine_outputs.find(
+        {"user_id": user_id, "engine_id": engine_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    # Calculate input completion
+    received_input_types = set()
+    for inp in recent_inputs:
+        received_input_types.add(inp.get("input_type"))
+    
+    input_completion = []
+    if config:
+        for input_type in config.inputs:
+            input_completion.append({
+                "input_type": input_type,
+                "received": input_type in received_input_types,
+                "label": input_type.replace("_", " ").title()
+            })
+    
+    # Calculate output availability
+    generated_output_types = set()
+    for out in recent_outputs:
+        generated_output_types.add(out.get("output_type"))
+    
+    output_availability = []
+    if config:
+        for output_type in config.outputs:
+            output_availability.append({
+                "output_type": output_type,
+                "generated": output_type in generated_output_types,
+                "label": output_type.replace("_", " ").title()
+            })
+    
+    # Health assessment
+    health = "good"
+    health_notes = []
+    
+    if engine_state.status == EngineStatus.BLOCKED:
+        health = "blocked"
+        health_notes.append(f"Engine blocked: {', '.join(engine_state.blockers)}")
+    elif engine_state.status == EngineStatus.PENDING:
+        health = "pending"
+        health_notes.append("Waiting for dependency engines to activate")
+    elif engine_state.status == EngineStatus.INACTIVE:
+        health = "inactive"
+        health_notes.append("Engine not selected during intake")
+    else:
+        if engine_state.progress < 25:
+            health = "needs_attention"
+            health_notes.append("Progress is low - provide more inputs")
+        if len(received_input_types) < 2:
+            health_notes.append("Insufficient input diversity")
+    
+    # Rule status
+    rule_status = []
+    if config:
+        for rule in config.rules:
+            # Simple rule evaluation (can be enhanced)
+            met = engine_state.progress >= 25 or engine_state.inputs_received >= 2
+            rule_status.append({
+                "rule": rule,
+                "status": "met" if met else "pending"
+            })
+    
+    return {
+        "engine_id": engine_id,
+        "display_name": ENGINE_DISPLAY_NAMES.get(engine_type, engine_id),
+        "description": ENGINE_DESCRIPTIONS.get(engine_type, ""),
+        
+        "state": {
+            "status": engine_state.status.value,
+            "progress": engine_state.progress,
+            "inputs_received": engine_state.inputs_received,
+            "outputs_generated": engine_state.outputs_generated,
+            "blockers": engine_state.blockers,
+            "dependencies_met": engine_state.dependencies_met,
+            "last_activity": engine_state.last_activity
+        },
+        
+        "health": {
+            "status": health,
+            "notes": health_notes,
+            "indicators": indicators.get("health_metrics", [])
+        },
+        
+        "inputs": {
+            "required": config.inputs if config else [],
+            "completion": input_completion,
+            "recent": recent_inputs[:5]
+        },
+        
+        "outputs": {
+            "available": config.outputs if config else [],
+            "availability": output_availability,
+            "recent": recent_outputs[:5]
+        },
+        
+        "rules": {
+            "definitions": config.rules if config else [],
+            "status": rule_status
+        },
+        
+        "dependencies": {
+            "required": [d.value for d in config.dependencies] if config else [],
+            "met": engine_state.dependencies_met,
+            "display_names": [ENGINE_DISPLAY_NAMES.get(d, d.value) for d in config.dependencies] if config else []
+        },
+        
+        "modules": {
+            "required": config.required_modules if config else [],
+            "count": len(config.required_modules) if config else 0
+        }
+    }
+
+
 # ============== UPDATE ENGINE PROGRESS ==============
 
 @router.post("/{engine_id}/progress")
