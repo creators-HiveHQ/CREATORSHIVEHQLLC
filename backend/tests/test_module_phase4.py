@@ -238,7 +238,7 @@ class TestModulePriorityAlignment:
         self.session.headers.update({"Content-Type": "application/json"})
         
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/creator/login",
+            f"{BASE_URL}/api/creators/login",
             json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
         )
         
@@ -284,7 +284,7 @@ class TestBlockedModules:
         self.session.headers.update({"Content-Type": "application/json"})
         
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/creator/login",
+            f"{BASE_URL}/api/creators/login",
             json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
         )
         
@@ -339,7 +339,7 @@ class TestModuleUpdateEndpoint:
         self.session.headers.update({"Content-Type": "application/json"})
         
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/creator/login",
+            f"{BASE_URL}/api/creators/login",
             json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
         )
         
@@ -519,7 +519,7 @@ class TestModuleActivityLog:
         self.session.headers.update({"Content-Type": "application/json"})
         
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/creator/login",
+            f"{BASE_URL}/api/creators/login",
             json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
         )
         
@@ -571,7 +571,7 @@ class TestModuleMetadata:
         self.session.headers.update({"Content-Type": "application/json"})
         
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/creator/login",
+            f"{BASE_URL}/api/creators/login",
             json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
         )
         
@@ -656,7 +656,7 @@ class TestModulesByEngineAndTrack:
         self.session.headers.update({"Content-Type": "application/json"})
         
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/creator/login",
+            f"{BASE_URL}/api/creators/login",
             json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
         )
         
