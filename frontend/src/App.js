@@ -29,6 +29,7 @@ import AdminWaitlistDashboard from "@/components/AdminWaitlistDashboard";
 import { SubscriptionLifecycleDashboard } from "@/components/SubscriptionLifecycleDashboard";
 import AutoEscalationDashboard from "@/components/AutoEscalationDashboard";
 import IntakeForm from "@/components/IntakeForm";
+import CommandCenter from "@/components/CommandCenter";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
