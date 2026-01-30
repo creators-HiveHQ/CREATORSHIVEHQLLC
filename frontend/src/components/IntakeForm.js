@@ -422,7 +422,7 @@ export default function IntakeForm({ token, onComplete }) {
 
               <div className="space-y-4">
                 <Label className="text-base font-semibold">
-                  Select the engines you need <span className="text-red-500">*</span>
+                  Select the support you need <span className="text-red-500">*</span>
                   <span className="text-sm font-normal text-slate-500 ml-2">(select at least one)</span>
                 </Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
