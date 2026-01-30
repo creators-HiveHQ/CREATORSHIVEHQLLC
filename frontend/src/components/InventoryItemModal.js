@@ -118,9 +118,9 @@ export default function InventoryItemModal({
         type: editItem?.type || "",
         tags: editItem?.tags || []
       });
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setErrors({});
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setTagInput("");
     }
   }, [isOpen, editItem?.id]); // Only depend on editItem.id to avoid unnecessary rerenders
