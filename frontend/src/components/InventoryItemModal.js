@@ -105,44 +105,21 @@ export default function InventoryItemModal({
   const categoryConfig = CATEGORIES[category] || CATEGORIES.assets;
   const CategoryIcon = categoryConfig.icon;
   
-  // Create a stable key from editItem to detect changes
-  const editItemKey = editItem ? `${editItem.id}-${editItem.updated_at || ""}` : "new";
-  
-  // Handler to reset form - called by parent or on dialog open
-  const resetForm = (item = null) => {
-    setFormData({
-      name: item?.name || "",
-      description: item?.description || "",
-      status: item?.status || "draft",
-      type: item?.type || "",
-      tags: item?.tags || []
-    });
-    setErrors({});
-    setTagInput("");
-  };
-
-  // Reset form when dialog opens with new/different item
-  const handleOpenChange = (open) => {
-    if (!open) {
-      onClose();
-    }
-  };
-  
-  // Effect to sync form data when editItem changes
-   
-  const syncFormData = () => {
+  // Sync form data when dialog opens or editItem changes
+  useEffect(() => {
     if (isOpen) {
-      resetForm(editItem);
+      // Reset form when modal opens
+      setFormData({
+        name: editItem?.name || "",
+        description: editItem?.description || "",
+        status: editItem?.status || "draft",
+        type: editItem?.type || "",
+        tags: editItem?.tags || []
+      });
+      setErrors({});
+      setTagInput("");
     }
-  };
-  
-  // Using a key-based approach - when editItemKey changes, sync form
-  const prevKeyRef = useRef(editItemKey);
-  if (prevKeyRef.current !== editItemKey && isOpen) {
-    // Schedule the update for after render
-    setTimeout(() => resetForm(editItem), 0);
-    prevKeyRef.current = editItemKey;
-  }
+  }, [isOpen, editItem?.id]); // Only depend on editItem.id to avoid unnecessary rerenders
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
