@@ -104,32 +104,32 @@ async def get_intake_form_options():
         },
         "system_need": {
             "selected_engines": {
-                "label": "Select the engines you need",
+                "label": "Select the support you need",
                 "required": True,
                 "type": "checkbox",
                 "min_selections": 1,
                 "options": [
                     {
                         "value": "business_engine",
-                        "label": "Business Engine",
+                        "label": "Business Support",
                         "description": "Business planning, strategy, market analysis",
                         "best_for": ["Business", "Hybrid"]
                     },
                     {
                         "value": "engagement_engine",
-                        "label": "Engagement Engine",
+                        "label": "Audience & Visibility Support",
                         "description": "Audience building, content strategy, community",
                         "best_for": ["Creator", "Hybrid"]
                     },
                     {
                         "value": "role_engine",
-                        "label": "Role Engine",
+                        "label": "Creator Identity Support",
                         "description": "Role definition, team building, delegation",
                         "best_for": ["Business", "Hybrid"]
                     },
                     {
                         "value": "income_engine",
-                        "label": "Income Engine",
+                        "label": "Monetization Support",
                         "description": "Revenue tracking, pricing, sales optimization",
                         "best_for": ["Creator", "Business", "Hybrid"]
                     }
