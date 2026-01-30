@@ -56,7 +56,9 @@ Single-page form collecting:
 
 #### Engine Endpoints
 - `GET /api/engines` - List all engines with status
+- `GET /api/engines/status` - Comprehensive status with health indicators (Phase 3)
 - `GET /api/engines/{engine_id}` - Get engine details
+- `GET /api/engines/{engine_id}/details` - Full configuration with inputs/outputs/rules (Phase 3)
 - `POST /api/engines/{engine_id}/progress` - Update engine progress
 - `GET /api/engines/summary/overview` - High-level summary
 
