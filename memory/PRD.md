@@ -2,9 +2,77 @@
 
 ## Overview
 
-Creators Hive HQ is a comprehensive database management system designed to power the Pattern Engine and Memory Palace for AI Agent ARRIS. The system implements a Zero-Human Operational Model with full data normalization based on the Master Database Excel schema.
+Creators Hive HQ is a comprehensive system designed for creators and businesses. The system now includes a 7-phase "System Restoration" architecture with Engines, Tracks, and rule-based AI guidance.
 
-## Architecture
+## System Restoration Architecture (NEW)
+
+### Phase Status
+| Phase | Name | Status |
+|-------|------|--------|
+| Phase 1 | Intake Form | ✅ COMPLETE |
+| Phase 2 | Post-Form Logic | ✅ COMPLETE |
+| Phase 3 | Engine Restoration | 🔄 NEXT |
+| Phase 4 | Module Realignment | ⏳ Pending |
+| Phase 5 | Dashboard Restoration | ⏳ Pending |
+| Phase 6 | Data Model | ⏳ Pending |
+| Phase 7 | System Reconnection | ⏳ Pending |
+
+### Core System Components
+
+#### 1. Intake Form (Phase 1 - COMPLETE)
+Single-page form collecting:
+- **User Identity**: identity_type, stage, primary_goal
+- **System Need**: selected_engines (multi-select)
+- **Starting Point**: assets_already_have, missing_elements, first_priority
+
+#### 2. Tracks (Phase 2 - COMPLETE)
+- **Creator Track** - For content creators, artists, influencers
+- **Business Track** - For entrepreneurs, business owners, consultants
+- **Hybrid Track** - For creative business owners, creator-entrepreneurs
+
+#### 3. Engines (Phase 2 - COMPLETE)
+| Engine ID | Display Name | Purpose |
+|-----------|--------------|---------|
+| business_engine | Business Support | Business planning, strategy, market analysis |
+| engagement_engine | Audience & Visibility Support | Audience building, content strategy, community |
+| role_engine | Creator Identity Support | Role definition, team building, delegation |
+| income_engine | Monetization Support | Revenue tracking, pricing, sales optimization |
+
+#### 4. Modules (Phase 2 - COMPLETE)
+18 modules organized by engine:
+- **Core** (all tracks): dashboard, profile
+- **Business Engine**: business_model_canvas, market_research, financial_planning, strategy_builder
+- **Engagement Engine**: audience_builder, content_planner, platform_optimizer, community_manager
+- **Role Engine**: role_definer, team_builder, delegation_matrix, accountability_tracker
+- **Income Engine**: revenue_tracker, pricing_optimizer, sales_funnel, financial_dashboard
+
+### System Restoration API Endpoints
+
+#### Intake Endpoints
+- `GET /api/intake/form-options` - Get form field definitions
+- `POST /api/intake/submit` - Submit intake form (ignition key)
+- `GET /api/intake/status` - Check intake completion status
+- `GET /api/intake/system-state` - Get full system state
+
+#### Engine Endpoints
+- `GET /api/engines` - List all engines with status
+- `GET /api/engines/{engine_id}` - Get engine details
+- `POST /api/engines/{engine_id}/progress` - Update engine progress
+- `GET /api/engines/summary/overview` - High-level summary
+
+#### Module Endpoints
+- `GET /api/modules` - List all modules
+- `GET /api/modules/unlocked` - List unlocked modules
+- `POST /api/modules/{module_id}/activate` - Activate module
+- `GET /api/modules/by-engine/{engine_id}` - Modules by engine
+- `GET /api/modules/by-track/{track_id}` - Modules by track
+
+#### Command Center
+- `GET /api/command-center` - Dashboard state with engines, modules, AI outputs
+
+---
+
+## Legacy Architecture
 
 ### Core Principles
 
