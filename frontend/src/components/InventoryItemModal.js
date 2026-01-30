@@ -123,6 +123,7 @@ export default function InventoryItemModal({
        
       setTagInput("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editItem?.id]); // Only depend on editItem.id to avoid unnecessary rerenders
 
   const handleChange = (field, value) => {
