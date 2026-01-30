@@ -454,6 +454,16 @@ async def startup_db():
     await auto_escalation_service.initialize()
     logger.info("Auto-Escalation Service initialized - Automatic proposal escalation system active")
     
+    # Initialize System Restoration Services (Engines, Intake, Millicent)
+    engine_service = EngineService(db)
+    logger.info("Engine Service initialized - Four core engines ready")
+    
+    millicent_service = MillicentService(db)
+    logger.info("Millicent Service initialized - Rule-based tone guidance active")
+    
+    intake_service = IntakeService(db, engine_service, millicent_service, arris_service)
+    logger.info("Intake Service initialized - System ignition key ready")
+    
     # Initialize ARRIS Activity Feed notification callback
     async def arris_activity_notification_callback(event_type: str, creator_id: str, data: dict):
         """Callback to send ARRIS activity notifications via WebSocket"""
