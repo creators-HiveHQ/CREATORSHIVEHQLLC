@@ -30,6 +30,7 @@ import { SubscriptionLifecycleDashboard } from "@/components/SubscriptionLifecyc
 import AutoEscalationDashboard from "@/components/AutoEscalationDashboard";
 import IntakeForm from "@/components/IntakeForm";
 import CommandCenter from "@/components/CommandCenter";
+import UniversalInventory from "@/components/UniversalInventory";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
