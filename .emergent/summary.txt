@@ -1,0 +1,142 @@
+<analysis>**original_problem_statement:**
+The user has initiated a major project pivot to restore the Creators Hive HQ System. This is a multi-phase restoration, not a new design. The core goal is to replace the existing onboarding flow with a new, highly specific Intake Form and a complex backend logic system involving Engines, Tracks, and rule-based guidance from AI personas (Arris and Millicent).
+
+PRODUCT REQUIREMENTS (New System Restoration):
+1.  **PHASE 1 - INTAKE FORM**: Replace the current onboarding wizard with a new Intake Form collecting three specific categories: User Identity, System Need, and Starting Point.
+2.  **PHASE 2 - POST-FORM LOGIC**: After submission, assign the user to a Track (Creator, Business, Hybrid), activate selected Engines (Business, Engagement, Role, Income), and unlock relevant modules.
+3.  **PHASE 3 - ENGINE RESTORATION**: Implement the four engines as backend services with corresponding UI components on the dashboard.
+4.  **PHASE 4 - MODULE REALIGNMENT**: Reconnect existing modules to the new Engine and Track system.
+5.  **PHASE 5 - DASHBOARD RESTORATION**: Transform the user dashboard into a command center showing active/blocked/next steps, engine status, and AI guidance.
+6.  **PHASE 6 & 7 - DATA MODEL & RECONNECTION**: Create the necessary data models and integrate all new components into a cohesive system.
+7.  **ROLE ENFORCEMENT**: Arris provides structure/logic, Millicent provides rule-based tone guidance (NOT an LLM), and neither handles intake.
+
+**User's preferred language**: English
+
+**what currently exists?**
+The application backend has been successfully refactored into a clean, modular architecture. Almost all endpoints from the monolithic  file have been migrated to dedicated files in , significantly improving maintainability.
+
+The agent has just begun the new System Restoration task by creating the initial skeleton files for the new architecture:
+-   Backend Services: , , 
+-   Backend Routes: 
+-   Backend Models: 
+
+**Last working item**:
+-   **Last item agent was working**: Kicking off the Creators Hive HQ System restoration. The agent created the initial backend file structure (services, models, routes) and was about to create the new frontend component for the Intake Form.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: both (Backend agent for the new services/API, Frontend agent for the new Intake Form UI and flow).
+-   **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+There are no outstanding bugs. The work has pivoted to a new, large-scale feature implementation.
+
+**In progress Task List**:
+-   **Task 1: (P0) Implement Creators Hive HQ System Restoration - Phase 1**
+    -   **Where to resume**: The agent was about to create . The next step is to populate this file and the corresponding backend stubs (, , etc.) with the required logic.
+    -   **What will be achieved with this?**: This will build the foundational data collection mechanism for the new system architecture, replacing the old onboarding wizard.
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on something**: No.
+
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks (P0): Complete Phase 1 - Intake Form**
+    -   **Backend**: Populate , , and  to handle form submission and data processing.
+    -   **Frontend**: Build the UI for the  component and integrate it to replace the existing onboarding wizard.
+-   **Future Tasks (The Restoration Plan):**
+    -   **(P1) Phase 2**: Implement post-form logic (track assignment, engine activation).
+    -   **(P1) Phase 3**: Build backend services and UI for the four system Engines.
+    -   **(P2) Phase 4 & 5**: Realign existing modules and overhaul the dashboard into a command center.
+    -   **(P2) Phase 6 & 7**: Finalize data models and complete system integration.
+
+**Completed work in this session**
+-   **Massive Backend Refactor (Completed)**:
+    -   Successfully migrated , , , and  routes from  into dedicated, modular route files.
+    -    is now a lean application factory, having been reduced by thousands of lines of code.
+-   **Critical Bug Fixes (Completed)**:
+    -   Resolved over 130 frontend linter issues, including a critical parsing error, to improve code quality.
+    -   Permanently fixed the  database issue by correcting the data model and creation logic.
+-   **Comprehensive Testing (Completed)**:
+    -   Ran multiple successful backend and frontend regression test suites ( through ), confirming system stability post-refactor.
+
+**Earlier issues found/mentioned but not fixed**
+-   All previously identified issues have been resolved.
+
+**Known issue recurrence from previous fork**
+-   None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **FastAPI Routers**: The backend is organized into modular  instances.
+-   **System Restoration Architecture**: A new, user-defined architecture based on Engines, Tracks, and rule-based AI guidance that needs to be implemented from the ground up.
+
+**key DB schema**
+-   **user_system_profiles**: A new collection/table will be needed to store the output of the Intake Form, tracking each user's assigned track, active engines, and other profile data. This will be defined in .
+
+**changes in tech stack**
+-   None.
+
+**All files of reference**
+-   **Created/Overwritten**:
+    -   
+    -   
+    -    (overwritten)
+    -   
+    -    (stub)
+    -    (stub)
+    -    (stub)
+    -    (stub)
+    -    (stub)
+-   **Modified**:
+    -    (heavily refactored)
+    -   
+    -   Numerous frontend files to fix linting issues.
+
+**Areas that need refactoring**:
+-   The existing onboarding wizard is now deprecated and must be replaced by the new Intake Form.
+
+**key api endpoints**
+-   **/api/intake**: A new endpoint will be created here to handle the submission of the new Intake Form.
+
+**Critical Info for New Agent**
+-   **MAJOR PIVOT**: The user has issued a complete change of direction. Disregard any previous plans and focus exclusively on the new Creators Hive HQ System restoration project. The 7-phase plan is your new source of truth.
+-   **START AT PHASE 1**: Your immediate priority is to build the Intake Form. This involves implementing the backend logic in the newly created stub files and creating the corresponding frontend component ().
+-   **FOLLOW THE BLUEPRINT**: The user's instructions for the restoration are highly specific. Adhere to them exactly. This is a restoration, not a redesign. Pay close attention to the rule-based nature of the Millicent service.
+-   **LEVERAGE THE REFACTOR**: The backend is now clean and modular. Use this improved structure to build the new system components.
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+- The last several user messages define the new, multi-phase System Restoration project, representing a complete pivot from the previous refactoring work. The agent has acknowledged and begun this new task.
+
+**Project Health Check:**
+-   **Broken**: The current user onboarding wizard is now considered obsolete and needs to be replaced.
+-   **Mocked**: Stripe and SendGrid integrations are still using test keys and mock handlers.
+
+**3rd Party Integrations**
+-   **OpenAI (Text, STT, TTS)**: Powers the ARRIS AI. Uses Emergent LLM Key.
+-   **Stripe (Payments)**: For subscriptions. Requires User API Key (test key pre-configured).
+-   **SendGrid (Email)**: For notifications. Requires User API Key.
+-   **websockets**: For real-time communication.
+
+**Testing status**
+-   **Testing agent used after significant changes**: YES. The previous refactor was validated with extensive backend and frontend testing.
+-   **Troubleshoot agent used after agent stuck in loop**: NO.
+-   **Test files created**: Multiple test reports from  to .
+-   **Known regressions**: None from the refactoring.
+
+**Credentials to test flow:**
+-   **Admin**:  / 
+-   **Free Tier**:  / 
+-   **Pro Tier**:  / 
+-   **Elite Tier**:  / 
+
+**What agent forgot to execute**
+-   The agent was performing as requested, successfully completing the massive refactor and then correctly pivoting to the new user request. It laid the foundation for the new task before the session ended.</analysis>

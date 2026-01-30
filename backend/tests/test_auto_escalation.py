@@ -9,7 +9,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://creatormind-1.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://creators-hive.preview.emergentagent.com')
 
 # Test credentials
 ADMIN_CREDENTIALS = {"email": "admin@hivehq.com", "password": "admin123"}
