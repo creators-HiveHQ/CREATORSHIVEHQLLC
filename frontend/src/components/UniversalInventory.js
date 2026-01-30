@@ -2,24 +2,31 @@
  * Universal Inventory - Expression Phase
  * =======================================
  * Displays the creator's assets, offers, content, workflows, and tasks.
- * Pulls data from user_system_profiles and presents it in an organized view.
+ * Full CRUD operations with backend persistence.
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import {
   Package, ShoppingBag, FileText, Workflow, CheckSquare,
-  ArrowLeft, Plus, Search, Filter, Grid3X3, List,
-  RefreshCw, AlertCircle, Sparkles, TrendingUp, Target,
-  Eye, Clock, CheckCircle2, XCircle, Pause, MoreHorizontal,
-  ChevronRight, Layers, Box, Zap
+  ArrowLeft, Plus, Search, Grid3X3, List,
+  RefreshCw, AlertCircle, Eye, Clock, CheckCircle2, 
+  XCircle, Pause, MoreHorizontal, ChevronRight, Layers,
+  Edit, Trash2, TrendingUp
 } from "lucide-react";
+import InventoryItemModal, { DeleteConfirmModal } from "./InventoryItemModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
@@ -97,26 +104,50 @@ const StatusBadge = ({ status }) => {
 };
 
 // ============== INVENTORY ITEM CARD ==============
-const InventoryItemCard = ({ item, category, onClick }) => {
+const InventoryItemCard = ({ item, category, onEdit, onDelete }) => {
   const categoryConfig = INVENTORY_CATEGORIES[category];
   const Icon = categoryConfig?.icon || Package;
+  const isSystemGenerated = item.id?.startsWith("workflow-") || item.id?.startsWith("task-") || item.id?.startsWith("asset-");
 
   return (
     <Card 
-      className={`border ${categoryConfig?.borderColor || 'border-slate-200'} hover:shadow-md transition-all cursor-pointer group`}
-      onClick={onClick}
+      className={`border ${categoryConfig?.borderColor || "border-slate-200"} hover:shadow-md transition-all group`}
       data-testid={`inventory-item-${item.id}`}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className={`p-2 rounded-lg ${categoryConfig?.bgColor || 'bg-slate-50'}`}>
-            <Icon className={`w-5 h-5 ${categoryConfig?.color || 'text-slate-500'}`} />
+          <div className={`p-2 rounded-lg ${categoryConfig?.bgColor || "bg-slate-50"}`}>
+            <Icon className={`w-5 h-5 ${categoryConfig?.color || "text-slate-500"}`} />
           </div>
-          <StatusBadge status={item.status || 'draft'} />
+          <div className="flex items-center gap-2">
+            <StatusBadge status={item.status || "draft"} />
+            {!isSystemGenerated && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(item)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => onDelete(item)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
         
-        <h4 className="font-medium text-slate-900 mt-3 group-hover:text-blue-600 transition-colors">
-          {item.name || item.title || 'Untitled'}
+        <h4 className="font-medium text-slate-900 mt-3">
+          {item.name || item.title || "Untitled"}
         </h4>
         
         {item.description && (
@@ -125,13 +156,32 @@ const InventoryItemCard = ({ item, category, onClick }) => {
           </p>
         )}
 
+        {item.tags && item.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {item.tags.slice(0, 3).map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {item.tags.length > 3 && (
+              <Badge variant="outline" className="text-xs">
+                +{item.tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             {item.created_at && (
               <span>Created {new Date(item.created_at).toLocaleDateString()}</span>
             )}
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+          {isSystemGenerated && (
+            <Badge variant="outline" className="text-xs text-slate-400">
+              System
+            </Badge>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -139,32 +189,55 @@ const InventoryItemCard = ({ item, category, onClick }) => {
 };
 
 // ============== INVENTORY LIST ITEM ==============
-const InventoryListItem = ({ item, category, onClick }) => {
+const InventoryListItem = ({ item, category, onEdit, onDelete }) => {
   const categoryConfig = INVENTORY_CATEGORIES[category];
   const Icon = categoryConfig?.icon || Package;
+  const isSystemGenerated = item.id?.startsWith("workflow-") || item.id?.startsWith("task-") || item.id?.startsWith("asset-");
 
   return (
     <div 
-      className="flex items-center gap-4 p-3 bg-white rounded-lg border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all cursor-pointer group"
-      onClick={onClick}
+      className="flex items-center gap-4 p-3 bg-white rounded-lg border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all group"
       data-testid={`inventory-list-item-${item.id}`}
     >
-      <div className={`p-2 rounded-lg ${categoryConfig?.bgColor || 'bg-slate-50'}`}>
-        <Icon className={`w-4 h-4 ${categoryConfig?.color || 'text-slate-500'}`} />
+      <div className={`p-2 rounded-lg ${categoryConfig?.bgColor || "bg-slate-50"}`}>
+        <Icon className={`w-4 h-4 ${categoryConfig?.color || "text-slate-500"}`} />
       </div>
       
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-          {item.name || item.title || 'Untitled'}
+        <h4 className="font-medium text-slate-900 truncate">
+          {item.name || item.title || "Untitled"}
         </h4>
         {item.description && (
           <p className="text-xs text-slate-500 truncate">{item.description}</p>
         )}
       </div>
 
-      <StatusBadge status={item.status || 'draft'} />
+      <StatusBadge status={item.status || "draft"} />
       
-      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+      {!isSystemGenerated && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit(item)}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => onDelete(item)}
+              className="text-red-600 focus:text-red-600"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+      
+      <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
     </div>
   );
 };
@@ -176,16 +249,16 @@ const EmptyState = ({ category, onAdd }) => {
 
   return (
     <div className="text-center py-12">
-      <div className={`w-16 h-16 rounded-full ${config?.bgColor || 'bg-slate-50'} flex items-center justify-center mx-auto mb-4`}>
-        <Icon className={`w-8 h-8 ${config?.color || 'text-slate-400'}`} />
+      <div className={`w-16 h-16 rounded-full ${config?.bgColor || "bg-slate-50"} flex items-center justify-center mx-auto mb-4`}>
+        <Icon className={`w-8 h-8 ${config?.color || "text-slate-400"}`} />
       </div>
-      <h3 className="text-lg font-medium text-slate-900 mb-2">No {config?.label || 'Items'} Yet</h3>
+      <h3 className="text-lg font-medium text-slate-900 mb-2">No {config?.label || "Items"} Yet</h3>
       <p className="text-sm text-slate-500 mb-4 max-w-sm mx-auto">
-        {config?.description || 'Start building your inventory by adding your first item.'}
+        {config?.description || "Start building your inventory by adding your first item."}
       </p>
       <Button onClick={onAdd} className="bg-slate-900 hover:bg-slate-800">
         <Plus className="w-4 h-4 mr-2" />
-        Add {config?.label?.slice(0, -1) || 'Item'}
+        Add {config?.label?.slice(0, -1) || "Item"}
       </Button>
     </div>
   );
@@ -198,7 +271,7 @@ const CategoryStats = ({ items }) => {
     return {
       ...config,
       count: categoryItems.length,
-      active: categoryItems.filter(i => i.status === 'active' || i.status === 'published').length
+      active: categoryItems.filter(i => i.status === "active" || i.status === "published" || i.status === "in_progress").length
     };
   });
 
@@ -207,7 +280,7 @@ const CategoryStats = ({ items }) => {
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <Card key={stat.id} className="border-0 shadow-sm">
+          <Card key={stat.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4 text-center">
               <Icon className={`w-5 h-5 mx-auto mb-2 ${stat.color}`} />
               <p className="text-2xl font-bold text-slate-900">{stat.count}</p>
@@ -232,39 +305,63 @@ export default function UniversalInventory({ token }) {
     workflows: [],
     tasks: []
   });
+  const [systemGeneratedData, setSystemGeneratedData] = useState({
+    assets: [],
+    offers: [],
+    content: [],
+    workflows: [],
+    tasks: []
+  });
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("assets");
-  const [viewMode, setViewMode] = useState("grid"); // grid or list
+  const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [deleteItem, setDeleteItem] = useState(null);
+  
   const navigate = useNavigate();
 
-  // Fetch inventory data from user_system_profiles
+  // Fetch inventory data
   const fetchInventory = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Fetch system profile which contains user data
-      const res = await fetch(`${BACKEND_URL}/api/system/profile`, {
+      // Fetch persisted inventory from API
+      const inventoryRes = await fetch(`${BACKEND_URL}/api/inventory`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch inventory data");
+      if (inventoryRes.ok) {
+        const data = await inventoryRes.json();
+        setInventoryData({
+          assets: data.assets || [],
+          offers: data.offers || [],
+          content: data.content || [],
+          workflows: data.workflows || [],
+          tasks: data.tasks || []
+        });
       }
 
-      const profile = await res.json();
-      
-      // Transform profile data into inventory categories
-      // This maps existing system data to inventory structure
-      const transformedInventory = transformProfileToInventory(profile);
-      setInventoryData(transformedInventory);
+      // Also fetch system profile for system-generated items
+      const profileRes = await fetch(`${BACKEND_URL}/api/system/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        const systemData = transformProfileToSystemItems(profile);
+        setSystemGeneratedData(systemData);
+      }
       
     } catch (err) {
       setError(err.message);
-      // Use placeholder data if fetch fails
-      setInventoryData(generatePlaceholderInventory());
+      toast.error("Failed to load inventory");
     } finally {
       setLoading(false);
     }
@@ -276,36 +373,10 @@ export default function UniversalInventory({ token }) {
     }
   }, [token, fetchInventory]);
 
-  // Transform system profile to inventory structure
-  const transformProfileToInventory = (profile) => {
-    const assets = [];
-    const offers = [];
-    const content = [];
+  // Transform system profile to system-generated items
+  const transformProfileToSystemItems = (profile) => {
     const workflows = [];
     const tasks = [];
-
-    // Map assets_already_have to Assets
-    const assetMap = {
-      social_media_accounts: { name: "Social Media Accounts", description: "Your connected social platforms" },
-      existing_audience: { name: "Existing Audience", description: "Your current follower base" },
-      offers_products: { name: "Products/Services", description: "Your existing offerings" },
-      brand_identity: { name: "Brand Identity", description: "Your visual and verbal brand" },
-      content_system: { name: "Content System", description: "Your content creation setup" }
-    };
-
-    if (profile.intake_data?.starting_point?.assets_already_have) {
-      profile.intake_data.starting_point.assets_already_have.forEach((asset, idx) => {
-        const assetInfo = assetMap[asset] || { name: asset, description: "" };
-        assets.push({
-          id: `asset-${idx}`,
-          name: assetInfo.name,
-          description: assetInfo.description,
-          status: "active",
-          type: asset,
-          created_at: profile.created_at || new Date().toISOString()
-        });
-      });
-    }
 
     // Map active engines to Workflows
     if (profile.active_engines) {
@@ -320,90 +391,176 @@ export default function UniversalInventory({ token }) {
         workflows.push({
           id: `workflow-${idx}`,
           name: engineNames[engine] || engine,
-          description: `Automated workflow for ${engine.replace(/_/g, ' ')}`,
+          description: `Automated workflow for ${engine.replace(/_/g, " ")}`,
           status: "active",
           type: "engine_workflow",
-          created_at: profile.created_at || new Date().toISOString()
+          created_at: profile.intake_completed_at || new Date().toISOString()
         });
       });
     }
 
-    // Map unlocked modules to Tasks (suggested actions)
+    // Map unlocked modules to Tasks
     if (profile.unlocked_modules) {
       profile.unlocked_modules.slice(0, 5).forEach((module, idx) => {
         tasks.push({
           id: `task-${idx}`,
-          name: `Complete ${module.replace(/_/g, ' ')}`,
-          description: `Work through the ${module.replace(/_/g, ' ')} module`,
+          name: `Complete ${module.replace(/_/g, " ")}`,
+          description: `Work through the ${module.replace(/_/g, " ")} module`,
           status: idx === 0 ? "in_progress" : "pending",
           type: "module_task",
           module_id: module,
-          created_at: profile.created_at || new Date().toISOString()
+          created_at: profile.intake_completed_at || new Date().toISOString()
         });
       });
     }
 
-    // Generate placeholder offers and content based on track
-    if (profile.track === "creator_track" || profile.track === "hybrid_track") {
-      content.push({
-        id: "content-placeholder-1",
-        name: "Content Strategy Document",
-        description: "Your personalized content plan based on intake responses",
-        status: "draft",
-        type: "strategy",
-        created_at: new Date().toISOString()
-      });
-    }
-
-    if (profile.track === "business_track" || profile.track === "hybrid_track") {
-      offers.push({
-        id: "offer-placeholder-1",
-        name: "Core Offer Framework",
-        description: "Your primary offer structure awaiting definition",
-        status: "draft",
-        type: "framework",
-        created_at: new Date().toISOString()
-      });
-    }
-
-    return { assets, offers, content, workflows, tasks };
+    return { assets: [], offers: [], content: [], workflows, tasks };
   };
 
-  // Generate placeholder inventory for demo/empty states
-  const generatePlaceholderInventory = () => ({
-    assets: [
-      { id: "asset-1", name: "Brand Guidelines", description: "Your visual identity system", status: "active", created_at: new Date().toISOString() },
-      { id: "asset-2", name: "Content Library", description: "Repository of reusable content", status: "draft", created_at: new Date().toISOString() }
-    ],
-    offers: [
-      { id: "offer-1", name: "Core Service Package", description: "Your primary offering", status: "draft", created_at: new Date().toISOString() }
-    ],
-    content: [
-      { id: "content-1", name: "Welcome Sequence", description: "Onboarding email series", status: "draft", created_at: new Date().toISOString() }
-    ],
-    workflows: [
-      { id: "workflow-1", name: "Client Onboarding", description: "Automated client welcome process", status: "active", created_at: new Date().toISOString() }
-    ],
-    tasks: [
-      { id: "task-1", name: "Define Brand Voice", description: "Document your unique communication style", status: "pending", created_at: new Date().toISOString() },
-      { id: "task-2", name: "Set Up Content Calendar", description: "Plan your content schedule", status: "pending", created_at: new Date().toISOString() }
-    ]
-  });
+  // Merge user items with system-generated items
+  const getMergedItems = (category) => {
+    const userItems = inventoryData[category] || [];
+    const systemItems = systemGeneratedData[category] || [];
+    return [...userItems, ...systemItems];
+  };
 
   // Filter items by search query
   const getFilteredItems = (category) => {
-    const items = inventoryData[category] || [];
+    const items = getMergedItems(category);
     if (!searchQuery) return items;
     
     return items.filter(item => 
-      (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+      (item.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
+  };
+
+  // CRUD Operations
+  const handleCreate = async (itemData) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/inventory`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(itemData)
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create item");
+      }
+
+      const newItem = await res.json();
+      
+      // Update local state
+      setInventoryData(prev => ({
+        ...prev,
+        [itemData.category]: [...(prev[itemData.category] || []), newItem]
+      }));
+
+      toast.success(`${INVENTORY_CATEGORIES[itemData.category]?.label?.slice(0, -1) || "Item"} created successfully`);
+      setIsModalOpen(false);
+      setEditingItem(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdate = async (itemData) => {
+    if (!editingItem) return;
+    
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/inventory/${activeCategory}/${editingItem.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(itemData)
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update item");
+      }
+
+      const updatedItem = await res.json();
+      
+      // Update local state
+      setInventoryData(prev => ({
+        ...prev,
+        [activeCategory]: prev[activeCategory].map(item => 
+          item.id === editingItem.id ? updatedItem : item
+        )
+      }));
+
+      toast.success("Item updated successfully");
+      setIsModalOpen(false);
+      setEditingItem(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+    
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/inventory/${activeCategory}/${deleteItem.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete item");
+      }
+      
+      // Update local state
+      setInventoryData(prev => ({
+        ...prev,
+        [activeCategory]: prev[activeCategory].filter(item => item.id !== deleteItem.id)
+      }));
+
+      toast.success("Item deleted successfully");
+      setDeleteItem(null);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openCreateModal = () => {
+    setEditingItem(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (item) => {
+    setEditingItem(item);
+    setIsModalOpen(true);
+  };
+
+  const handleSave = (itemData) => {
+    if (editingItem) {
+      handleUpdate(itemData);
+    } else {
+      handleCreate(itemData);
+    }
   };
 
   const currentItems = getFilteredItems(activeCategory);
   const currentCategory = INVENTORY_CATEGORIES[activeCategory];
-  const CategoryIcon = currentCategory?.icon || Package;
+  const totalCounts = Object.entries(INVENTORY_CATEGORIES).reduce((acc, [key]) => {
+    acc[key] = getMergedItems(key).length;
+    return acc;
+  }, {});
 
   if (loading) {
     return (
@@ -451,7 +608,11 @@ export default function UniversalInventory({ token }) {
 
         {/* Stats Overview */}
         <div className="mb-6">
-          <CategoryStats items={inventoryData} />
+          <CategoryStats items={{
+            ...inventoryData,
+            workflows: getMergedItems("workflows"),
+            tasks: getMergedItems("tasks")
+          }} />
         </div>
 
         {/* Search and View Controls */}
@@ -484,6 +645,10 @@ export default function UniversalInventory({ token }) {
               <List className="w-4 h-4" />
             </Button>
           </div>
+          <Button onClick={openCreateModal} className="bg-slate-900 hover:bg-slate-800">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Item
+          </Button>
         </div>
 
         {/* Category Tabs */}
@@ -491,7 +656,7 @@ export default function UniversalInventory({ token }) {
           <TabsList className="mb-6 bg-white border border-slate-200">
             {Object.entries(INVENTORY_CATEGORIES).map(([key, config]) => {
               const Icon = config.icon;
-              const count = (inventoryData[key] || []).length;
+              const count = totalCounts[key];
               return (
                 <TabsTrigger 
                   key={key} 
@@ -517,7 +682,7 @@ export default function UniversalInventory({ token }) {
                   <CardContent className="p-4 flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-500" />
                     <p className="text-sm text-amber-700">
-                      Showing placeholder data. {error}
+                      {error}
                     </p>
                   </CardContent>
                 </Card>
@@ -526,7 +691,7 @@ export default function UniversalInventory({ token }) {
               {currentItems.length === 0 ? (
                 <EmptyState 
                   category={category} 
-                  onAdd={() => console.log(`Add ${category}`)} 
+                  onAdd={openCreateModal} 
                 />
               ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -535,7 +700,8 @@ export default function UniversalInventory({ token }) {
                       key={item.id}
                       item={item}
                       category={category}
-                      onClick={() => console.log("View item:", item.id)}
+                      onEdit={openEditModal}
+                      onDelete={setDeleteItem}
                     />
                   ))}
                 </div>
@@ -546,7 +712,8 @@ export default function UniversalInventory({ token }) {
                       key={item.id}
                       item={item}
                       category={category}
-                      onClick={() => console.log("View item:", item.id)}
+                      onEdit={openEditModal}
+                      onDelete={setDeleteItem}
                     />
                   ))}
                 </div>
@@ -555,6 +722,28 @@ export default function UniversalInventory({ token }) {
           ))}
         </Tabs>
       </div>
+
+      {/* Create/Edit Modal */}
+      <InventoryItemModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingItem(null);
+        }}
+        onSave={handleSave}
+        category={activeCategory}
+        editItem={editingItem}
+        loading={actionLoading}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteItem}
+        onClose={() => setDeleteItem(null)}
+        onConfirm={handleDelete}
+        itemName={deleteItem?.name || ""}
+        loading={actionLoading}
+      />
     </div>
   );
 }
