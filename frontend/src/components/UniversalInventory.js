@@ -549,6 +549,11 @@ export default function UniversalInventory({ token }) {
     setIsModalOpen(true);
   };
 
+  const viewItem = (item) => {
+    // Navigate to item detail page
+    navigate(`/inventory/${activeCategory}/${item.id}`);
+  };
+
   const handleSave = (itemData) => {
     if (editingItem) {
       handleUpdate(itemData);
