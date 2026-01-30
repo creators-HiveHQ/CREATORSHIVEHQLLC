@@ -428,6 +428,10 @@ export default function CommandCenter({ token, onNavigateToIntake }) {
               <LayoutDashboard className="w-4 h-4" />
               Overview
             </TabsTrigger>
+            <TabsTrigger value="keeper" className="flex items-center gap-2">
+              <Eye className="w-4 h-4" />
+              Keeper
+            </TabsTrigger>
             <TabsTrigger value="engines" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
               Engines
