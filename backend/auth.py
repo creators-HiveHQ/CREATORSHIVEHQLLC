@@ -314,3 +314,69 @@ async def get_current_creator(credentials: HTTPAuthorizationCredentials = Depend
         return creator
     
     return {"email": token_data.email, "user_id": token_data.user_id}
+
+
+
+# ============== ADMIN IMPERSONATION ==============
+
+async def create_impersonation_token(db, admin_credentials: HTTPAuthorizationCredentials, creator_id: str):
+    """
+    Create a temporary impersonation token for admin to explore as a creator.
+    Admin-only functionality for testing and support purposes.
+    """
+    from models_creator import CreatorToken
+    
+    # First verify admin is authenticated
+    admin_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Admin authentication required",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    token = admin_credentials.credentials
+    token_data = decode_token(token)
+    
+    if token_data is None or token_data.role != "admin":
+        raise admin_exception
+    
+    # Verify admin exists
+    admin = await db.admin_users.find_one({"email": token_data.email})
+    if not admin:
+        raise admin_exception
+    
+    # Find the creator to impersonate
+    creator = await db.creators.find_one({"id": creator_id}, {"_id": 0, "hashed_password": 0})
+    if not creator:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Creator with ID {creator_id} not found"
+        )
+    
+    # Create impersonation token (shorter expiry for security - 1 hour)
+    impersonation_expires = timedelta(hours=1)
+    impersonation_token = create_access_token(
+        data={
+            "sub": creator["email"], 
+            "user_id": creator["id"],
+            "role": "creator",
+            "impersonated_by": admin["email"],
+            "is_impersonation": True
+        },
+        expires_delta=impersonation_expires
+    )
+    
+    return CreatorToken(
+        access_token=impersonation_token,
+        expires_in=3600,  # 1 hour in seconds
+        creator={
+            "id": creator["id"],
+            "email": creator["email"],
+            "name": creator["name"],
+            "status": creator.get("status", "pending"),
+            "tier": creator.get("assigned_tier", "Free"),
+            "platforms": creator.get("platforms", []),
+            "niche": creator.get("niche", ""),
+            "is_impersonated": True,
+            "impersonated_by": admin["email"]
+        }
+    )
