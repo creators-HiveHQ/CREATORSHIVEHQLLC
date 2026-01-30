@@ -244,11 +244,22 @@ async def get_intake_status(
     
     state = await intake_service.get_system_state(user_id)
     
+    # Count active engines
+    engines_active = 0
+    if state and state.engines:
+        for engine_data in state.engines.values():
+            if isinstance(engine_data, dict):
+                if engine_data.get("status") == "active":
+                    engines_active += 1
+            elif hasattr(engine_data, 'status'):
+                if engine_data.status == EngineStatus.ACTIVE or engine_data.status == "active":
+                    engines_active += 1
+    
     return {
         "intake_completed": True,
         "intake_id": state.intake_id if state else None,
         "assigned_track": state.assigned_track.value if state and state.assigned_track else None,
-        "engines_active": len([e for k, e in state.engines.items() if isinstance(e, dict) and e.get("status") == "active" or hasattr(e, 'status') and e.status == EngineStatus.ACTIVE]) if state else 0,
+        "engines_active": engines_active,
         "modules_unlocked": len(state.unlocked_modules) if state else 0
     }
 
