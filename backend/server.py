@@ -5514,6 +5514,8 @@ api_router.include_router(referral_admin_router)
 api_router.include_router(webhooks_router)  # Production webhook handlers
 api_router.include_router(intake_router)  # Intake form routes
 api_router.include_router(command_center_router)  # Command center dashboard routes
+api_router.include_router(engines_router)  # Engine management routes
+api_router.include_router(modules_router)  # Module management routes
 
 # Include the router into the app
 app.include_router(api_router)
