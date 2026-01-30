@@ -129,7 +129,7 @@ export default function InventoryItemModal({
   };
   
   // Effect to sync form data when editItem changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   const syncFormData = () => {
     if (isOpen) {
       resetForm(editItem);
