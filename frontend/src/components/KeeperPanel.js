@@ -274,7 +274,7 @@ export default function KeeperPanel({
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-500" />
-            Keeper's Observations
+            Keeper&apos;s Observations
           </h4>
           <Button 
             variant="ghost" 
