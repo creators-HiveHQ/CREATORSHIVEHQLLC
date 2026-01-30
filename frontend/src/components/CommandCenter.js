@@ -313,6 +313,7 @@ export default function CommandCenter({ token, onNavigateToIntake }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const navigate = useNavigate();
 
   const fetchCommandCenterData = useCallback(async () => {
     setLoading(true);
