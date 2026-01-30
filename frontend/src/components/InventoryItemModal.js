@@ -110,7 +110,6 @@ export default function InventoryItemModal({
   useEffect(() => {
     if (isOpen) {
       // Reset form when modal opens
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: editItem?.name || "",
         description: editItem?.description || "",
@@ -123,8 +122,7 @@ export default function InventoryItemModal({
        
       setTagInput("");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editItem?.id]); // Only depend on editItem.id to avoid unnecessary rerenders
+  }, [isOpen, editItem]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
