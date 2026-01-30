@@ -709,6 +709,7 @@ export default function UniversalInventory({ token }) {
                       category={category}
                       onEdit={openEditModal}
                       onDelete={setDeleteItem}
+                      onView={viewItem}
                     />
                   ))}
                 </div>
@@ -721,6 +722,7 @@ export default function UniversalInventory({ token }) {
                       category={category}
                       onEdit={openEditModal}
                       onDelete={setDeleteItem}
+                      onView={viewItem}
                     />
                   ))}
                 </div>
