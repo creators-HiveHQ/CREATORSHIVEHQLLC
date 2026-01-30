@@ -190,15 +190,16 @@ const InventoryItemCard = ({ item, category, onEdit, onDelete, onView }) => {
 };
 
 // ============== INVENTORY LIST ITEM ==============
-const InventoryListItem = ({ item, category, onEdit, onDelete }) => {
+const InventoryListItem = ({ item, category, onEdit, onDelete, onView }) => {
   const categoryConfig = INVENTORY_CATEGORIES[category];
   const Icon = categoryConfig?.icon || Package;
   const isSystemGenerated = item.id?.startsWith("workflow-") || item.id?.startsWith("task-") || item.id?.startsWith("asset-");
 
   return (
     <div 
-      className="flex items-center gap-4 p-3 bg-white rounded-lg border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all group"
+      className="flex items-center gap-4 p-3 bg-white rounded-lg border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all group cursor-pointer"
       data-testid={`inventory-list-item-${item.id}`}
+      onClick={() => onView && onView(item)}
     >
       <div className={`p-2 rounded-lg ${categoryConfig?.bgColor || "bg-slate-50"}`}>
         <Icon className={`w-4 h-4 ${categoryConfig?.color || "text-slate-500"}`} />
@@ -218,12 +219,12 @@ const InventoryListItem = ({ item, category, onEdit, onDelete }) => {
       {!isSystemGenerated && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(item)}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(item); }}>
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </DropdownMenuItem>
