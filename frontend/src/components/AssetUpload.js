@@ -30,14 +30,6 @@ const FILE_ICONS = {
 };
 
 // Get icon for file type
-const getFileIcon = (mimeType) => {
-  if (mimeType?.startsWith("image/")) return FILE_ICONS.image;
-  if (mimeType?.startsWith("video/")) return FILE_ICONS.video;
-  if (mimeType?.startsWith("audio/")) return FILE_ICONS.audio;
-  if (mimeType === "application/pdf") return FILE_ICONS["application/pdf"];
-  return FILE_ICONS.default;
-};
-
 // Format file size
 const formatFileSize = (bytes) => {
   if (bytes === 0) return "0 B";
