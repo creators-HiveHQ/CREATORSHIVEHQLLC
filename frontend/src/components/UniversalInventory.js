@@ -229,7 +229,7 @@ const InventoryListItem = ({ item, category, onEdit, onDelete, onView }) => {
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => onDelete(item)}
+              onClick={(e) => { e.stopPropagation(); onDelete(item); }}
               className="text-red-600 focus:text-red-600"
             >
               <Trash2 className="w-4 h-4 mr-2" />
