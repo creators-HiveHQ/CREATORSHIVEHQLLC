@@ -64,7 +64,10 @@ Single-page form collecting:
 
 #### Module Endpoints
 - `GET /api/modules` - List all modules
+- `GET /api/modules/status` - Comprehensive status with health/blockers/priority (Phase 4)
 - `GET /api/modules/unlocked` - List unlocked modules
+- `GET /api/modules/{module_id}` - Get module with Phase 4 metadata
+- `POST /api/modules/update/{module_id}` - Update status (activate/deactivate/acknowledge_blocker) (Phase 4)
 - `POST /api/modules/{module_id}/activate` - Activate module
 - `GET /api/modules/by-engine/{engine_id}` - Modules by engine
 - `GET /api/modules/by-track/{track_id}` - Modules by track
