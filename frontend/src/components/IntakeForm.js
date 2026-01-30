@@ -50,10 +50,10 @@ const PRIMARY_GOAL_OPTIONS = [
 ];
 
 const ENGINE_OPTIONS = [
-  { value: "business_engine", label: "Business Engine", description: "Business planning, strategy, market analysis", icon: Briefcase, color: "bg-blue-500" },
-  { value: "engagement_engine", label: "Engagement Engine", description: "Audience building, content strategy, community", icon: Users, color: "bg-purple-500" },
-  { value: "role_engine", label: "Role Engine", description: "Role definition, team building, delegation", icon: Target, color: "bg-amber-500" },
-  { value: "income_engine", label: "Income Engine", description: "Revenue tracking, pricing, sales optimization", icon: DollarSign, color: "bg-emerald-500" }
+  { value: "business_engine", label: "Business Support", description: "Business planning, strategy, market analysis", icon: Briefcase, color: "bg-blue-500" },
+  { value: "engagement_engine", label: "Audience & Visibility Support", description: "Audience building, content strategy, community", icon: Users, color: "bg-purple-500" },
+  { value: "role_engine", label: "Creator Identity Support", description: "Role definition, team building, delegation", icon: Target, color: "bg-amber-500" },
+  { value: "income_engine", label: "Monetization Support", description: "Revenue tracking, pricing, sales optimization", icon: DollarSign, color: "bg-emerald-500" }
 ];
 
 const ASSETS_OPTIONS = [
