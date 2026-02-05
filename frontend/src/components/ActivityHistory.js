@@ -14,6 +14,7 @@ import {
   ArrowLeft, Clock, Zap, Target, Layers, Activity,
   Sparkles, RefreshCw, AlertCircle
 } from "lucide-react";
+import ActivityNotificationBell from "./ActivityNotificationBell";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
