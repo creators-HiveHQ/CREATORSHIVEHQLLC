@@ -91,14 +91,30 @@ const ConnectionCard = ({ connection, onClick }) => {
 const AttachmentPreview = ({ attachment, onRemove }) => {
   const isImage = attachment.type?.startsWith("image/");
   
+  // Construct full URL for files
+  const getFullUrl = (url) => {
+    if (!url) return null;
+    // If URL is already absolute, use as-is
+    if (url.startsWith("http")) return url;
+    // Otherwise, prepend backend URL
+    return `${BACKEND_URL}${url}`;
+  };
+  
+  const fullUrl = getFullUrl(attachment.url);
+  
   return (
     <div className="relative group">
       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-        {isImage && attachment.url ? (
+        {isImage && fullUrl ? (
           <img 
-            src={attachment.url} 
+            src={fullUrl} 
             alt={attachment.name}
             className="w-full h-32 object-cover rounded-lg mb-2"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = `<div class="w-full h-32 bg-slate-100 rounded-lg flex items-center justify-center mb-2"><svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>`;
+            }}
           />
         ) : (
           <div className="w-full h-32 bg-slate-100 rounded-lg flex items-center justify-center mb-2">
@@ -106,22 +122,41 @@ const AttachmentPreview = ({ attachment, onRemove }) => {
           </div>
         )}
         <p className="text-sm font-medium text-slate-700 truncate">{attachment.name}</p>
-        <p className="text-xs text-slate-400">{attachment.size}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-slate-400">{attachment.size}</p>
+          {attachment.created_at && (
+            <p className="text-xs text-slate-400">
+              {new Date(attachment.created_at).toLocaleDateString()}
+            </p>
+          )}
+        </div>
       </div>
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {attachment.url && (
-          <a
-            href={attachment.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1 bg-white rounded shadow hover:bg-slate-50"
-          >
-            <Download className="w-4 h-4 text-slate-600" />
-          </a>
+        {fullUrl && (
+          <>
+            <a
+              href={fullUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 bg-white rounded-lg shadow hover:bg-slate-50 transition-colors"
+              title="View file"
+            >
+              <Eye className="w-4 h-4 text-slate-600" />
+            </a>
+            <a
+              href={fullUrl}
+              download={attachment.name}
+              className="p-1.5 bg-white rounded-lg shadow hover:bg-slate-50 transition-colors"
+              title="Download file"
+            >
+              <Download className="w-4 h-4 text-slate-600" />
+            </a>
+          </>
         )}
         <button
           onClick={() => onRemove(attachment.id)}
-          className="p-1 bg-white rounded shadow hover:bg-red-50"
+          className="p-1.5 bg-white rounded-lg shadow hover:bg-red-50 transition-colors"
+          title="Remove attachment"
         >
           <X className="w-4 h-4 text-red-500" />
         </button>
