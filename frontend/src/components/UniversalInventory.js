@@ -27,6 +27,8 @@ import {
   Edit, Trash2, TrendingUp
 } from "lucide-react";
 import InventoryItemModal, { DeleteConfirmModal } from "./InventoryItemModal";
+import ActivityNotificationBell from "./ActivityNotificationBell";
+import useActivityData from "@/hooks/useActivityData";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
