@@ -153,6 +153,8 @@ const QuickAccessSection = ({ onKeeperClick, onInventoryClick, systemState, inve
 
 // ============== RECENT ACTIVITY SECTION ==============
 const RecentActivitySection = ({ activities }) => {
+  const [activeFilter, setActiveFilter] = useState("all");
+
   const activityIcons = {
     engine: <Zap className="w-4 h-4 text-amber-500" />,
     module: <Target className="w-4 h-4 text-blue-500" />,
@@ -162,10 +164,27 @@ const RecentActivitySection = ({ activities }) => {
     system: <Activity className="w-4 h-4 text-slate-500" />
   };
 
+  // Filter categories with their matching activity types
+  const filterCategories = [
+    { key: "all", label: "All", types: null },
+    { key: "inventory", label: "Inventory", types: ["inventory"] },
+    { key: "workflows", label: "Workflows", types: ["workflow"] },
+    { key: "engines", label: "Engines", types: ["engine", "module"] },
+    { key: "arris", label: "ARRIS", types: ["arris"] }
+  ];
+
   // Show real activities or fallback
-  const displayActivities = activities?.length > 0 ? activities : [
+  const allActivities = activities?.length > 0 ? activities : [
     { type: "system", message: "Your system is ready for action", time: "Just now" }
   ];
+
+  // Apply filter
+  const filteredActivities = activeFilter === "all"
+    ? allActivities
+    : allActivities.filter(activity => {
+        const category = filterCategories.find(f => f.key === activeFilter);
+        return category?.types?.includes(activity.type);
+      });
 
   return (
     <Card className="border-0 shadow-sm mb-8" data-testid="whats-new-section">
@@ -176,27 +195,50 @@ const RecentActivitySection = ({ activities }) => {
             <CardTitle className="text-lg">What&apos;s New</CardTitle>
           </div>
           <Badge variant="outline" className="text-xs">
-            {displayActivities.length} updates
+            {filteredActivities.length} updates
           </Badge>
+        </div>
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap gap-2 mt-3">
+          {filterCategories.map((filter) => (
+            <button
+              key={filter.key}
+              onClick={() => setActiveFilter(filter.key)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                activeFilter === filter.key
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+              data-testid={`filter-${filter.key}`}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {displayActivities.slice(0, 5).map((activity, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-              data-testid={`activity-item-${idx}`}
-            >
-              <div className="p-2 bg-white rounded-lg shadow-sm">
-                {activityIcons[activity.type] || activityIcons.system}
+          {filteredActivities.length > 0 ? (
+            filteredActivities.slice(0, 5).map((activity, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                data-testid={`activity-item-${idx}`}
+              >
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  {activityIcons[activity.type] || activityIcons.system}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-slate-700 truncate">{activity.message}</p>
+                  <p className="text-xs text-slate-400">{activity.time}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-700 truncate">{activity.message}</p>
-                <p className="text-xs text-slate-400">{activity.time}</p>
-              </div>
+            ))
+          ) : (
+            <div className="text-center py-6 text-slate-400">
+              <p className="text-sm">No {activeFilter} activity yet</p>
             </div>
-          ))}
+          )}
         </div>
       </CardContent>
     </Card>
