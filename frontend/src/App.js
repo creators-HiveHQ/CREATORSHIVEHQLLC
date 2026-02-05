@@ -1356,8 +1356,8 @@ const IntakeFormWrapper = () => {
   const navigate = useNavigate();
   
   const handleIntakeComplete = (result) => {
-    // Navigate to command center after intake completion
-    navigate("/command-center");
+    // Navigate to home after intake completion
+    navigate("/home");
   };
   
   return (
