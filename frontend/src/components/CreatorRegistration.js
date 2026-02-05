@@ -428,7 +428,7 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
       }
       
       const response = await axios.post(
-        `${API}/auth/impersonate/${creator.assigned_user_id}`,
+        `${API}/auth/impersonate/${creator.id}`,
         {},
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );
