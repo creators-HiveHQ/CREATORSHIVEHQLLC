@@ -1580,6 +1580,13 @@ function App() {
               </CreatorProtectedRoute>
             } />
             
+            {/* Activity History Route */}
+            <Route path="/activity-history" element={
+              <CreatorProtectedRoute>
+                <ActivityHistoryWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
             {/* Universal Inventory Route - Expression Phase */}
             <Route path="/inventory" element={
               <CreatorProtectedRoute>
