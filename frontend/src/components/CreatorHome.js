@@ -408,6 +408,7 @@ const NavigationGrid = ({ navigate }) => {
 // ============== MAIN CREATOR HOME ==============
 export default function CreatorHome({ token, creator }) {
   const [homeData, setHomeData] = useState(null);
+  const [inventoryData, setInventoryData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isImpersonation, setIsImpersonation] = useState(false);
@@ -456,21 +457,26 @@ export default function CreatorHome({ token, creator }) {
     setError(null);
     
     try {
-      // Fetch command center data for system state
-      const res = await fetch(`${BACKEND_URL}/api/command-center`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Fetch command center data and inventory data in parallel
+      const [commandCenterRes, inventoryRes] = await Promise.all([
+        fetch(`${BACKEND_URL}/api/command-center`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${BACKEND_URL}/api/inventory`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => null) // Don't fail if inventory fails
+      ]);
 
-      if (!res.ok) {
+      if (!commandCenterRes.ok) {
         // If intake required, redirect
-        if (res.status === 403) {
+        if (commandCenterRes.status === 403) {
           navigate("/intake");
           return;
         }
         throw new Error("Failed to load home data");
       }
 
-      const data = await res.json();
+      const data = await commandCenterRes.json();
       
       // Check if intake is required
       if (data.intake_required) {
@@ -479,6 +485,12 @@ export default function CreatorHome({ token, creator }) {
       }
 
       setHomeData(data);
+
+      // Parse inventory data if available
+      if (inventoryRes?.ok) {
+        const invData = await inventoryRes.json();
+        setInventoryData(invData);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
