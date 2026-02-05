@@ -30,6 +30,8 @@ import EngineStatusPanel from "./EngineStatusPanel";
 import ModuleStatusPanel from "./ModuleStatusPanel";
 import KeeperPanel, { KeeperWidget } from "./KeeperPanel";
 import { InventoryWidget } from "./UniversalInventory";
+import ActivityNotificationBell from "./ActivityNotificationBell";
+import useActivityData from "@/hooks/useActivityData";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
