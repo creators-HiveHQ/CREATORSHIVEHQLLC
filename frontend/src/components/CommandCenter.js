@@ -316,6 +316,9 @@ export default function CommandCenter({ token, onNavigateToIntake }) {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
+  
+  // Fetch activity data for notification bell
+  const { activities } = useActivityData(token);
 
   const fetchCommandCenterData = useCallback(async () => {
     setLoading(true);
