@@ -21,10 +21,40 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Briefcase, Users, Target, DollarSign, 
-  Zap, UserCircle, Layers, CheckCircle2
+  Zap, UserCircle, Layers, CheckCircle2,
+  Shield, LogOut
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
+
+// ============== IMPERSONATION BANNER ==============
+const ImpersonationBanner = ({ creatorName, onExit }) => {
+  return (
+    <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3 mb-6 rounded-xl shadow-md" data-testid="impersonation-banner">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/20 rounded-lg">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-medium">Admin Impersonation Mode</p>
+            <p className="text-sm text-white/80">
+              You are viewing as {creatorName || "this creator"}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onExit}
+          className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors font-medium"
+          data-testid="exit-impersonation-btn"
+        >
+          <LogOut className="w-4 h-4" />
+          Exit Impersonation
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // ============== OPTION DEFINITIONS ==============
 
