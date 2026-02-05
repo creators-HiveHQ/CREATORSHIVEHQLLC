@@ -535,9 +535,10 @@ export default function CreatorHome({ token, creator }) {
     );
   }
 
-  const systemState = homeData?.system_state || {};
-  const inventoryData = homeData?.inventory || {};
-  const activities = homeData?.recent_activity || [];
+  const systemState = homeData?.system_state || homeData || {};
+  
+  // Generate real activities from homeData and inventoryData
+  const activities = generateActivitiesFromData(homeData, inventoryData);
 
   // Use impersonated creator name or fall back to passed creator
   const displayCreator = isImpersonation && impersonatedCreator ? impersonatedCreator : creator;
