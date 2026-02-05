@@ -329,6 +329,9 @@ export default function UniversalInventory({ token }) {
   const [deleteItem, setDeleteItem] = useState(null);
   
   const navigate = useNavigate();
+  
+  // Fetch activity data for notification bell
+  const { activities } = useActivityData(token);
 
   // Fetch inventory data
   const fetchInventory = useCallback(async () => {
