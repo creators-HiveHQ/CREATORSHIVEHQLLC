@@ -433,6 +433,9 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );
       
+      // Save the admin token before switching to impersonation
+      localStorage.setItem("admin_token_backup", adminToken);
+      
       // Store the impersonation token in creator_token
       localStorage.setItem("creator_token", response.data.access_token);
       localStorage.setItem("creator_data", JSON.stringify(response.data.creator));
