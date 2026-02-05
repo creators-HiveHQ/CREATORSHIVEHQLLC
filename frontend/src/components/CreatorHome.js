@@ -55,7 +55,7 @@ const ImpersonationBanner = ({ creatorName, onExit }) => {
 };
 
 // ============== WELCOME HEADER ==============
-const WelcomeHeader = ({ creator, systemState }) => {
+const WelcomeHeader = ({ creator, systemState, activities }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
@@ -76,19 +76,25 @@ const WelcomeHeader = ({ creator, systemState }) => {
             Welcome back to your creative hub
           </p>
         </div>
-        <div className="hidden md:flex items-center gap-4">
-          {systemState && (
-            <>
-              <div className="text-center px-4 py-2 bg-emerald-50 rounded-lg">
-                <p className="text-lg font-bold text-emerald-600">{systemState.engines_active || 0}</p>
-                <p className="text-xs text-slate-500">Active Engines</p>
-              </div>
-              <div className="text-center px-4 py-2 bg-purple-50 rounded-lg">
-                <p className="text-lg font-bold text-purple-600">{Math.round(systemState.overall_progress || 0)}%</p>
-                <p className="text-xs text-slate-500">Progress</p>
-              </div>
-            </>
-          )}
+        <div className="flex items-center gap-4">
+          {/* Notification Bell */}
+          <ActivityNotificationBell activities={activities} />
+          
+          {/* Stats - Hidden on mobile */}
+          <div className="hidden md:flex items-center gap-4">
+            {systemState && (
+              <>
+                <div className="text-center px-4 py-2 bg-emerald-50 rounded-lg">
+                  <p className="text-lg font-bold text-emerald-600">{systemState.engines_active || 0}</p>
+                  <p className="text-xs text-slate-500">Active Engines</p>
+                </div>
+                <div className="text-center px-4 py-2 bg-purple-50 rounded-lg">
+                  <p className="text-lg font-bold text-purple-600">{Math.round(systemState.overall_progress || 0)}%</p>
+                  <p className="text-xs text-slate-500">Progress</p>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
