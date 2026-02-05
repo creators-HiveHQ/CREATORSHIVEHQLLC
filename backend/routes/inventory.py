@@ -456,6 +456,71 @@ async def upload_file(
     return UploadResponse(**attachment)
 
 
+@router.delete("/attachment/{category}/{item_id}/{attachment_id}")
+async def delete_attachment(
+    category: str,
+    item_id: str,
+    attachment_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db = Depends(get_db)
+):
+    """Delete a file attachment from an inventory item"""
+    # Validate token
+    token_data = verify_token(credentials.credentials)
+    user_id = token_data.get("sub")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    # Find the item
+    profile = await db.user_system_profiles.find_one({"user_id": user_id})
+    if not profile or "inventory" not in profile:
+        raise HTTPException(status_code=404, detail="Inventory not found")
+    
+    items = profile["inventory"].get(category, [])
+    item = next((i for i in items if i.get("id") == item_id), None)
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Find and remove attachment from metadata
+    attachments = item.get("metadata", {}).get("attachments", [])
+    attachment = next((a for a in attachments if a.get("id") == attachment_id), None)
+    
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    
+    # Delete file from storage
+    if attachment.get("url"):
+        filename = attachment["url"].split("/")[-1]
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"Warning: Could not delete file {file_path}: {e}")
+    
+    # Remove attachment from item metadata
+    new_attachments = [a for a in attachments if a.get("id") != attachment_id]
+    
+    # Update the database
+    await db.user_system_profiles.update_one(
+        {"user_id": user_id, f"inventory.{category}.id": item_id},
+        {
+            "$set": {
+                f"inventory.{category}.$.metadata.attachments": new_attachments,
+                f"inventory.{category}.$.updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    return {
+        "success": True,
+        "deleted_id": attachment_id,
+        "message": f"Attachment '{attachment.get('name', attachment_id)}' deleted successfully"
+    }
+
+
 @router.get("/files/{filename}")
 async def get_file(filename: str):
     """Serve an uploaded file"""
