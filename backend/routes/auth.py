@@ -62,6 +62,23 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
     return {"valid": True, "user": current_user}
 
 
+@router.post("/impersonate/{creator_id}")
+async def impersonate_creator(
+    creator_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Admin-only: Impersonate a creator for testing/support.
+    Returns a temporary token to explore the app as that creator.
+    """
+    db = get_db()
+    token_response = await create_impersonation_token(db, credentials, creator_id)
+    
+    logger.info(f"Admin impersonating creator {creator_id}")
+    
+    return token_response
+
+
 # ============== CREATOR REGISTRATION (Public Form) ==============
 
 @creator_auth_router.get("/form-options")
