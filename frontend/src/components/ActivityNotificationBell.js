@@ -112,7 +112,7 @@ export default function ActivityNotificationBell({ activities = [] }) {
               <Clock className="w-4 h-4 text-slate-500" />
               <h3 className="font-semibold text-slate-900 text-sm">Recent Activity</h3>
             </div>
-            {unreadCount === 0 && activities.length > 0 && (
+            {hasSeenThisSession && activities.length > 0 && (
               <div className="flex items-center gap-1 text-xs text-emerald-600">
                 <Check className="w-3 h-3" />
                 <span>All caught up</span>
