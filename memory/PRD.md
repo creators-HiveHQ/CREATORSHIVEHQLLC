@@ -124,6 +124,20 @@ The system restoration is complete. Now implementing the user-facing identity la
 - **File validation** (type and size)
 - Supported formats: Images, PDFs, Videos, Audio, Documents
 
+### Persistent File Storage
+- **Storage location**: `/app/uploads/` (local filesystem)
+- **Supported types**: Images (JPEG, PNG, GIF, WebP, SVG), PDFs, Videos (MP4, WebM), Audio (MP3, WAV), Documents (DOC, DOCX, XLS, XLSX)
+- **Max file size**: 10MB per file
+- **Metadata stored**: id, name, type, size, url, created_at
+- **API endpoints**:
+  - `POST /api/inventory/upload` - Upload file to item
+  - `GET /api/inventory/files/{filename}` - Retrieve uploaded file
+- **UI features**:
+  - Drag & drop upload zone
+  - File preview cards with thumbnails
+  - View and download buttons on hover
+  - Attachment count indicator (📎) in inventory list
+
 #### 5. Workflow Triggers (`WorkflowTriggers.js`) - NEW
 - **6 trigger types**: Manual, Scheduled, Task Completed, Engine Activated, Webhook, Condition
 - **Enable/disable** individual triggers
