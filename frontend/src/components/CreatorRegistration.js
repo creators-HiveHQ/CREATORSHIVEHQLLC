@@ -414,7 +414,8 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
   };
 
   const handleExploreAsUser = async (creator) => {
-    console.log("handleExploreAsUser called with creator:", creator);
+    console.log("handleExploreAsUser called with creator:", JSON.stringify(creator, null, 2));
+    console.log("assigned_user_id:", creator.assigned_user_id);
     if (!creator.assigned_user_id) {
       console.log("No assigned_user_id, showing error");
       toast.error("Creator must be approved and have a user account first");
