@@ -414,32 +414,24 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
   };
 
   const handleExploreAsUser = async (creator) => {
-    console.log("handleExploreAsUser called with creator:", JSON.stringify(creator, null, 2));
-    console.log("assigned_user_id:", creator.assigned_user_id);
     if (!creator.assigned_user_id) {
-      console.log("No assigned_user_id, showing error");
       toast.error("Creator must be approved and have a user account first");
       return;
     }
     
-    console.log("Setting impersonating to true");
     setImpersonating(true);
     try {
       const adminToken = localStorage.getItem("hivehq_token");
-      console.log("Admin token:", adminToken ? "exists" : "missing");
       if (!adminToken) {
         toast.error("Admin authentication required");
         return;
       }
       
-      console.log("Making API call to:", `${API}/auth/impersonate/${creator.id}`);
       const response = await axios.post(
         `${API}/auth/impersonate/${creator.id}`,
         {},
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );
-      
-      console.log("API response:", response.data);
       
       // Store the impersonation token in creator_token
       localStorage.setItem("creator_token", response.data.access_token);
@@ -448,13 +440,11 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
       
       toast.success(`Exploring as ${creator.name}`);
       
-      console.log("Navigating to /command-center");
       // Redirect to command center with full page reload to re-initialize auth state
       window.location.href = "/command-center";
       
     } catch (error) {
       console.error("Impersonation error:", error);
-      console.error("Error response:", error.response?.data);
       toast.error(error.response?.data?.detail || "Failed to impersonate user");
     } finally {
       setImpersonating(false);
