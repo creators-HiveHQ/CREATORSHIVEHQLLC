@@ -152,7 +152,7 @@ const QuickAccessSection = ({ onKeeperClick, onInventoryClick, systemState, inve
 };
 
 // ============== RECENT ACTIVITY SECTION ==============
-const RecentActivitySection = ({ activities }) => {
+const RecentActivitySection = ({ activities, onViewAll }) => {
   const [activeFilter, setActiveFilter] = useState("all");
 
   const activityIcons = {
@@ -194,9 +194,19 @@ const RecentActivitySection = ({ activities }) => {
             <Clock className="w-5 h-5 text-slate-500" />
             <CardTitle className="text-lg">What&apos;s New</CardTitle>
           </div>
-          <Badge variant="outline" className="text-xs">
-            {filteredActivities.length} updates
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="text-xs">
+              {filteredActivities.length} updates
+            </Badge>
+            <button
+              onClick={onViewAll}
+              className="text-xs text-slate-500 hover:text-slate-700 font-medium transition-colors flex items-center gap-1"
+              data-testid="view-all-activity"
+            >
+              View All
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
         </div>
         {/* Filter Buttons */}
         <div className="flex flex-wrap gap-2 mt-3">
