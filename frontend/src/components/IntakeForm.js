@@ -119,6 +119,8 @@ export default function IntakeForm({ token, onComplete }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [isImpersonation, setIsImpersonation] = useState(false);
+  const [impersonatedCreator, setImpersonatedCreator] = useState(null);
 
   // Form state - User Identity
   const [identityType, setIdentityType] = useState("");
@@ -135,6 +137,34 @@ export default function IntakeForm({ token, onComplete }) {
   const [firstPriority, setFirstPriority] = useState("");
 
   const headers = { Authorization: `Bearer ${token}` };
+
+  // Check for impersonation mode on mount
+  useEffect(() => {
+    const impersonationFlag = localStorage.getItem("is_impersonation");
+    const creatorData = localStorage.getItem("creator_data");
+    
+    if (impersonationFlag === "true") {
+      setIsImpersonation(true);
+      if (creatorData) {
+        try {
+          setImpersonatedCreator(JSON.parse(creatorData));
+        } catch (e) {
+          console.error("Failed to parse creator data:", e);
+        }
+      }
+    }
+  }, []);
+
+  const handleExitImpersonation = () => {
+    // Clear impersonation data
+    localStorage.removeItem("creator_token");
+    localStorage.removeItem("creator_data");
+    localStorage.removeItem("is_impersonation");
+    localStorage.removeItem("admin_token_backup");
+    
+    // Redirect to admin dashboard with full page reload
+    window.location.href = "/admin";
+  };
 
   // Load previous submission if exists
   useEffect(() => {
