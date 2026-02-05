@@ -48,8 +48,19 @@ The system restoration is complete. Now implementing the user-facing identity la
     - **Filters**: All (default), Inventory, Workflows, Engines, ARRIS
     - **Activity sources**: Inventory updates, workflow executions, engine status, module activations, ARRIS outputs
     - Client-side filtering with dynamic count updates
+    - **"View All"** link to full Activity History page
   - Creator Tools navigation grid (Dashboard, Proposals, ARRIS Chat, Settings)
 - **Redirects to**: `/intake` if creator hasn't completed onboarding
+
+### Activity History (`ActivityHistory.js`)
+- **Route**: `/activity-history`
+- **Features**:
+  - Full chronological activity list (no limit)
+  - Same filters as Home Screen (All, Inventory, Workflows, Engines, ARRIS)
+  - Category badge on each activity item
+  - Dynamic header based on active filter
+  - "Back to Home" navigation
+- **Reuses**: Same activity generation logic and icon styling as Home Screen
 
 ### Creator Access Points
 - **Login**: `/creator/login`
