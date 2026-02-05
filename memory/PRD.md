@@ -42,6 +42,11 @@ The system restoration is complete. Now implementing the user-facing identity la
 - **Route**: `/home` (default post-login destination)
 - **Features**:
   - Welcome header with greeting and creator's first name
+  - **Notification Bell** in top navigation with unread count badge
+    - Shows 5 most recent activities in dropdown
+    - Client-side unread tracking (localStorage)
+    - "View All Activity" link to full history page
+    - "All caught up" indicator when opened
   - System stats (Active Engines, Progress %)
   - Quick access cards for The Keeper and Universal Inventory with stats badges
   - **"What's New" activity feed** - Real-time activities with filtering:
