@@ -124,7 +124,7 @@ export const CreatorLoginPage = () => {
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    return <Navigate to="/command-center" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -135,7 +135,7 @@ export const CreatorLoginPage = () => {
     const result = await login(email, password);
     
     if (result.success) {
-      navigate("/command-center");
+      navigate("/home");
     } else {
       setError(result.error);
     }
