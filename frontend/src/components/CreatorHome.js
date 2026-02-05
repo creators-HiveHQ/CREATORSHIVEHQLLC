@@ -143,7 +143,7 @@ const RecentActivitySection = ({ activities }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-slate-500" />
-            <CardTitle className="text-lg">What's New</CardTitle>
+            <CardTitle className="text-lg">What&apos;s New</CardTitle>
           </div>
           <Badge variant="outline" className="text-xs">
             {displayActivities.length} updates
