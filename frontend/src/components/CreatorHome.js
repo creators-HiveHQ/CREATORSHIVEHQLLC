@@ -388,11 +388,22 @@ export default function CreatorHome({ token, creator }) {
   const inventoryData = homeData?.inventory || {};
   const activities = homeData?.recent_activity || [];
 
+  // Use impersonated creator name or fall back to passed creator
+  const displayCreator = isImpersonation && impersonatedCreator ? impersonatedCreator : creator;
+
   return (
     <div className="min-h-screen bg-slate-50" data-testid="creator-home">
       <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Impersonation Banner - Only shown when admin is exploring as user */}
+        {isImpersonation && (
+          <ImpersonationBanner 
+            creatorName={impersonatedCreator?.name}
+            onExit={handleExitImpersonation}
+          />
+        )}
+
         {/* Welcome Header */}
-        <WelcomeHeader creator={creator} systemState={systemState} />
+        <WelcomeHeader creator={displayCreator} systemState={systemState} />
 
         {/* Quick Access Cards */}
         <QuickAccessSection
