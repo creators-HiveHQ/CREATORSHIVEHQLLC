@@ -218,9 +218,18 @@ const InventoryListItem = ({ item, category, onEdit, onDelete, onView }) => {
         <h4 className="font-medium text-slate-900 truncate">
           {item.name || item.title || "Untitled"}
         </h4>
-        {item.description && (
-          <p className="text-xs text-slate-500 truncate">{item.description}</p>
-        )}
+        <div className="flex items-center gap-2">
+          {item.description && (
+            <p className="text-xs text-slate-500 truncate">{item.description}</p>
+          )}
+          {/* Attachment indicator */}
+          {item.metadata?.attachments?.length > 0 && (
+            <span className="flex items-center gap-1 text-xs text-slate-400">
+              <Paperclip className="w-3 h-3" />
+              {item.metadata.attachments.length}
+            </span>
+          )}
+        </div>
       </div>
 
       <StatusBadge status={item.status || "draft"} />
