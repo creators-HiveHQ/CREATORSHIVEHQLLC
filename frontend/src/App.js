@@ -1556,6 +1556,13 @@ function App() {
               </CreatorProtectedRoute>
             } />
             
+            {/* Creator Home Route - User-facing front door */}
+            <Route path="/home" element={
+              <CreatorProtectedRoute>
+                <CreatorHomeWrapper />
+              </CreatorProtectedRoute>
+            } />
+            
             {/* Command Center Route - Phase 5 Dashboard */}
             <Route path="/command-center" element={
               <CreatorProtectedRoute>
