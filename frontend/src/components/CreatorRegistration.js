@@ -376,6 +376,8 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [selectedCreator, setSelectedCreator] = useState(null);
+  const [impersonating, setImpersonating] = useState(false);
+  const navigate = useNavigate();
 
   const fetchCreators = useCallback(async () => {
     try {
@@ -408,6 +410,44 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
       setSelectedCreator(null);
     } catch (error) {
       console.error("Error updating creator:", error);
+    }
+  };
+
+  const handleExploreAsUser = async (creator) => {
+    if (!creator.assigned_user_id) {
+      toast.error("Creator must be approved and have a user account first");
+      return;
+    }
+    
+    setImpersonating(true);
+    try {
+      const adminToken = localStorage.getItem("token");
+      if (!adminToken) {
+        toast.error("Admin authentication required");
+        return;
+      }
+      
+      const response = await axios.post(
+        `${API}/auth/impersonate/${creator.assigned_user_id}`,
+        {},
+        { headers: { Authorization: `Bearer ${adminToken}` } }
+      );
+      
+      // Store the impersonation token in creator_token
+      localStorage.setItem("creator_token", response.data.access_token);
+      localStorage.setItem("creator_data", JSON.stringify(response.data.creator));
+      localStorage.setItem("is_impersonation", "true");
+      
+      toast.success(`Exploring as ${creator.name}`);
+      
+      // Redirect to command center
+      navigate("/command-center");
+      
+    } catch (error) {
+      console.error("Impersonation error:", error);
+      toast.error(error.response?.data?.detail || "Failed to impersonate user");
+    } finally {
+      setImpersonating(false);
     }
   };
 
