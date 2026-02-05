@@ -449,8 +449,8 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
       toast.success(`Exploring as ${creator.name}`);
       
       console.log("Navigating to /command-center");
-      // Redirect to command center
-      navigate("/command-center");
+      // Redirect to command center with full page reload to re-initialize auth state
+      window.location.href = "/command-center";
       
     } catch (error) {
       console.error("Impersonation error:", error);
