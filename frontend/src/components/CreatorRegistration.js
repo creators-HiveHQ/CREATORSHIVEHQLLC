@@ -425,7 +425,7 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
     console.log("Setting impersonating to true");
     setImpersonating(true);
     try {
-      const adminToken = localStorage.getItem("token");
+      const adminToken = localStorage.getItem("hivehq_token");
       console.log("Admin token:", adminToken ? "exists" : "missing");
       if (!adminToken) {
         toast.error("Admin authentication required");
