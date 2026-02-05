@@ -24,7 +24,7 @@ import {
   ArrowLeft, Plus, Search, Grid3X3, List,
   RefreshCw, AlertCircle, Eye, Clock, CheckCircle2, 
   XCircle, Pause, MoreHorizontal, ChevronRight, Layers,
-  Edit, Trash2, TrendingUp
+  Edit, Trash2, TrendingUp, Paperclip
 } from "lucide-react";
 import InventoryItemModal, { DeleteConfirmModal } from "./InventoryItemModal";
 import ActivityNotificationBell from "./ActivityNotificationBell";
