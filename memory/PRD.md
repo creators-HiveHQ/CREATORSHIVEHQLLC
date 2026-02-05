@@ -57,7 +57,16 @@ The system restoration is complete. Now implementing the user-facing identity la
   - Creator Tools navigation grid (Dashboard, Proposals, ARRIS Chat, Settings)
 - **Redirects to**: `/intake` if creator hasn't completed onboarding
 
-### Activity History (`ActivityHistory.js`)
+### Notification System (`ActivityNotificationBell.js`)
+- **Placement**: Top-right navigation on all creator-facing pages
+- **Pages with bell**: Home, Command Center, Inventory, Activity History
+- **Features**:
+  - Bell icon with red unread count badge
+  - Dropdown showing 5 most recent activities
+  - Client-side unread tracking (localStorage)
+  - "All caught up ✓" indicator when opened
+  - "View All Activity" link to history page
+- **Shared hook**: `useActivityData.js` for consistent activity data across pages
 - **Route**: `/activity-history`
 - **Features**:
   - Full chronological activity list (no limit)
