@@ -534,6 +534,10 @@ export default function CreatorHome({ token, creator }) {
     navigate("/inventory");
   };
 
+  const handleViewAllActivity = () => {
+    navigate("/activity-history");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
