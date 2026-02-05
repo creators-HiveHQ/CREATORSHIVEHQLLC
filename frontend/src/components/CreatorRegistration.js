@@ -668,26 +668,40 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
                   <p className="font-mono">{selectedCreator.assigned_user_id}</p>
                 </div>
               )}
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => setSelectedCreator(null)}>
-                  Close
-                </Button>
-                {selectedCreator.status === "pending" && (
-                  <>
+              <div className="flex justify-between items-center gap-2 pt-4 border-t">
+                <div>
+                  {selectedCreator.assigned_user_id && (
                     <Button 
-                      className="bg-green-500 hover:bg-green-600"
-                      onClick={() => handleStatusUpdate(selectedCreator.id, "approved", "Free")}
+                      onClick={() => handleExploreAsUser(selectedCreator)}
+                      disabled={impersonating}
+                      className="bg-purple-600 hover:bg-purple-700"
+                      data-testid="explore-as-user-btn"
                     >
-                      Approve & Create User
+                      {impersonating ? "Loading..." : "🔍 Explore as User"}
                     </Button>
-                    <Button 
-                      variant="destructive"
-                      onClick={() => handleStatusUpdate(selectedCreator.id, "rejected")}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                )}
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setSelectedCreator(null)}>
+                    Close
+                  </Button>
+                  {selectedCreator.status === "pending" && (
+                    <>
+                      <Button 
+                        className="bg-green-500 hover:bg-green-600"
+                        onClick={() => handleStatusUpdate(selectedCreator.id, "approved", "Free")}
+                      >
+                        Approve & Create User
+                      </Button>
+                      <Button 
+                        variant="destructive"
+                        onClick={() => handleStatusUpdate(selectedCreator.id, "rejected")}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
