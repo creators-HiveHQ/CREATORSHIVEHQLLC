@@ -157,22 +157,161 @@ const RecentActivitySection = ({ activities }) => {
     engine: <Zap className="w-4 h-4 text-amber-500" />,
     module: <Target className="w-4 h-4 text-blue-500" />,
     inventory: <Layers className="w-4 h-4 text-purple-500" />,
-    proposal: <FileText className="w-4 h-4 text-emerald-500" />,
+    workflow: <Activity className="w-4 h-4 text-emerald-500" />,
+    arris: <Sparkles className="w-4 h-4 text-purple-500" />,
     system: <Activity className="w-4 h-4 text-slate-500" />
   };
 
-  // Generate sample activities if none provided
+  // Show real activities or fallback
   const displayActivities = activities?.length > 0 ? activities : [
-    { type: "system", message: "Your system is ready for action", time: "Just now" },
-    { type: "engine", message: "Engines are standing by", time: "Ready" }
+    { type: "system", message: "Your system is ready for action", time: "Just now" }
   ];
 
   return (
-    <Card className="border-0 shadow-sm mb-8">
+    <Card className="border-0 shadow-sm mb-8" data-testid="whats-new-section">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-slate-500" />
+            <CardTitle className="text-lg">What&apos;s New</CardTitle>
+          </div>
+          <Badge variant="outline" className="text-xs">
+            {displayActivities.length} updates
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {displayActivities.slice(0, 5).map((activity, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+              data-testid={`activity-item-${idx}`}
+            >
+              <div className="p-2 bg-white rounded-lg shadow-sm">
+                {activityIcons[activity.type] || activityIcons.system}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-slate-700 truncate">{activity.message}</p>
+                <p className="text-xs text-slate-400">{activity.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ============== HELPER: Generate activities from data ==============
+const generateActivitiesFromData = (homeData, inventoryData) => {
+  const activities = [];
+  const now = new Date();
+
+  // Helper to format relative time
+  const formatRelativeTime = (dateString) => {
+    if (!dateString) return "Recently";
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Add inventory item activities
+  if (inventoryData) {
+    const allItems = [];
+    Object.entries(inventoryData).forEach(([category, items]) => {
+      if (Array.isArray(items)) {
+        items.forEach(item => {
+          allItems.push({ ...item, category });
+        });
+      }
+    });
+
+    // Sort by updated_at or created_at
+    allItems.sort((a, b) => {
+      const dateA = new Date(a.updated_at || a.created_at || 0);
+      const dateB = new Date(b.updated_at || b.created_at || 0);
+      return dateB - dateA;
+    });
+
+    // Add recent inventory items
+    allItems.slice(0, 3).forEach(item => {
+      const isUpdated = item.updated_at && item.created_at && item.updated_at !== item.created_at;
+      activities.push({
+        type: "inventory",
+        message: isUpdated 
+          ? `Updated ${item.category.slice(0, -1)}: ${item.name}`
+          : `Added ${item.category.slice(0, -1)}: ${item.name}`,
+        time: formatRelativeTime(item.updated_at || item.created_at),
+        timestamp: new Date(item.updated_at || item.created_at)
+      });
+    });
+
+    // Check for workflow executions
+    const workflows = inventoryData.workflows || [];
+    workflows.forEach(workflow => {
+      const executions = workflow.metadata?.executions || [];
+      executions.slice(0, 2).forEach(exec => {
+        activities.push({
+          type: "workflow",
+          message: `Workflow "${workflow.name}" ${exec.status}`,
+          time: formatRelativeTime(exec.started_at),
+          timestamp: new Date(exec.started_at)
+        });
+      });
+    });
+  }
+
+  // Add engine activities from homeData
+  if (homeData?.engine_status) {
+    Object.entries(homeData.engine_status).forEach(([engineKey, engine]) => {
+      if (engine.status === "active") {
+        activities.push({
+          type: "engine",
+          message: `${engineKey.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} is active`,
+          time: formatRelativeTime(engine.last_activity),
+          timestamp: new Date(engine.last_activity)
+        });
+      }
+    });
+  }
+
+  // Add ARRIS outputs as activities
+  if (homeData?.arris_outputs?.length > 0) {
+    homeData.arris_outputs.slice(0, 2).forEach(output => {
+      activities.push({
+        type: "arris",
+        message: `ARRIS ${output.output_type}: New guidance available`,
+        time: formatRelativeTime(output.created_at),
+        timestamp: new Date(output.created_at)
+      });
+    });
+  }
+
+  // Add module activities
+  if (homeData?.active_modules?.length > 0) {
+    activities.push({
+      type: "module",
+      message: `${homeData.active_modules.length} modules are active`,
+      time: "Current",
+      timestamp: now
+    });
+  }
+
+  // Sort all activities by timestamp (most recent first)
+  activities.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  // Return top activities without timestamp field
+  return activities.slice(0, 8).map(({ timestamp, ...rest }) => rest);
+};
             <CardTitle className="text-lg">What&apos;s New</CardTitle>
           </div>
           <Badge variant="outline" className="text-xs">
