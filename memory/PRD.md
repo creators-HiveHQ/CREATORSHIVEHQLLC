@@ -31,8 +31,12 @@ The system restoration is complete. Now implementing the user-facing identity la
 - **Explore as User**: Allows admins to impersonate any creator with an `assigned_user_id` to test the user experience
   - Backend endpoint: `POST /api/auth/impersonate/{creator_id}`
   - Frontend: "Explore as User" button in creator detail modal (Creators page)
-  - Session: Stores temporary token as `creator_token`, flags `is_impersonation=true`
+  - Session: Stores temporary token as `creator_token`, flags `is_impersonation=true`, backs up `admin_token_backup`
   - Redirect: Full page reload to `/home` to re-initialize auth state
+- **Exit Impersonation**: Allows admins to cleanly exit impersonation and return to admin dashboard
+  - Banner: Orange gradient banner shown when `is_impersonation === true` on Creator Home and Intake Form
+  - Exit action: Clears `creator_token`, `creator_data`, `is_impersonation`, `admin_token_backup`
+  - Redirect: Returns to `/admin` dashboard
 
 ### Creator Home Screen (`CreatorHome.js`)
 - **Route**: `/home` (default post-login destination)
