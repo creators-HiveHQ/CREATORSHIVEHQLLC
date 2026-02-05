@@ -31,6 +31,7 @@ import AutoEscalationDashboard from "@/components/AutoEscalationDashboard";
 import IntakeForm from "@/components/IntakeForm";
 import CommandCenter from "@/components/CommandCenter";
 import CreatorHome from "@/components/CreatorHome";
+import ActivityHistory from "@/components/ActivityHistory";
 import UniversalInventory from "@/components/UniversalInventory";
 import InventoryItemDetail from "@/components/InventoryItemDetail";
 import AssetUpload from "@/components/AssetUpload";
