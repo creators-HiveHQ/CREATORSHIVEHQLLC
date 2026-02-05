@@ -44,12 +44,10 @@ The system restoration is complete. Now implementing the user-facing identity la
   - Welcome header with greeting and creator's first name
   - System stats (Active Engines, Progress %)
   - Quick access cards for The Keeper and Universal Inventory with stats badges
-  - **"What's New" activity feed** - Real-time activities from:
-    - Inventory item updates (assets, workflows, tasks, offers)
-    - Workflow executions (completed, started)
-    - Engine status changes
-    - Module activations
-    - ARRIS AI outputs
+  - **"What's New" activity feed** - Real-time activities with filtering:
+    - **Filters**: All (default), Inventory, Workflows, Engines, ARRIS
+    - **Activity sources**: Inventory updates, workflow executions, engine status, module activations, ARRIS outputs
+    - Client-side filtering with dynamic count updates
   - Creator Tools navigation grid (Dashboard, Proposals, ARRIS Chat, Settings)
 - **Redirects to**: `/intake` if creator hasn't completed onboarding
 
