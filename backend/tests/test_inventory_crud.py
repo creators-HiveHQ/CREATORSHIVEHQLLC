@@ -9,7 +9,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://engine-dashboard-1.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://user-test-drive.preview.emergentagent.com')
 
 # Test credentials
 TEST_EMAIL = "elitetest@hivehq.com"
