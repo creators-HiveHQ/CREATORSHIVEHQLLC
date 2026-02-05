@@ -596,7 +596,7 @@ export default function CreatorHome({ token, creator }) {
         {/* Two Column Layout for Activity and Navigation */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Activity */}
-          <RecentActivitySection activities={activities} />
+          <RecentActivitySection activities={activities} onViewAll={handleViewAllActivity} />
 
           {/* Navigation Grid */}
           <NavigationGrid navigate={navigate} />
