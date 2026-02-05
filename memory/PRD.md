@@ -46,8 +46,9 @@ The system restoration is complete. Now implementing the user-facing identity la
 
 ### Creator Access Points
 - **Login**: `/creator/login`
-- **Command Center**: `/command-center` (default post-login destination)
-- **Inventory**: `/inventory` (accessible from Command Center)
+- **Home**: `/home` (default post-login destination, user-facing front door)
+- **Command Center**: `/command-center` (detailed dashboard with Keeper, engines, modules)
+- **Inventory**: `/inventory` (accessible from Home or Command Center)
 - **Item Detail**: `/inventory/:category/:itemId`
 - **Asset Upload**: `/inventory/:category/:itemId/upload`
 - **Workflow Triggers**: `/inventory/:category/:itemId/triggers`
