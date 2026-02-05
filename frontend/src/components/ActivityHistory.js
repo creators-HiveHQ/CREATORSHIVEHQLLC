@@ -265,9 +265,12 @@ export default function ActivityHistory({ token }) {
                 <p className="text-sm text-slate-500">Your recent actions and system events</p>
               </div>
             </div>
-            <Badge variant="outline" className="text-sm">
-              {filteredActivities.length} total
-            </Badge>
+            <div className="flex items-center gap-3">
+              <ActivityNotificationBell activities={activities} />
+              <Badge variant="outline" className="text-sm">
+                {filteredActivities.length} total
+              </Badge>
+            </div>
           </div>
         </div>
 
