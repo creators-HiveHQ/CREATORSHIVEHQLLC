@@ -426,16 +426,20 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
     setImpersonating(true);
     try {
       const adminToken = localStorage.getItem("token");
+      console.log("Admin token:", adminToken ? "exists" : "missing");
       if (!adminToken) {
         toast.error("Admin authentication required");
         return;
       }
       
+      console.log("Making API call to:", `${API}/auth/impersonate/${creator.id}`);
       const response = await axios.post(
         `${API}/auth/impersonate/${creator.id}`,
         {},
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );
+      
+      console.log("API response:", response.data);
       
       // Store the impersonation token in creator_token
       localStorage.setItem("creator_token", response.data.access_token);
@@ -444,11 +448,13 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
       
       toast.success(`Exploring as ${creator.name}`);
       
+      console.log("Navigating to /command-center");
       // Redirect to command center
       navigate("/command-center");
       
     } catch (error) {
       console.error("Impersonation error:", error);
+      console.error("Error response:", error.response?.data);
       toast.error(error.response?.data?.detail || "Failed to impersonate user");
     } finally {
       setImpersonating(false);
