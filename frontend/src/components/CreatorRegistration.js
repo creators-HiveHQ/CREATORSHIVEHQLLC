@@ -414,11 +414,14 @@ export const AdminCreatorsPage = ({ onNavigate }) => {
   };
 
   const handleExploreAsUser = async (creator) => {
+    console.log("handleExploreAsUser called with creator:", creator);
     if (!creator.assigned_user_id) {
+      console.log("No assigned_user_id, showing error");
       toast.error("Creator must be approved and have a user account first");
       return;
     }
     
+    console.log("Setting impersonating to true");
     setImpersonating(true);
     try {
       const adminToken = localStorage.getItem("token");
