@@ -175,9 +175,16 @@ const InventoryItemCard = ({ item, category, onEdit, onDelete, onView }) => {
         )}
 
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
+          <div className="flex items-center gap-3 text-xs text-slate-400">
             {item.created_at && (
               <span>Created {new Date(item.created_at).toLocaleDateString()}</span>
+            )}
+            {/* Attachment indicator */}
+            {item.metadata?.attachments?.length > 0 && (
+              <span className="flex items-center gap-1 text-slate-500">
+                <Paperclip className="w-3 h-3" />
+                {item.metadata.attachments.length}
+              </span>
             )}
           </div>
           {isSystemGenerated && (
