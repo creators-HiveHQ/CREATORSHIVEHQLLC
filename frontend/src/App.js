@@ -1385,6 +1385,18 @@ const CommandCenterWrapper = () => {
   );
 };
 
+// Wrapper for Creator Home with Creator Auth
+const CreatorHomeWrapper = () => {
+  const { token, creator } = useCreatorAuth();
+  
+  return (
+    <CreatorHome 
+      token={token} 
+      creator={creator}
+    />
+  );
+};
+
 // Wrapper for Universal Inventory with Creator Auth
 const InventoryWrapper = () => {
   const { token } = useCreatorAuth();
