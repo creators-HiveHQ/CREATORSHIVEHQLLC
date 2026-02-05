@@ -312,34 +312,6 @@ const generateActivitiesFromData = (homeData, inventoryData) => {
   // Return top activities without timestamp field
   return activities.slice(0, 8).map(({ timestamp, ...rest }) => rest);
 };
-            <CardTitle className="text-lg">What&apos;s New</CardTitle>
-          </div>
-          <Badge variant="outline" className="text-xs">
-            {displayActivities.length} updates
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {displayActivities.slice(0, 5).map((activity, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              <div className="p-2 bg-white rounded-lg shadow-sm">
-                {activityIcons[activity.type] || activityIcons.system}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-700 truncate">{activity.message}</p>
-                <p className="text-xs text-slate-400">{activity.time}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 // ============== NAVIGATION GRID ==============
 const NavigationGrid = ({ navigate }) => {
