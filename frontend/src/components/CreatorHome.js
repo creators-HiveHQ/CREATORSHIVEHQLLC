@@ -21,6 +21,7 @@ import {
 
 import { KeeperWidget } from "./KeeperPanel";
 import { InventoryWidget } from "./UniversalInventory";
+import ActivityNotificationBell from "./ActivityNotificationBell";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
