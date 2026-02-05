@@ -414,10 +414,13 @@ export default function CommandCenter({ token, onNavigateToIntake }) {
               <p className="text-sm text-slate-500">Your system control hub</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchCommandCenterData}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <ActivityNotificationBell activities={activities} />
+            <Button variant="outline" size="sm" onClick={fetchCommandCenterData}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Track Info */}
