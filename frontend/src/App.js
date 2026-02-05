@@ -1398,6 +1398,15 @@ const CreatorHomeWrapper = () => {
   );
 };
 
+// Wrapper for Activity History with Creator Auth
+const ActivityHistoryWrapper = () => {
+  const { token } = useCreatorAuth();
+  
+  return (
+    <ActivityHistory token={token} />
+  );
+};
+
 // Wrapper for Universal Inventory with Creator Auth
 const InventoryWrapper = () => {
   const { token } = useCreatorAuth();
