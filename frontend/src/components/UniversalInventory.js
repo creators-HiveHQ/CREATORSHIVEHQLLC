@@ -601,10 +601,13 @@ export default function UniversalInventory({ token }) {
               Command Center
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchInventory}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <ActivityNotificationBell activities={activities} />
+            <Button variant="outline" size="sm" onClick={fetchInventory}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Title Section */}
