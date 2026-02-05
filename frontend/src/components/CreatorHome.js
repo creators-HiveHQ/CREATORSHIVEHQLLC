@@ -271,7 +271,41 @@ export default function CreatorHome({ token, creator }) {
   const [homeData, setHomeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isImpersonation, setIsImpersonation] = useState(false);
+  const [impersonatedCreator, setImpersonatedCreator] = useState(null);
   const navigate = useNavigate();
+
+  // Check for impersonation mode on mount
+  useEffect(() => {
+    const impersonationFlag = localStorage.getItem("is_impersonation");
+    const creatorData = localStorage.getItem("creator_data");
+    
+    if (impersonationFlag === "true") {
+      setIsImpersonation(true);
+      if (creatorData) {
+        try {
+          setImpersonatedCreator(JSON.parse(creatorData));
+        } catch (e) {
+          console.error("Failed to parse creator data:", e);
+        }
+      }
+    }
+  }, []);
+
+  const handleExitImpersonation = () => {
+    // Restore admin token
+    const adminToken = localStorage.getItem("admin_token_backup");
+    
+    // Clear impersonation data
+    localStorage.removeItem("creator_token");
+    localStorage.removeItem("creator_data");
+    localStorage.removeItem("is_impersonation");
+    localStorage.removeItem("admin_token_backup");
+    
+    // Redirect to admin dashboard with full page reload
+    // If admin token was saved, they'll be logged in; otherwise they'll need to re-login
+    window.location.href = "/admin";
+  };
 
   const fetchHomeData = useCallback(async () => {
     if (!token) {
