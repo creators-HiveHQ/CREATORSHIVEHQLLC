@@ -5,7 +5,7 @@
  * Client-side unread tracking using localStorage.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,26 +28,28 @@ const LAST_SEEN_KEY = "activity_last_seen_timestamp";
 
 export default function ActivityNotificationBell({ activities = [] }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [lastSeenTime, setLastSeenTime] = useState(() => {
+    const lastSeenStr = localStorage.getItem(LAST_SEEN_KEY);
+    return lastSeenStr ? new Date(lastSeenStr) : new Date(0);
+  });
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // Calculate unread count based on last seen timestamp
-  useEffect(() => {
-    const lastSeenStr = localStorage.getItem(LAST_SEEN_KEY);
-    const lastSeen = lastSeenStr ? new Date(lastSeenStr) : new Date(0);
-
-    // Count activities newer than last seen
-    const unread = activities.filter(activity => {
-      // Parse the relative time back to approximate timestamp
-      // For simplicity, count activities from today as potentially unread
+  // Calculate unread count based on last seen timestamp using useMemo
+  const unreadCount = useMemo(() => {
+    // Count activities that appear recent (within today)
+    return activities.filter(activity => {
       if (activity.time === "Just now" || activity.time === "Current") return true;
       if (activity.time?.includes("m ago") || activity.time?.includes("h ago")) return true;
       return false;
     }).length;
-
-    setUnreadCount(unread);
   }, [activities]);
+
+  // Track if user has seen notifications this session
+  const [hasSeenThisSession, setHasSeenThisSession] = useState(false);
+  
+  // Display count (0 if user has opened dropdown this session)
+  const displayUnreadCount = hasSeenThisSession ? 0 : unreadCount;
 
   // Close dropdown when clicking outside
   useEffect(() => {
