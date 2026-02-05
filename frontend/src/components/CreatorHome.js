@@ -590,7 +590,7 @@ export default function CreatorHome({ token, creator }) {
         )}
 
         {/* Welcome Header */}
-        <WelcomeHeader creator={displayCreator} systemState={systemState} />
+        <WelcomeHeader creator={displayCreator} systemState={systemState} activities={activities} />
 
         {/* Quick Access Cards */}
         <QuickAccessSection
