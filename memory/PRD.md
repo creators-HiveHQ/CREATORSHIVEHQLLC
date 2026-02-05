@@ -25,13 +25,24 @@ The system restoration is complete. Now implementing the user-facing identity la
 | **Asset Upload Functionality** | ✅ COMPLETE | Jan 30, 2026 |
 | **Workflow Automation Integration** | ✅ COMPLETE | Jan 30, 2026 |
 || **Admin "Explore as User" Impersonation** | ✅ COMPLETE | Feb 5, 2026 |
+|| **Creator Home Screen** | ✅ COMPLETE | Feb 5, 2026 |
 
 ### Admin Features
 - **Explore as User**: Allows admins to impersonate any creator with an `assigned_user_id` to test the user experience
   - Backend endpoint: `POST /api/auth/impersonate/{creator_id}`
   - Frontend: "Explore as User" button in creator detail modal (Creators page)
   - Session: Stores temporary token as `creator_token`, flags `is_impersonation=true`
-  - Redirect: Full page reload to `/command-center` to re-initialize auth state
+  - Redirect: Full page reload to `/home` to re-initialize auth state
+
+### Creator Home Screen (`CreatorHome.js`)
+- **Route**: `/home` (default post-login destination)
+- **Features**:
+  - Welcome header with greeting and creator's first name
+  - System stats (Active Engines, Progress %)
+  - Quick access cards for The Keeper and Universal Inventory
+  - "What's New" recent activity section
+  - Creator Tools navigation grid (Dashboard, Proposals, ARRIS Chat, Settings)
+- **Redirects to**: `/intake` if creator hasn't completed onboarding
 
 ### Creator Access Points
 - **Login**: `/creator/login`
