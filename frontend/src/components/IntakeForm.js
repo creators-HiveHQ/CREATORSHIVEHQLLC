@@ -343,6 +343,14 @@ export default function IntakeForm({ token, onComplete }) {
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
+        {/* Impersonation Banner - Only shown when admin is exploring as user */}
+        {isImpersonation && (
+          <ImpersonationBanner 
+            creatorName={impersonatedCreator?.name}
+            onExit={handleExitImpersonation}
+          />
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-full mb-4">
