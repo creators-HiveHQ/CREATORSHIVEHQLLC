@@ -68,7 +68,7 @@ export default function ActivityNotificationBell({ activities = [] }) {
     if (!isOpen) {
       // Mark as read when opening
       localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
-      setUnreadCount(0);
+      setHasSeenThisSession(true);
     }
     setIsOpen(!isOpen);
   };
@@ -90,12 +90,12 @@ export default function ActivityNotificationBell({ activities = [] }) {
         aria-label="Activity notifications"
       >
         <Bell className="w-5 h-5 text-slate-600" />
-        {unreadCount > 0 && (
+        {displayUnreadCount > 0 && (
           <span 
             className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
             data-testid="activity-unread-badge"
           >
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {displayUnreadCount > 9 ? "9+" : displayUnreadCount}
           </span>
         )}
       </button>
